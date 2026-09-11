@@ -240,11 +240,10 @@ export function DollarAmountInput({
               <span className="text-[11px] text-white/40">3% slippage</span>
             </div>
             <p className="text-sm font-semibold text-white mb-1">
-              {quote.amountOutFormatted} {symbol}
-              <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
+              You send {formatUsd(usdNum)} → get {quote.amountOutFormatted} {symbol}
             </p>
             <p className="text-[11px] text-white/40">
-              ETH → WETH → USDG → {symbol}
+              ETH → WETH → USDG → {symbol} · Pool price may differ from spot
             </p>
           </motion.div>
         )}
