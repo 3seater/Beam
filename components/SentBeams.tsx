@@ -285,12 +285,12 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   const client = usePublicClient();
 
   const [rows, setRows] = useState<RowData[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 'idle' = not started yet, 'loading' = onchain fetch in flight, 'done' = finished
+  const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'done'>('idle');
 
-  // Keep tokenMap in a ref so it never invalidates the `refresh` callback.
-  // The ref is populated once on mount and is stable for the component lifetime.
   const tokenMapRef = useRef<Map<string, { symbol: string; decimals: number }>>(new Map());
 
+  // Load token map once
   useEffect(() => {
     fetchRobinhoodTokens().then((tokens) => {
       const map = new Map<string, { symbol: string; decimals: number }>();
@@ -299,8 +299,28 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     });
   }, []);
 
+  // Seed rows immediately from localStorage so something shows before onchain fetch
+  useEffect(() => {
+    const local = loadBeamHistory(walletAddress);
+    if (local.length > 0) {
+      setRows(local.map((e) => ({
+        depositId: e.depositId,
+        tokenSymbol: e.tokenSymbol,
+        tokenDecimals: 18,
+        amount: 0n, // placeholder — overwritten by onchain fetch
+        beamLink: e.beamLink,
+        usdAmount: e.usdAmount,
+        createdAt: e.createdAt,
+        claimSigner: '',
+      })));
+    }
+  }, [walletAddress]);
+
   const refresh = useCallback(async () => {
-    setLoading(true);
+    // Don't fire until wagmi client is ready
+    if (!client) return;
+
+    setFetchState('loading');
 
     const [onchain, serverLinks, localEntries] = await Promise.all([
       fetchOnchainDeposits(walletAddress, client),
@@ -343,29 +363,24 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       };
     });
 
-    setRows(merged);
-    setLoading(false);
-  }, [walletAddress, client]); // tokenMapRef is stable — intentionally excluded
+    // Only update rows if we actually got onchain data; otherwise keep localStorage rows
+    if (merged.length > 0) setRows(merged);
+    setFetchState('done');
+  }, [walletAddress, client]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  // Fire refresh when client becomes available (handles wagmi async hydration)
+  useEffect(() => {
+    if (client) void refresh();
+  }, [client, refresh]);
 
-  // When a row is cancelled, mark it locally so the UI updates immediately
   const handleCancelled = useCallback((depositId: string) => {
     setRows((prev) => prev.map((r) =>
       r.depositId === depositId ? { ...r, amount: 0n } : r,
     ));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="glass-sm rounded-2xl px-4 py-4 flex items-center gap-2 text-white/40 text-xs">
-        <Loader2 size={12} className="animate-spin shrink-0" />
-        Loading your sent beams…
-      </div>
-    );
-  }
-
-  if (rows.length === 0) return null;
+  // Never render anything if there's genuinely nothing to show
+  if (rows.length === 0 && fetchState !== 'loading') return null;
 
   return (
     <div className="glass-sm rounded-2xl px-4 py-3">
@@ -374,9 +389,10 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         <button
           type="button"
           onClick={refresh}
-          className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+          className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
         >
-          Refresh
+          {fetchState === 'loading' && <Loader2 size={10} className="animate-spin" />}
+          {fetchState !== 'loading' && 'Refresh'}
         </button>
       </div>
       {rows.map((row) => (
