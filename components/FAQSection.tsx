@@ -1,0 +1,75 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { Accordion, type AccordionItem } from '@/components/ui/Accordion';
+
+const FAQ_ITEMS: AccordionItem[] = [
+  {
+    question: 'Is my Beam link secure?',
+    answer: 'Each link contains a one-time ephemeral private key in the URL hash fragment. Hash fragments never reach servers, so the key stays private. On-chain, the escrow verifies that only the holder of that key can claim — and the key is destroyed the moment funds are claimed or cancelled.',
+  },
+  {
+    question: 'Do recipients need a crypto wallet?',
+    answer: 'No. Recipients sign in with Apple, Google, or Twitter. Privy automatically provisions a secure embedded smart wallet behind the scenes — no seed phrases, no browser extensions, no setup required.',
+  },
+  {
+    question: 'Which tokens can I send?',
+    answer: 'Native ETH, any ERC-20, and Robinhood Chain stock-paired tokens representing real company shares (NVDA, AAPL, TSLA, and more). The asset picker shows the most popular options, or you can paste any contract address.',
+  },
+  {
+    question: 'Can I cancel and recover my funds?',
+    answer: 'Yes — at any time before the link is claimed. Call cancel from the app and the full amount returns to your wallet. Once a link is claimed, the deposit is permanently closed.',
+  },
+  {
+    question: 'Who pays gas when a recipient claims?',
+    answer: 'The recipient pays zero gas. Beam\'s Relayer service submits the claim transaction on their behalf, paying all fees. The only gas cost is the sender\'s initial deposit.',
+  },
+  {
+    question: 'Do Beam links expire?',
+    answer: 'No expiry. The funds sit in the escrow contract until the recipient claims or the sender cancels. There\'s no time pressure on either side.',
+  },
+];
+
+export function FAQSection() {
+  return (
+    <section
+      id="faq"
+      className="relative py-32"
+      aria-labelledby="faq-heading"
+    >
+      <div className="layout">
+        <div className="text-center mb-16">
+          <motion.h2
+            id="faq-heading"
+            className="text-5xl sm:text-6xl font-medium text-white tracking-tight"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            FAQs
+          </motion.h2>
+          <motion.p
+            className="mt-4 text-white/55 text-xl"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
+            Everything you need to know.
+          </motion.p>
+        </div>
+
+        <motion.div
+          className="glass p-3"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        >
+          <Accordion items={FAQ_ITEMS} mode="single" className="px-3" />
+        </motion.div>
+      </div>
+    </section >
+  );
+}

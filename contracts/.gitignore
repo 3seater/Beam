@@ -1,0 +1,7 @@
+# Foundry dependency libraries (installed via forge install / git submodule)
+lib/forge-std
+lib/openzeppelin-contracts
+
+# Foundry build output
+out/
+cache/

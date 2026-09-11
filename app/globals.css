@@ -1,0 +1,607 @@
+/* ============================================================
+   Beam — iOS / Apple-inspired Design System
+   Sky-blue liquid glass aesthetic
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------
+   Layout token — every section uses this exact container
+   ------------------------------------------------------------ */
+@layer utilities {
+  .layout {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    /* 32px */
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .layout {
+    padding-left: 2.5rem;
+    /* 40px */
+    padding-right: 2.5rem;
+  }
+}
+
+:root {
+  /* Sky gradient background */
+  --sky-top: #0a4a6e;
+  /* deep ocean */
+  --sky-mid: #1a7ab5;
+  /* mid blue   */
+  --sky-light: #4db8f0;
+  /* sky        */
+  --sky-pale: #a8dff7;
+  /* pale sky   */
+  --sky-white: #dff0fb;
+  /* near-white */
+
+  /* Liquid glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.14);
+  --glass-bg-hover: rgba(255, 255, 255, 0.22);
+  --glass-bg-strong: rgba(255, 255, 255, 0.32);
+  --glass-border: rgba(255, 255, 255, 0.30);
+  --glass-border-dim: rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 8px 32px rgba(10, 74, 110, 0.25),
+    0 2px 8px rgba(10, 74, 110, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  /* Primary CTA — vivid sky blue pill */
+  --primary-bg: rgba(255, 255, 255, 0.22);
+  --primary-text: #ffffff;
+  --primary-glow: rgba(78, 180, 240, 0.5);
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.48);
+  --text-dim: rgba(255, 255, 255, 0.30);
+
+  /* Accent */
+  --accent-blue: #4eb4f0;
+  --accent-teal: #38c4d8;
+  --accent-green: #34d399;
+  --accent-red: #f87171;
+
+  /* Easing curves */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ------------------------------------------------------------
+   Base
+   ------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    'SF Pro Text', 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+  background-color: #1a7ab5;
+  /* solid fallback — matches gradient mid, no flash */
+  background-image: linear-gradient(185deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 35%,
+      var(--sky-light) 75%,
+      #3aaee0 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ambient cloud/glow orbs behind content */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+body::before {
+  width: 900px;
+  height: 600px;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(168, 223, 247, 0.10) 50%,
+      transparent 75%);
+  filter: blur(40px);
+}
+
+body::after {
+  width: 600px;
+  height: 400px;
+  bottom: 0;
+  right: -100px;
+  background: radial-gradient(ellipse at center,
+      rgba(56, 196, 216, 0.12) 0%,
+      transparent 70%);
+  filter: blur(60px);
+}
+
+/* All page content above the ambient orbs */
+body>* {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------
+   Liquid Glass Surface
+   The core reusable glass card class
+   ------------------------------------------------------------ */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+  /* Subtle inner gradient keeps bottom content legible when the page
+     background goes light (near-white) at the bottom of the viewport */
+  position: relative;
+}
+
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom,
+      rgba(10, 60, 90, 0.00) 40%,
+      rgba(10, 60, 90, 0.18) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure direct children sit above the overlay */
+.glass>* {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-sm {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-dim);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 16px rgba(10, 74, 110, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow:
+    0 16px 48px rgba(10, 74, 110, 0.30),
+    0 4px 12px rgba(10, 74, 110, 0.20),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.10);
+  position: relative;
+}
+
+.glass-strong::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom,
+      rgba(10, 60, 90, 0.00) 40%,
+      rgba(10, 60, 90, 0.20) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glass-strong>* {
+  position: relative;
+  z-index: 1;
+}
+
+/* Floating pill — used for navbar and inline badges */
+.glass-pill {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  box-shadow:
+    0 4px 24px rgba(10, 74, 110, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.40);
+}
+
+/* ------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------ */
+
+/* Primary — frosted white fill, scales on hover */
+.btn-glass-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  transition: background 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
+    transform 180ms var(--ease-spring),
+    border-color 200ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(10, 74, 110, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glass-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 60%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-glass-primary:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 8px 32px rgba(10, 74, 110, 0.30),
+    0 0 0 1px rgba(255, 255, 255, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.60);
+  transform: scale(1.03);
+}
+
+.btn-glass-primary:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.btn-glass-primary:disabled,
+.btn-glass-primary[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Ghost — outline only, for secondary actions */
+.btn-glass-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+  transition: background 200ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    transform 180ms var(--ease-spring);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-glass-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.50);
+  transform: scale(1.02);
+}
+
+.btn-glass-ghost:active {
+  transform: scale(0.97);
+}
+
+/* Icon button — circular glass pill */
+.btn-glass-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: background 180ms ease, transform 150ms var(--ease-spring);
+}
+
+.btn-glass-icon:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
+}
+
+/* ------------------------------------------------------------
+   Input fields
+   ------------------------------------------------------------ */
+.input-glass {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  outline: none;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.input-glass::placeholder {
+  color: rgba(255, 255, 255, 0.40);
+}
+
+.input-glass:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.40);
+}
+
+.input-glass:focus {
+  background: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+.input-glass.error {
+  border-color: rgba(248, 113, 113, 0.70);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+/* ------------------------------------------------------------
+   Token / Asset tile (for the picker grid)
+   ------------------------------------------------------------ */
+.token-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+  transition: background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms var(--ease-spring),
+    box-shadow 160ms ease;
+  user-select: none;
+}
+
+.token-tile:hover {
+  background: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.40);
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(10, 74, 110, 0.20);
+}
+
+.token-tile.selected {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.70);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.40),
+    0 4px 16px rgba(10, 74, 110, 0.25);
+  transform: scale(1.05);
+}
+
+/* ------------------------------------------------------------
+   Typography
+   ------------------------------------------------------------ */
+.text-display {
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: #ffffff;
+}
+
+.text-hero {
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.0;
+  color: #ffffff;
+}
+
+.text-glass-muted {
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------
+   Animations
+   ------------------------------------------------------------ */
+@keyframes float-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.20);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-float-up {
+  animation: float-up 0.55s var(--ease-out) both;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+/* Stagger children */
+.stagger>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stagger>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.stagger>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.stagger>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.stagger>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+/* ------------------------------------------------------------
+   Scrollbar
+   ------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.20);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ------------------------------------------------------------
+   Focus ring — accessible, on-brand
+   ------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.70);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------
+   Utilities
+   ------------------------------------------------------------ */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Glass gradient text */
+  .text-sky-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #a8dff7 60%, #4eb4f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Subtle inner-top highlight — like polished glass */
+  .inner-highlight {
+    box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .backdrop-blur-glass {
+    /* backdrop-filter removed — was causing visual shift on hydration */
+  }
+}
+
+/* ── Navbar CTA glow border ───────────────────────────────────────────────── */
+.cta-glow-border {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.38),
+    0 0 10px 1px rgba(255, 255, 255, 0.12);
+  animation: cta-pulse 2.8s ease-in-out infinite;
+  transition: box-shadow 200ms ease;
+}
+
+.cta-glow-border:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 0 16px 3px rgba(255, 255, 255, 0.18);
+  animation: none;
+}
+
+@keyframes cta-pulse {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.32),
+      0 0 8px 1px rgba(255, 255, 255, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.52),
+      0 0 14px 3px rgba(255, 255, 255, 0.16);
+  }
+}

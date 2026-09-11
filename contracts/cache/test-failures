@@ -1,0 +1,1 @@
+{"version":1,"failures":[{"contract":"test/BeamEscrowFuzz.t.sol:BeamEscrowFuzzTest","test":"testFuzz_claim_validSignature_nativeETH"},{"contract":"test/BeamEscrowFuzz.t.sol:BeamEscrowFuzzTest","test":"testFuzz_claimedDeposit_permanentlyClosed"}]}
