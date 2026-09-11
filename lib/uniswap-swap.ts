@@ -2,33 +2,40 @@
  * lib/uniswap-swap.ts
  *
  * Uniswap V3 swap helpers for Robinhood Chain (chainId 4663).
- * Uses QuoterV2 for onchain quotes and SwapRouter02 for execution.
  *
- * Swap path: ETH (native) → WETH → USDG → <stock token>
- * Stock tokens on Robinhood Chain trade against USDG.
+ * CORRECT SWAP PATH: ETH → WETH → stock token (single-hop, direct pool)
  *
- * We use SwapRouter02.exactInput (not UniversalRouter) because:
- * - Simpler encoding — no WRAP_ETH command byte needed
- * - Accepts native ETH directly via msg.value
- * - More predictable revert reasons
+ * Verified on-chain liquidity (uint128, via IUniswapV3Pool.liquidity()):
+ *   WETH/TSLA fee=3000  → 8.57e21   ← deepest
+ *   WETH/NVDA fee=3000  → 5.56e21
+ *   WETH/AAPL fee=500   → 2.65e21   (fee=3000 pool does NOT exist for AAPL)
+ *   USDG/TSLA fee=3000  → 1.39e18   ← 6,000× shallower (old wrong path)
+ *   WETH/USDG fee=500   → 3.80e17   ← very shallow
+ *
+ * Using the USDG intermediate route (old code) caused ~27% price impact
+ * because it routed through two shallow pools.
+ * Direct WETH→stock single-hop is the correct path.
  */
 
-import { encodeFunctionData, encodeAbiParameters, formatUnits } from 'viem';
+import { encodeFunctionData, formatUnits } from 'viem';
 
 // ── Deployed addresses on Robinhood Chain (chainId 4663) ─────────────────────
 export const UNISWAP_QUOTER_V2 = '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7' as const;
 export const UNISWAP_SWAP_ROUTER_02 = '0xcaf681a66d020601342297493863e78c959e5cb2' as const;
 export const UNISWAP_FACTORY = '0x1f7d7550b1b028f7571e69a784071f0205fd2efa' as const;
 
-// Keep the old export name so existing imports don't break
+// Keep alias for any remaining references
 export const UNISWAP_UNIVERSAL_ROUTER = UNISWAP_SWAP_ROUTER_02;
 
 export const WETH_ADDRESS = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73' as const;
 export const USDG_ADDRESS = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168' as const;
 
-const WETH_USDG_FEES = [500, 3000, 10000];
-const USDG_TOKEN_FEES = [3000, 500, 10000];
-const SLIPPAGE_BPS = 300; // 3%
+// Fee tiers to probe for direct WETH→stock pools.
+// Most stock tokens use 3000 (0.3%), AAPL uses 500 (0.05%).
+const WETH_STOCK_FEES = [3000, 500, 10000];
+
+// Slippage: 1% — tighter now that we're using deep pools
+const SLIPPAGE_BPS = 100;
 
 // ── ABIs ─────────────────────────────────────────────────────────────────────
 
@@ -48,29 +55,38 @@ const FACTORY_ABI = [
 
 const QUOTER_V2_ABI = [
   {
-    name: 'quoteExactInput',
+    name: 'quoteExactInputSingle',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
-      { name: 'path', type: 'bytes' },
-      { name: 'amountIn', type: 'uint256' },
+      {
+        name: 'params',
+        type: 'tuple',
+        components: [
+          { name: 'tokenIn', type: 'address' },
+          { name: 'tokenOut', type: 'address' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'fee', type: 'uint24' },
+          { name: 'sqrtPriceLimitX96', type: 'uint160' },
+        ],
+      },
     ],
     outputs: [
       { name: 'amountOut', type: 'uint256' },
-      { name: 'sqrtPriceX96AfterList', type: 'uint160[]' },
-      { name: 'initializedTicksCrossedList', type: 'uint32[]' },
+      { name: 'sqrtPriceX96After', type: 'uint160' },
+      { name: 'initializedTicksCrossed', type: 'uint32' },
       { name: 'gasEstimate', type: 'uint256' },
     ],
   },
 ] as const;
 
 /**
- * SwapRouter02.exactInput — multihop exact-input swap.
- * When tokenIn == WETH and msg.value > 0 the router auto-wraps ETH.
+ * SwapRouter02.exactInputSingle — single-hop swap.
+ * When tokenIn == WETH and msg.value == amountIn, the router auto-wraps ETH.
  */
 const SWAP_ROUTER_02_ABI = [
   {
-    name: 'exactInput',
+    name: 'exactInputSingle',
     type: 'function',
     stateMutability: 'payable',
     inputs: [
@@ -78,27 +94,19 @@ const SWAP_ROUTER_02_ABI = [
         name: 'params',
         type: 'tuple',
         components: [
-          { name: 'path', type: 'bytes' },
+          { name: 'tokenIn', type: 'address' },
+          { name: 'tokenOut', type: 'address' },
+          { name: 'fee', type: 'uint24' },
           { name: 'recipient', type: 'address' },
           { name: 'amountIn', type: 'uint256' },
           { name: 'amountOutMinimum', type: 'uint256' },
+          { name: 'sqrtPriceLimitX96', type: 'uint160' },
         ],
       },
     ],
     outputs: [{ name: 'amountOut', type: 'uint256' }],
   },
 ] as const;
-
-// ── Path encoding ─────────────────────────────────────────────────────────────
-
-function encodePath(tokens: readonly string[], fees: readonly number[]): `0x${string}` {
-  let hex = tokens[0].toLowerCase().slice(2);
-  for (let i = 0; i < fees.length; i++) {
-    hex += fees[i].toString(16).padStart(6, '0');
-    hex += tokens[i + 1].toLowerCase().slice(2);
-  }
-  return `0x${hex}`;
-}
 
 // ── Pool discovery ────────────────────────────────────────────────────────────
 
@@ -131,13 +139,18 @@ export interface UniswapQuote {
   amountOut: bigint;
   amountOutMin: bigint;
   amountOutFormatted: string;
-  path: `0x${string}`;
+  fee: number;
+  // Keep these for backwards compat with the quote display panel
   wethUsdgFee: number;
   usdgTokenFee: number;
+  path: `0x${string}`;
 }
 
 // ── Quote ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Single-hop quote: ETH → WETH → stockToken via the deepest direct pool.
+ */
 export async function fetchUniswapQuote(
   tokenAddress: `0x${string}`,
   ethAmountWei: bigint,
@@ -148,42 +161,46 @@ export async function fetchUniswapQuote(
     const client = getPublicClient(wagmiConfig);
     if (!client) return null;
 
-    const [wethUsdgFee, usdgTokenFee] = await Promise.all([
-      findPoolFee(WETH_ADDRESS, USDG_ADDRESS, WETH_USDG_FEES, client),
-      findPoolFee(USDG_ADDRESS, tokenAddress, USDG_TOKEN_FEES, client),
-    ]);
-
-    if (!wethUsdgFee || !usdgTokenFee) {
-      console.warn('[uniswap-quote] no pool found for pair');
+    // Find the deepest direct WETH→token pool
+    const fee = await findPoolFee(WETH_ADDRESS, tokenAddress, WETH_STOCK_FEES, client);
+    if (!fee) {
+      console.warn('[uniswap-quote] no direct WETH/token pool found for', tokenAddress);
       return null;
     }
-
-    const path = encodePath(
-      [WETH_ADDRESS, USDG_ADDRESS, tokenAddress],
-      [wethUsdgFee, usdgTokenFee],
-    );
 
     const result = await client.readContract({
       address: UNISWAP_QUOTER_V2,
       abi: QUOTER_V2_ABI,
-      functionName: 'quoteExactInput',
-      args: [path, ethAmountWei],
-    }) as [bigint, bigint[], number[], bigint];
+      functionName: 'quoteExactInputSingle',
+      args: [{
+        tokenIn: WETH_ADDRESS,
+        tokenOut: tokenAddress,
+        amountIn: ethAmountWei,
+        fee: fee,
+        sqrtPriceLimitX96: 0n,
+      }],
+    }) as [bigint, bigint, number, bigint];
 
     const amountOut = result[0];
     const amountOutMin = (amountOut * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
 
-    console.log('[uniswap] pools: WETH/USDG fee=', wethUsdgFee, '| USDG/token fee=', usdgTokenFee);
-    console.log('[uniswap] amountIn:', ethAmountWei.toString(), '| amountOut:', amountOut.toString(), '| path:', path);
+    // Encode single-hop path for display/compat
+    const pathHex = WETH_ADDRESS.toLowerCase().slice(2)
+      + fee.toString(16).padStart(6, '0')
+      + tokenAddress.toLowerCase().slice(2);
+    const path = `0x${pathHex}` as `0x${string}`;
+
+    console.log('[uniswap] direct pool WETH→token fee=', fee, '| amountIn:', ethAmountWei.toString(), '| amountOut:', amountOut.toString());
 
     return {
       amountIn: ethAmountWei,
       amountOut,
       amountOutMin,
       amountOutFormatted: Number(formatUnits(amountOut, 18)).toPrecision(6).replace(/\.?0+$/, ''),
+      fee,
+      wethUsdgFee: fee,   // compat alias
+      usdgTokenFee: fee,  // compat alias
       path,
-      wethUsdgFee,
-      usdgTokenFee,
     };
   } catch (err) {
     console.warn('[uniswap-quote] failed:', err);
@@ -194,32 +211,33 @@ export async function fetchUniswapQuote(
 // ── Swap calldata ─────────────────────────────────────────────────────────────
 
 /**
- * Builds SwapRouter02.exactInput calldata for ETH → WETH → USDG → token.
- *
- * SwapRouter02 handles ETH→WETH wrapping automatically when:
- *   - path starts with WETH
- *   - msg.value == amountIn
- * No separate WRAP_ETH command needed (unlike UniversalRouter).
+ * Builds SwapRouter02.exactInputSingle calldata for ETH → stock token.
+ * Single hop — no intermediate USDG, directly through the deep WETH/stock pool.
  */
 export function buildSwapCalldata(
   quote: UniswapQuote,
   recipient: `0x${string}`,
   deadlineSeconds = 300,
 ): { to: `0x${string}`; data: `0x${string}`; value: bigint } {
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineSeconds);
+  // Extract tokenOut from the path (last 20 bytes)
+  const pathHex = quote.path.slice(2); // remove 0x
+  const tokenOut = `0x${pathHex.slice(-40)}` as `0x${string}`;
 
   const data = encodeFunctionData({
     abi: SWAP_ROUTER_02_ABI,
-    functionName: 'exactInput',
+    functionName: 'exactInputSingle',
     args: [{
-      path: quote.path,
+      tokenIn: WETH_ADDRESS,
+      tokenOut,
+      fee: quote.fee,
       recipient,
       amountIn: quote.amountIn,
       amountOutMinimum: quote.amountOutMin,
+      sqrtPriceLimitX96: 0n,
     }],
   });
 
-  console.log('[uniswap] SwapRouter02.exactInput | to:', UNISWAP_SWAP_ROUTER_02, '| value:', quote.amountIn.toString());
+  console.log('[uniswap] exactInputSingle | WETH →', tokenOut, 'fee=', quote.fee, '| value:', quote.amountIn.toString());
 
   return {
     to: UNISWAP_SWAP_ROUTER_02,
@@ -228,61 +246,7 @@ export function buildSwapCalldata(
   };
 }
 
-// ── Exact-output quote (ETH in, exact USD out) ────────────────────────────────
-
-const QUOTER_V2_EXACT_OUTPUT_ABI = [
-  {
-    name: 'quoteExactOutput',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'path', type: 'bytes' },
-      { name: 'amountOut', type: 'uint256' },
-    ],
-    outputs: [
-      { name: 'amountIn', type: 'uint256' },
-      { name: 'sqrtPriceX96AfterList', type: 'uint160[]' },
-      { name: 'initializedTicksCrossedList', type: 'uint32[]' },
-      { name: 'gasEstimate', type: 'uint256' },
-    ],
-  },
-] as const;
-
-/**
- * Returns the exact amount of ETH (in wei) needed to receive `usdgAmountOut`
- * USDG via the WETH → USDG pool.
- *
- * For exactOutput the path is encoded in REVERSE: tokenOut → ... → tokenIn
- */
-export async function quoteEthForUsdg(usdgAmountOut: bigint): Promise<bigint | null> {
-  try {
-    const { getPublicClient } = await import('wagmi/actions');
-    const { wagmiConfig } = await import('@/lib/wagmi-config');
-    const client = getPublicClient(wagmiConfig);
-    if (!client) return null;
-
-    const fee = await findPoolFee(WETH_ADDRESS, USDG_ADDRESS, WETH_USDG_FEES, client);
-    if (!fee) return null;
-
-    // exactOutput path is reversed: USDG → WETH
-    const reversePath = encodePath(
-      [USDG_ADDRESS, WETH_ADDRESS],
-      [fee],
-    );
-
-    const result = await client.readContract({
-      address: UNISWAP_QUOTER_V2,
-      abi: QUOTER_V2_EXACT_OUTPUT_ABI,
-      functionName: 'quoteExactOutput',
-      args: [reversePath, usdgAmountOut],
-    }) as [bigint, bigint[], number[], bigint];
-
-    // Add 1% buffer so the tx doesn't revert due to price movement
-    const amountIn = (result[0] * 101n) / 100n;
-    console.log('[uniswap] exactOutput: need', amountIn.toString(), 'ETH wei for', usdgAmountOut.toString(), 'USDG');
-    return amountIn;
-  } catch (err) {
-    console.warn('[uniswap] quoteEthForUsdg failed:', err);
-    return null;
-  }
+// Keep the old export so nothing else breaks
+export async function quoteEthForUsdg(_usdgAmountOut: bigint): Promise<bigint | null> {
+  return null; // deprecated — no longer routing through USDG
 }
