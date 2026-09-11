@@ -16,13 +16,99 @@ import { DepositCard } from './DepositCard';
 import { ClaimButton } from './ClaimButton';
 import { ClaimSuccess } from './ClaimSuccess';
 
-import { AlertTriangle, RefreshCw, Zap, LogIn } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Zap, LogIn, ArrowRight, Link2 } from 'lucide-react';
 
-type PageState = 'parsing' | 'invalid-link' | 'loading' | 'error' | 'ready';
+type PageState = 'parsing' | 'no-link' | 'invalid-link' | 'loading' | 'error' | 'ready';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const isNativeEth = (token: `0x${string}`) =>
   token.toLowerCase() === ZERO_ADDRESS;
+
+/* ── Link entry panel — shown when user arrives with no hash ─────────────── */
+function LinkEntryPanel() {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) { setError('Please paste your Beam link.'); return; }
+
+    // Accept either a full URL (https://…/claim#key=…) or just the hash fragment
+    try {
+      let hash = '';
+      if (trimmed.startsWith('#')) {
+        hash = trimmed;
+      } else {
+        // Try to parse as URL and grab the hash
+        const url = new URL(trimmed.startsWith('http') ? trimmed : `https://x${trimmed}`);
+        hash = url.hash;
+      }
+      if (!hash) throw new Error('No fragment found');
+      // Validate it parses correctly before navigating
+      parseBeamLink(hash);
+      // Navigate — preserves the current origin so it works in any environment
+      window.location.hash = hash.startsWith('#') ? hash.slice(1) : hash;
+      window.location.reload();
+    } catch {
+      setError('That doesn\'t look like a valid Beam link. Make sure you pasted the full link.');
+    }
+  }, [value]);
+
+  return (
+    <motion.div
+      className="glass-strong rounded-[28px] w-full max-w-sm overflow-hidden"
+      initial={{ opacity: 0, y: 20, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {/* Header */}
+      <div className="flex flex-col items-center gap-3 px-7 pt-8 pb-6 border-b border-white/10">
+        <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+          <Link2 size={22} className="text-white/80" aria-hidden="true" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-base font-semibold text-white">Enter your Beam link</h2>
+          <p className="text-sm text-white/50 mt-1 leading-relaxed">
+            Paste the full link you received to claim your tokens.
+          </p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="px-7 py-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => { setValue(e.target.value); setError(null); }}
+            placeholder="https://beam.finance/claim#key=…"
+            className="input-glass !text-sm !py-3"
+            aria-label="Beam link"
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+          />
+          {error && (
+            <p className="text-xs text-red-300/90 px-1">{error}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="btn-glass-primary w-full !justify-center flex items-center gap-2 !py-3 !text-sm"
+        >
+          Claim tokens
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
+
+        <p className="text-center text-xs text-white/30">
+          Don't have a link? Ask the sender to share it with you.
+        </p>
+      </form>
+    </motion.div>
+  );
+}
 
 export default function ClaimPage() {
   const publicClient = usePublicClient();
@@ -44,8 +130,14 @@ export default function ClaimPage() {
 
   /* Parse URL hash */
   useEffect(() => {
+    const hash = window.location.hash;
+    // No hash at all — show the link entry UI
+    if (!hash || hash === '#') {
+      setPageState('no-link');
+      return;
+    }
     try {
-      const { ephemeralPrivKey: key, depositId: id } = parseBeamLink(window.location.hash);
+      const { ephemeralPrivKey: key, depositId: id } = parseBeamLink(hash);
       setEphemeralPrivKey(key);
       setDepositId(id);
     } catch (err) {
@@ -135,24 +227,25 @@ export default function ClaimPage() {
         </div>
       )}
 
-      {/* ── Invalid link ───────────────────────────────────────────────── */}
+      {/* ── No link — let user paste one ──────────────────────────────── */}
+      {pageState === 'no-link' && <LinkEntryPanel />}
+
+      {/* ── Invalid link — show entry panel with error context ─────────── */}
       {pageState === 'invalid-link' && (
         <motion.div
-          className="glass flex flex-col items-center gap-4 p-8 w-full max-w-sm text-center"
+          className="flex flex-col items-center gap-4 w-full max-w-sm"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          role="alert"
-          aria-live="assertive"
         >
-          <AlertTriangle size={32} className="text-white/60" aria-hidden="true" />
-          <div>
-            <h2 className="text-base font-medium text-white mb-1">Invalid link</h2>
-            <p className="text-sm font-normal text-white/55">
-              {parseError ?? 'This BeamLink is malformed or has been tampered with.'}
+          <div className="glass flex items-center gap-3 px-4 py-3 w-full rounded-2xl"
+            role="alert" aria-live="assertive">
+            <AlertTriangle size={16} className="text-amber-300 shrink-0" aria-hidden="true" />
+            <p className="text-sm text-white/70">
+              {parseError ?? 'This link looks malformed — try pasting it again below.'}
             </p>
           </div>
-          <p className="text-xs text-white/35">Ask the sender to share the original link again.</p>
+          <LinkEntryPanel />
         </motion.div>
       )}
 
