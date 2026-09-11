@@ -7,7 +7,7 @@ import { decodeEventLog, parseUnits } from 'viem';
 import { generateEphemeralKey, constructBeamLink } from '@/lib/beam-link';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS, DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
-import { fetchUniswapQuote, buildSwapCalldata } from '@/lib/uniswap-swap';
+import { fetchUniswapQuote, buildSwapCalldata, quoteEthForUsdg } from '@/lib/uniswap-swap';
 import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { saveBeamEntry } from '@/lib/beam-history';
 import type { BeamStep } from '@/lib/types';
@@ -148,10 +148,28 @@ export function useDeposit(): UseDepositReturn {
     const { ephemeralPrivKey, claimSignerAddress } = generateEphemeralKey();
     ephemeralPrivKeyRef.current = ephemeralPrivKey;
 
-    // Get live ETH price for USD → wei conversion
-    const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
-    const ethAmtFloat = usdAmount / ethPrice;
-    const ethAmtWei = parseUnits(ethAmtFloat.toFixed(18), 18);
+    // For ERC-20 path: get exact ETH needed for $usdAmount of USDG on-chain
+    // (USDG is pegged 1:1 USD, so $10 = 10 USDG = 10e18 wei of USDG)
+    // This avoids relying on a price feed that can diverge from pool prices.
+    // For native ETH path we still use the price API as a fallback.
+    let ethAmtWei: bigint;
+    if (tokenAddress !== null) {
+      const usdgNeeded = parseUnits(usdAmount.toFixed(6), 18); // $10 → 10e18 USDG
+      const quotedEth = await quoteEthForUsdg(usdgNeeded);
+      if (quotedEth) {
+        ethAmtWei = quotedEth;
+        console.log('[useDeposit] on-chain ETH quote:', ethAmtWei.toString(), 'for $', usdAmount, 'USDG');
+      } else {
+        // Fallback: price API
+        const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
+        const ethAmt = usdAmount / ethPrice;
+        ethAmtWei = parseUnits(ethAmt.toFixed(18), 18);
+        console.log('[useDeposit] fallback ETH price quote:', ethAmtWei.toString());
+      }
+    } else {
+      const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
+      ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
+    }
 
     console.log('[useDeposit] tokenAddress:', tokenAddress, 'usd:', usdAmount, 'ethAmtWei:', ethAmtWei.toString());
 

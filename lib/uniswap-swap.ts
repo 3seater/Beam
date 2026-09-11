@@ -227,3 +227,62 @@ export function buildSwapCalldata(
     value: quote.amountIn,
   };
 }
+
+// ── Exact-output quote (ETH in, exact USD out) ────────────────────────────────
+
+const QUOTER_V2_EXACT_OUTPUT_ABI = [
+  {
+    name: 'quoteExactOutput',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'path', type: 'bytes' },
+      { name: 'amountOut', type: 'uint256' },
+    ],
+    outputs: [
+      { name: 'amountIn', type: 'uint256' },
+      { name: 'sqrtPriceX96AfterList', type: 'uint160[]' },
+      { name: 'initializedTicksCrossedList', type: 'uint32[]' },
+      { name: 'gasEstimate', type: 'uint256' },
+    ],
+  },
+] as const;
+
+/**
+ * Returns the exact amount of ETH (in wei) needed to receive `usdgAmountOut`
+ * USDG via the WETH → USDG pool.
+ *
+ * For exactOutput the path is encoded in REVERSE: tokenOut → ... → tokenIn
+ */
+export async function quoteEthForUsdg(usdgAmountOut: bigint): Promise<bigint | null> {
+  try {
+    const { getPublicClient } = await import('wagmi/actions');
+    const { wagmiConfig } = await import('@/lib/wagmi-config');
+    const client = getPublicClient(wagmiConfig);
+    if (!client) return null;
+
+    const fee = await findPoolFee(WETH_ADDRESS, USDG_ADDRESS, WETH_USDG_FEES, client);
+    if (!fee) return null;
+
+    // exactOutput path is reversed: USDG → WETH
+    const reversePath = encodePath(
+      [USDG_ADDRESS, WETH_ADDRESS],
+      [fee],
+    );
+
+    const result = await client.readContract({
+      address: UNISWAP_QUOTER_V2,
+      abi: QUOTER_V2_EXACT_OUTPUT_ABI,
+      functionName: 'quoteExactOutput',
+      args: [reversePath, usdgAmountOut],
+    }) as [bigint, bigint[], number[], bigint];
+
+    // Add 1% buffer so the tx doesn't revert due to price movement
+    const amountIn = (result[0] * 101n) / 100n;
+    console.log('[uniswap] exactOutput: need', amountIn.toString(), 'ETH wei for', usdgAmountOut.toString(), 'USDG');
+    return amountIn;
+  } catch (err) {
+    console.warn('[uniswap] quoteEthForUsdg failed:', err);
+    return null;
+  }
+}
