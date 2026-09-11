@@ -203,7 +203,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
       <div className="layout relative z-10 w-full">
         {/* Two-column grid: text left, card right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-8 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-8 lg:gap-10 items-center">
 
           {/* ── Left: headline + CTAs ─────────────────────────────────── */}
           <div className="flex flex-col gap-7">
