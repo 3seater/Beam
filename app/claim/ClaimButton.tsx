@@ -42,8 +42,6 @@ export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim }: Claim
       <motion.button
         onClick={isDisabled ? undefined : onClaim}
         disabled={isDisabled}
-        whileHover={!isDisabled ? { scale: 1.04 } : undefined}
-        whileTap={!isDisabled ? { scale: 0.96 } : undefined}
         transition={{ duration: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
         aria-label={label}
         className={[
