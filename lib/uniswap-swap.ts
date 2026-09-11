@@ -2,29 +2,33 @@
  * lib/uniswap-swap.ts
  *
  * Uniswap V3 swap helpers for Robinhood Chain (chainId 4663).
- * Uses QuoterV2 for onchain quotes (no API key, no geo-restriction)
- * and UniversalRouter for swap execution.
+ * Uses QuoterV2 for onchain quotes and SwapRouter02 for execution.
  *
- * Swap path:  ETH (native) → WETH → USDG → <stock token>
+ * Swap path: ETH (native) → WETH → USDG → <stock token>
  * Stock tokens on Robinhood Chain trade against USDG.
+ *
+ * We use SwapRouter02.exactInput (not UniversalRouter) because:
+ * - Simpler encoding — no WRAP_ETH command byte needed
+ * - Accepts native ETH directly via msg.value
+ * - More predictable revert reasons
  */
 
 import { encodeFunctionData, encodeAbiParameters, formatUnits } from 'viem';
 
 // ── Deployed addresses on Robinhood Chain (chainId 4663) ─────────────────────
 export const UNISWAP_QUOTER_V2 = '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7' as const;
-export const UNISWAP_UNIVERSAL_ROUTER = '0x8876789976dEcBfCbBbe364623C63652db8C0904' as const;
+export const UNISWAP_SWAP_ROUTER_02 = '0xcaf681a66d020601342297493863e78c959e5cb2' as const;
 export const UNISWAP_FACTORY = '0x1f7d7550b1b028f7571e69a784071f0205fd2efa' as const;
+
+// Keep the old export name so existing imports don't break
+export const UNISWAP_UNIVERSAL_ROUTER = UNISWAP_SWAP_ROUTER_02;
 
 export const WETH_ADDRESS = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73' as const;
 export const USDG_ADDRESS = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168' as const;
 
-// Fee tiers to try in order for each hop (picks the first with an active pool)
-const WETH_USDG_FEES = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
-const USDG_TOKEN_FEES = [3000, 500, 10000]; // try 0.3% first for stock tokens
-
-// Slippage tolerance: 3%
-const SLIPPAGE_BPS = 300;
+const WETH_USDG_FEES = [500, 3000, 10000];
+const USDG_TOKEN_FEES = [3000, 500, 10000];
+const SLIPPAGE_BPS = 300; // 3%
 
 // ── ABIs ─────────────────────────────────────────────────────────────────────
 
@@ -60,28 +64,38 @@ const QUOTER_V2_ABI = [
   },
 ] as const;
 
-const UNIVERSAL_ROUTER_ABI = [
+/**
+ * SwapRouter02.exactInput — multihop exact-input swap.
+ * When tokenIn == WETH and msg.value > 0 the router auto-wraps ETH.
+ */
+const SWAP_ROUTER_02_ABI = [
   {
-    name: 'execute',
+    name: 'exactInput',
     type: 'function',
     stateMutability: 'payable',
     inputs: [
-      { name: 'commands', type: 'bytes' },
-      { name: 'inputs', type: 'bytes[]' },
-      { name: 'deadline', type: 'uint256' },
+      {
+        name: 'params',
+        type: 'tuple',
+        components: [
+          { name: 'path', type: 'bytes' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'amountOutMinimum', type: 'uint256' },
+        ],
+      },
     ],
-    outputs: [],
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
   },
 ] as const;
 
 // ── Path encoding ─────────────────────────────────────────────────────────────
 
-/** Encodes a Uniswap V3 multihop path: token0 | fee | token1 | fee | token2 */
 function encodePath(tokens: readonly string[], fees: readonly number[]): `0x${string}` {
-  let hex = tokens[0].toLowerCase().slice(2); // 20 bytes
+  let hex = tokens[0].toLowerCase().slice(2);
   for (let i = 0; i < fees.length; i++) {
-    hex += fees[i].toString(16).padStart(6, '0'); // 3 bytes uint24
-    hex += tokens[i + 1].toLowerCase().slice(2);  // 20 bytes
+    hex += fees[i].toString(16).padStart(6, '0');
+    hex += tokens[i + 1].toLowerCase().slice(2);
   }
   return `0x${hex}`;
 }
@@ -105,7 +119,7 @@ async function findPoolFee(
         args: [tokenA as `0x${string}`, tokenB as `0x${string}`, fee],
       }) as string;
       if (pool && pool !== ZERO_ADDRESS) return fee;
-    } catch { /* try next fee */ }
+    } catch { /* try next */ }
   }
   return null;
 }
@@ -124,10 +138,6 @@ export interface UniswapQuote {
 
 // ── Quote ─────────────────────────────────────────────────────────────────────
 
-/**
- * Onchain QuoterV2 quote: ETH → WETH → USDG → token.
- * Discovers active pool fee tiers automatically before quoting.
- */
 export async function fetchUniswapQuote(
   tokenAddress: `0x${string}`,
   ethAmountWei: bigint,
@@ -138,7 +148,6 @@ export async function fetchUniswapQuote(
     const client = getPublicClient(wagmiConfig);
     if (!client) return null;
 
-    // Discover active fee tiers for both hops
     const [wethUsdgFee, usdgTokenFee] = await Promise.all([
       findPoolFee(WETH_ADDRESS, USDG_ADDRESS, WETH_USDG_FEES, client),
       findPoolFee(USDG_ADDRESS, tokenAddress, USDG_TOKEN_FEES, client),
@@ -185,13 +194,12 @@ export async function fetchUniswapQuote(
 // ── Swap calldata ─────────────────────────────────────────────────────────────
 
 /**
- * Builds correct UniversalRouter calldata for: WRAP_ETH + V3_SWAP_EXACT_IN.
+ * Builds SwapRouter02.exactInput calldata for ETH → WETH → USDG → token.
  *
- * Command bytes (UR v1.2 / v2):
- *   0x0b = WRAP_ETH         — wrap ETH → WETH, send to router
- *   0x00 = V3_SWAP_EXACT_IN — swap WETH along path, output to recipient
- *
- * Uses encodeFunctionData for type-safe, correct ABI encoding.
+ * SwapRouter02 handles ETH→WETH wrapping automatically when:
+ *   - path starts with WETH
+ *   - msg.value == amountIn
+ * No separate WRAP_ETH command needed (unlike UniversalRouter).
  */
 export function buildSwapCalldata(
   quote: UniswapQuote,
@@ -200,42 +208,21 @@ export function buildSwapCalldata(
 ): { to: `0x${string}`; data: `0x${string}`; value: bigint } {
   const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineSeconds);
 
-  // WRAP_ETH input: (address recipient, uint256 amountMin)
-  // address(2) = MSG_SENDER constant = the router forwards to itself
-  const ROUTER_RECIPIENT = '0x0000000000000000000000000000000000000002' as `0x${string}`;
-  const wrapInput = encodeAbiParameters(
-    [{ type: 'address' }, { type: 'uint256' }],
-    [ROUTER_RECIPIENT, quote.amountIn],
-  );
-
-  // V3_SWAP_EXACT_IN input: (address recipient, uint256 amountIn, uint256 amountOutMin, bytes path, bool payerIsUser)
-  // payerIsUser = false → router uses its own WETH balance (just wrapped above)
-  const swapInput = encodeAbiParameters(
-    [
-      { type: 'address' },
-      { type: 'uint256' },
-      { type: 'uint256' },
-      { type: 'bytes' },
-      { type: 'bool' },
-    ],
-    [recipient, quote.amountIn, quote.amountOutMin, quote.path, false],
-  );
-
-  // commands: byte array where each byte is a command
-  // 0x0b = WRAP_ETH, 0x00 = V3_SWAP_EXACT_IN
-  const commands = '0x0b00' as `0x${string}`;
-
   const data = encodeFunctionData({
-    abi: UNIVERSAL_ROUTER_ABI,
-    functionName: 'execute',
-    args: [commands, [wrapInput, swapInput], deadline],
+    abi: SWAP_ROUTER_02_ABI,
+    functionName: 'exactInput',
+    args: [{
+      path: quote.path,
+      recipient,
+      amountIn: quote.amountIn,
+      amountOutMinimum: quote.amountOutMin,
+    }],
   });
 
-  console.log('[uniswap] swap calldata to:', UNISWAP_UNIVERSAL_ROUTER, '| value:', quote.amountIn.toString());
-  console.log('[uniswap] commands:', commands, '| wrapInput:', wrapInput.slice(0, 66), '...');
+  console.log('[uniswap] SwapRouter02.exactInput | to:', UNISWAP_SWAP_ROUTER_02, '| value:', quote.amountIn.toString());
 
   return {
-    to: UNISWAP_UNIVERSAL_ROUTER,
+    to: UNISWAP_SWAP_ROUTER_02,
     data,
     value: quote.amountIn,
   };
