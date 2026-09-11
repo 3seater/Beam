@@ -203,7 +203,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
       <div className="layout relative z-10 w-full">
         {/* Two-column grid: text left, card right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-8 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
 
           {/* ── Left: headline + CTAs ─────────────────────────────────── */}
           <div className="flex flex-col gap-7">
@@ -284,7 +284,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
           </div>
 
           {/* ── Right: animated asset card ───────────────────────────── */}
-          <div className="w-full lg:mx-0 lg:ml-auto">
+          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
             <AssetCard onAssetClick={handleSend} />
           </div>
         </div>
