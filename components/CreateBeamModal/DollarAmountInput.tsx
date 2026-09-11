@@ -33,6 +33,7 @@ export function DollarAmountInput({
   const isCustom = !QUICK_AMOUNTS.some((a) => String(a) === dollarValue);
 
   const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
+  const [tokenPriceUsd, setTokenPriceUsd] = useState<number | null>(null);
   const [quote, setQuote] = useState<UniswapQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteErr, setQuoteErr] = useState(false);
@@ -40,10 +41,20 @@ export function DollarAmountInput({
 
   const fetchId = useRef(0);
 
-  // Fetch ETH price once on mount
+  // Fetch ETH price once on mount; fetch token price when asset changes
   useEffect(() => {
     fetchTokenPriceUsd('ETH').then((p) => { if (p) setEthPriceUsd(p); });
   }, []);
+
+  useEffect(() => {
+    if (!isNative && selectedAsset.type === 'erc20') {
+      fetchTokenPriceUsd(selectedAsset.symbol).then((p) => {
+        setTokenPriceUsd(p);
+      });
+    } else {
+      setTokenPriceUsd(null);
+    }
+  }, [isNative, selectedAsset]);
 
   // Fetch Uniswap quote when dollar amount or asset changes
   const fetchQuote = useCallback(async (usdAmt: number) => {
@@ -218,35 +229,55 @@ export function DollarAmountInput({
 
       {/* Live Uniswap quote panel */}
       <AnimatePresence>
-        {!isNative && quote && usdNum > 0 && (
-          <motion.div
-            key="uniswap-quote"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: 'hidden' }}
-            className="glass-sm px-3 py-3 rounded-xl"
-            role="region"
-            aria-label="Live quote"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <Zap size={10} className="text-white/40" aria-hidden="true" />
-                <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
-                  Live quote · Uniswap V3
-                </p>
+        {!isNative && quote && usdNum > 0 && (() => {
+          // Compute estimated output value and price impact
+          const outTokens = parseFloat(quote.amountOutFormatted);
+          const outUsd = tokenPriceUsd && outTokens ? outTokens * tokenPriceUsd : null;
+          const impact = outUsd ? ((usdNum - outUsd) / usdNum) * 100 : null;
+          const highImpact = impact !== null && impact > 10;
+
+          return (
+            <motion.div
+              key="uniswap-quote"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              style={{ overflow: 'hidden' }}
+              className={`glass-sm px-3 py-3 rounded-xl ${highImpact ? 'border border-amber-400/30' : ''}`}
+              role="region"
+              aria-label="Live quote"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Zap size={10} className="text-white/40" aria-hidden="true" />
+                  <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
+                    Live quote · Uniswap V3
+                  </p>
+                </div>
+                {impact !== null && (
+                  <span className={`text-[11px] font-medium ${highImpact ? 'text-amber-300' : 'text-white/40'}`}>
+                    {highImpact ? '⚠ ' : ''}{impact.toFixed(1)}% impact
+                  </span>
+                )}
               </div>
-              <span className="text-[11px] text-white/40">3% slippage</span>
-            </div>
-            <p className="text-sm font-semibold text-white mb-1">
-              You send {formatUsd(usdNum)} → get {quote.amountOutFormatted} {symbol}
-            </p>
-            <p className="text-[11px] text-white/40">
-              ETH → WETH → USDG → {symbol} · Pool price may differ from spot
-            </p>
-          </motion.div>
-        )}
+              <p className="text-sm font-semibold text-white mb-1">
+                You send {formatUsd(usdNum)} → get {quote.amountOutFormatted} {symbol}
+                {outUsd && <span className="text-white/50 font-normal"> ≈ {formatUsd(outUsd)}</span>}
+              </p>
+              {highImpact && (
+                <p className="text-[11px] text-amber-300/80 mt-1">
+                  Low pool liquidity — you may receive significantly less than expected.
+                </p>
+              )}
+              {!highImpact && (
+                <p className="text-[11px] text-white/40">
+                  ETH → WETH → USDG → {symbol}
+                </p>
+              )}
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ETH native panel */}
