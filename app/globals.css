@@ -88,6 +88,9 @@
 html {
   color-scheme: light dark;
   scroll-behavior: smooth;
+  /* Always show scrollbar gutter so the page never shifts width
+     when navigating between short and tall pages */
+  scrollbar-gutter: stable;
 }
 
 body {
