@@ -9,7 +9,7 @@
  * Stock tokens on Robinhood Chain trade against USDG.
  */
 
-import { encodeFunctionData, encodeAbiParameters, formatUnits, parseUnits } from 'viem';
+import { encodeFunctionData, encodeAbiParameters, formatUnits } from 'viem';
 
 // ── Deployed addresses on Robinhood Chain (chainId 4663) ─────────────────────
 export const UNISWAP_QUOTER_V2 = '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7' as const;

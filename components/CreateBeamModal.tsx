@@ -62,7 +62,6 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
   // When we open Privy's wallet picker we visually hide our modal so
   // there's no stacking-context conflict. It comes back once connected.
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [reopenAfterConnect, setReopenAfterConnect] = useState(false);
 
   /* ── Form state ───────────────────────────────────────────────────────── */

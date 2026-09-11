@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight } from 'lucide-react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { isAddress, parseUnits, formatUnits } from 'viem';
-import { truncateAddress } from '@/lib/format';
+import { isAddress, parseUnits } from 'viem';
 
 /* ── Confetti ────────────────────────────────────────────────────────────── */
 interface Particle {
@@ -72,12 +71,11 @@ interface ClaimSuccessProps {
 }
 
 const EXPLORER_BASE = 'https://robinhoodchain.blockscout.com';
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 /* ── Send panel ──────────────────────────────────────────────────────────── */
 function SendPanel({
   tokenAddress,
-  decimals = 18,
+  decimals: _decimals = 18,
   rawAmount,
 }: {
   tokenAddress: `0x${string}` | null;

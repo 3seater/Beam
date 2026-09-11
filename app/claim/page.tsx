@@ -103,7 +103,7 @@ function LinkEntryPanel() {
         </button>
 
         <p className="text-center text-xs text-white/30">
-          Don't have a link? Ask the sender to share it with you.
+          Don&apos;t have a link? Ask the sender to share it with you.
         </p>
       </form>
     </motion.div>
