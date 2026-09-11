@@ -203,14 +203,14 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
       <div className="layout relative z-10 w-full">
         {/* Two-column grid: text left, card right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.25fr] gap-8 lg:gap-10 items-center">
 
           {/* ── Left: headline + CTAs ─────────────────────────────────── */}
           <div className="flex flex-col gap-7">
 
             {/* Headline */}
             <motion.h1
-              className="text-[clamp(3.2rem,6.5vw,6.2rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-white"
+              className="text-[clamp(2.6rem,4.8vw,5.5rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-white whitespace-nowrap"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
@@ -284,7 +284,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
           </div>
 
           {/* ── Right: animated asset card ───────────────────────────── */}
-          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
+          <div className="w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto">
             <AssetCard onAssetClick={handleSend} />
           </div>
         </div>
