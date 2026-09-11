@@ -158,16 +158,6 @@ function AssetCard({ onAssetClick }: { onAssetClick: () => void }) {
   );
 }
 
-/* ── Pill badges shown near headline ────────────────────────────────────── */
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
-                     bg-white/10 border border-white/20 text-xs text-white/70">
-      {children}
-    </span>
-  );
-}
-
 /* ── Section ─────────────────────────────────────────────────────────────── */
 export function HeroSection({ onSendClick }: HeroSectionProps) {
   const router = useRouter();
@@ -202,29 +192,14 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
       <div className="layout relative z-10 w-full">
         {/* Two-column grid: text left, card right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
 
           {/* ── Left: headline + CTAs ─────────────────────────────────── */}
           <div className="flex flex-col gap-7">
 
-            {/* Badge row */}
-            <motion.div
-              className="flex flex-wrap gap-2"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-            >
-              <Pill>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-                Gasless for recipients
-              </Pill>
-              <Pill>30+ assets</Pill>
-              <Pill>Robinhood Chain</Pill>
-            </motion.div>
-
             {/* Headline */}
             <motion.h1
-              className="text-[clamp(2.8rem,6vw,5.5rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-white"
+              className="text-[clamp(3.2rem,6.5vw,6.2rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-white"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
@@ -244,7 +219,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
             {/* Sub-copy */}
             <motion.p
-              className="text-lg sm:text-xl text-white/60 leading-relaxed max-w-[38ch]"
+              className="text-xl sm:text-2xl text-white/60 leading-relaxed max-w-[38ch]"
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
@@ -262,15 +237,15 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
             >
               <button
                 onClick={handleSend}
-                className="btn-glass-primary flex items-center gap-2 !px-8 !py-3.5 !text-base"
+                className="btn-glass-primary flex items-center gap-2 !px-9 !py-4 !text-lg"
                 aria-label="Send a Beam"
               >
                 Send a Beam
-                <ArrowRight size={16} aria-hidden="true" />
+                <ArrowRight size={18} aria-hidden="true" />
               </button>
               <a
                 href="#how-it-works"
-                className="btn-glass-ghost !px-6 !py-3.5 !text-sm"
+                className="btn-glass-ghost !px-7 !py-4 !text-base"
                 aria-label="How it works"
               >
                 How it works
