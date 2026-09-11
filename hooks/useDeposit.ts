@@ -195,9 +195,33 @@ export function useDeposit(): UseDepositReturn {
       setStep('swap-confirming');
       await waitForTxReceipt(swapHash);
 
-      // Token is now in the wallet. Use amountOutMin for the deposit
-      // (actual received may be slightly more due to slippage tolerance)
-      const depositAmount = quote.amountOutMin;
+      // Token is now in the wallet. Read actual received balance rather than
+      // using amountOutMin — slippage means we could have received more, and
+      // using the wrong amount would cause depositToken to revert.
+      let depositAmount: bigint;
+      try {
+        const { getPublicClient } = await import('wagmi/actions');
+        const { wagmiConfig } = await import('@/lib/wagmi-config');
+        const publicClient = getPublicClient(wagmiConfig);
+        if (!publicClient) throw new Error('no client');
+        depositAmount = await publicClient.readContract({
+          address: tokenAddress,
+          abi: [{
+            name: 'balanceOf',
+            type: 'function',
+            stateMutability: 'view',
+            inputs: [{ name: 'account', type: 'address' }],
+            outputs: [{ name: '', type: 'uint256' }],
+          }] as const,
+          functionName: 'balanceOf',
+          args: [ownerAddress],
+        }) as bigint;
+        if (depositAmount === 0n) throw new Error('zero balance after swap');
+        console.log('[useDeposit] actual token balance after swap:', depositAmount.toString());
+      } catch (balErr) {
+        console.warn('[useDeposit] could not read post-swap balance, falling back to amountOutMin:', balErr);
+        depositAmount = quote.amountOutMin;
+      }
 
       // 3. Approve BeamEscrow to spend the received tokens
       let needsApproval = true;
@@ -222,9 +246,7 @@ export function useDeposit(): UseDepositReturn {
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: 'approve',
-          // Approve the full expected output (not min) so the deposit succeeds
-          // even if we received slightly more than amountOutMin
-          args: [BEAM_ESCROW_ADDRESS, quote.amountOut],
+          args: [BEAM_ESCROW_ADDRESS, depositAmount],
         });
         setStep('approval-confirming');
         await waitForTxReceipt(approveHash);
