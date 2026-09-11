@@ -37,3 +37,15 @@ next-env.d.ts
 
 # beam link server-side store (local dev only — use Redis in production)
 /.data/
+
+# Windows command artifacts
+nul
+tsc-out.txt
+
+# Foundry dependency libraries (nested git repos — installed via forge install)
+/contracts/lib/forge-std/
+/contracts/lib/openzeppelin-contracts/
+
+# Foundry build output
+/contracts/out/
+/contracts/cache/
