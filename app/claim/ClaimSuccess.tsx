@@ -75,7 +75,6 @@ const EXPLORER_BASE = 'https://robinhoodchain.blockscout.com';
 /* ── Send panel ──────────────────────────────────────────────────────────── */
 function SendPanel({
   tokenAddress,
-  decimals: _decimals = 18,
   rawAmount,
 }: {
   tokenAddress: `0x${string}` | null;
