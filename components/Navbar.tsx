@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
@@ -26,8 +26,6 @@ const LINK_STYLE: React.CSSProperties = {
 
 export function Navbar({ onSendClick }: NavbarProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const isHome = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -66,7 +64,7 @@ export function Navbar({ onSendClick }: NavbarProps) {
         style={{ paddingTop: '16px' }}
       >
         <motion.nav
-          initial={isHome ? { opacity: 0, y: -12 } : false}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           aria-label="Main navigation"

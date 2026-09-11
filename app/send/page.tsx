@@ -14,7 +14,6 @@ import { DollarAmountInput } from '@/components/CreateBeamModal/DollarAmountInpu
 import { StepIndicator } from '@/components/CreateBeamModal/StepIndicator';
 import { BeamLinkDisplay } from '@/components/CreateBeamModal/BeamLinkDisplay';
 import { useDeposit } from '@/hooks/useDeposit';
-import { Navbar } from '@/components/Navbar';
 import { SentBeams } from '@/components/SentBeams';
 import type { BeamStep } from '@/lib/types';
 
@@ -129,7 +128,6 @@ export default function SendPage() {
 
   return (
     <>
-      <Navbar />
       <main className="min-h-screen flex flex-col items-center justify-center px-4 py-24">
         <motion.div
           className="w-full max-w-lg"

@@ -12,7 +12,6 @@ import { fetchRobinhoodTokens } from '@/lib/robinhood-tokens';
 import { useClaim } from '@/hooks/useClaim';
 import type { Deposit } from '@/lib/types';
 
-import { Navbar } from '@/components/Navbar';
 import { DepositCard } from './DepositCard';
 import { ClaimButton } from './ClaimButton';
 import { ClaimSuccess } from './ClaimSuccess';
@@ -203,7 +202,6 @@ export default function ClaimPage() {
 
   return (
     <>
-      <Navbar />
       <main
         className="min-h-screen flex flex-col items-center justify-center px-4 py-20 gap-8"
         aria-label="Beam claim page"
