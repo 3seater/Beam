@@ -39,12 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             createOnLogin: 'users-without-wallets',
           },
         },
-        // External wallet options for senders
-        externalWallets: {
-          ethereum: {
-            connectionOptions: 'all',
-          },
-        },
+        // External wallet options for senders — wagmi handles connector setup via wagmiConfig
         defaultChain: robinhoodChain,
         supportedChains: [robinhoodChain],
         appearance: {
