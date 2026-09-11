@@ -219,12 +219,25 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
     setResolveErr(false);
     setResolvedToken(null);
 
-    resolveTokenMeta(addr).then((meta) => {
+    resolveTokenMeta(addr).then(async (meta) => {
       setResolving(false);
       if (!meta) {
         setResolveErr(true);
       } else {
-        setResolvedToken({ address: addr, ...meta, logoUrl: stockLogoUrl(meta.symbol) });
+        // Try to find a logo: first ask our server-side CoinGecko proxy
+        // (works for any Robinhood Chain token), fall back to Parqet CDN
+        // (works for stock tickers), final fallback is initials in TokenLogo.
+        let logoUrl = stockLogoUrl(meta.symbol);
+        try {
+          const res = await fetch(`/api/token-logo/${addr}`);
+          if (res.ok) {
+            const data: { logoUrl: string | null } = await res.json();
+            if (data.logoUrl) logoUrl = data.logoUrl;
+          }
+        } catch {
+          // network error — keep Parqet fallback
+        }
+        setResolvedToken({ address: addr, ...meta, logoUrl });
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
