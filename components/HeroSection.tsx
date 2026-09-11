@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
@@ -24,13 +24,16 @@ const FEATURED_ASSETS = [
   { symbol: 'MU', name: 'Micron Technology', change: '+1.4%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/MU?format=png' },
 ];
 
-/** Logo with initials fallback */
-function AssetLogo({ logoUrl, symbol, size = 36 }: { logoUrl: string; symbol: string; size?: number }) {
+// 4 rows, each starting at a different offset so they don't all rotate together
+const ROW_OFFSETS = [0, 3, 6, 9];
+const ROTATE_EVERY = 2400; // ms between rotations, staggered per row
+
+function AssetLogo({ logoUrl, symbol, size = 40 }: { logoUrl: string; symbol: string; size?: number }) {
   const [err, setErr] = useState(false);
   if (err || !logoUrl) {
     return (
       <span
-        className="rounded-xl flex items-center justify-center bg-white/15 border border-white/20 shrink-0 text-xs font-semibold text-white/80"
+        className="rounded-2xl flex items-center justify-center bg-white/15 border border-white/20 shrink-0 text-xs font-semibold text-white/80"
         style={{ width: size, height: size }}
       >
         {symbol.slice(0, 2).toUpperCase()}
@@ -40,7 +43,7 @@ function AssetLogo({ logoUrl, symbol, size = 36 }: { logoUrl: string; symbol: st
   return (
     <Image
       src={logoUrl} alt={symbol} width={size} height={size}
-      className="rounded-xl object-contain bg-white/10 shrink-0"
+      className="rounded-2xl object-contain bg-white/10 shrink-0"
       style={{ width: size, height: size }}
       onError={() => setErr(true)}
       unoptimized
@@ -48,82 +51,78 @@ function AssetLogo({ logoUrl, symbol, size = 36 }: { logoUrl: string; symbol: st
   );
 }
 
-/* ── Floating scrolling asset rows ──────────────────────────────────────── */
-const ROW_H = 64;  // px per row (incl. gap)
-const ROW_GAP = 8;   // gap between rows
-const SCROLL_DURATION = `${FEATURED_ASSETS.length * 1.9}s`;
+/* ── Single rotating row ─────────────────────────────────────────────────── */
+function AssetRow({
+  initialIndex,
+  staggerMs,
+  onClick,
+}: {
+  initialIndex: number;
+  staggerMs: number;
+  onClick: () => void;
+}) {
+  const [idx, setIdx] = useState(initialIndex);
 
-function AssetRows({ onAssetClick }: { onAssetClick: () => void }) {
-  const doubled = [...FEATURED_ASSETS, ...FEATURED_ASSETS];
-  const stripHeight = FEATURED_ASSETS.length * (ROW_H + ROW_GAP);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const interval = setInterval(() => {
+        setIdx((prev) => (prev + 1) % FEATURED_ASSETS.length);
+      }, ROTATE_EVERY);
+      return () => clearInterval(interval);
+    }, staggerMs);
+    return () => clearTimeout(timer);
+  }, [staggerMs]);
+
+  const asset = FEATURED_ASSETS[idx];
 
   return (
-    <motion.div
-      className="w-full select-none"
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
-      aria-label="Supported assets"
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative flex w-full items-center justify-between px-4 py-3.5
+                 glass hover:bg-white/20 active:bg-white/25
+                 transition-colors duration-150 overflow-hidden"
+      style={{ borderRadius: 20, height: 68 }}
+      aria-label={`Send ${asset.name}`}
     >
-      {/* Viewport — fades top & bottom so rows dissolve in/out */}
-      <div
-        className="relative overflow-hidden"
-        style={{
-          height: 5 * (ROW_H + ROW_GAP) - ROW_GAP,
-          maskImage:
-            'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)',
-          WebkitMaskImage:
-            'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: ROW_GAP,
-            animation: `hero-scroll ${SCROLL_DURATION} linear infinite`,
-            willChange: 'transform',
-          }}
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={asset.symbol}
+          className="flex items-center gap-3 min-w-0"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          {doubled.map((asset, i) => (
-            <button
-              key={`${asset.symbol}-${i}`}
-              type="button"
-              onClick={onAssetClick}
-              className="flex w-full items-center justify-between px-4
-                         glass hover:bg-white/20 transition-colors duration-150 shrink-0"
-              style={{ height: ROW_H, borderRadius: 16 }}
-              aria-label={`Send ${asset.name}`}
-            >
-              <div className="flex items-center gap-3">
-                <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={36} />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-white leading-tight">{asset.name}</p>
-                  <p className="text-[11px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
-                </div>
-              </div>
-              <span
-                className={[
-                  'text-xs font-semibold rounded-full px-2.5 py-0.5 tabular-nums',
-                  asset.positive
-                    ? 'bg-emerald-500/30 text-emerald-200'
-                    : 'bg-red-500/30 text-red-200',
-                ].join(' ')}
-              >
-                {asset.change}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+          <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={40} />
+          <div className="text-left min-w-0">
+            <p className="text-[15px] font-semibold text-white leading-tight truncate">{asset.name}</p>
+            <p className="text-[12px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
-      <style>{`
-        @keyframes hero-scroll {
-          0%   { transform: translateY(0); }
-          100% { transform: translateY(-${stripHeight}px); }
-        }
-      `}</style>
-    </motion.div>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={`${asset.symbol}-change`}
+          className="flex flex-col items-end shrink-0 ml-4"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <span className="text-[11px] text-white/40 leading-tight">Today</span>
+          <span
+            className={[
+              'text-[14px] font-semibold leading-tight',
+              asset.positive ? 'text-emerald-300' : 'text-red-300',
+            ].join(' ')}
+          >
+            {asset.positive ? '▲ ' : '▼ '}{asset.change.replace(/^[+-]/, '')}
+          </span>
+        </motion.div>
+      </AnimatePresence>
+    </button>
   );
 }
 
@@ -164,7 +163,6 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
           {/* ── Left: headline + CTAs ───────────────────────────────── */}
           <div className="flex flex-col gap-7">
-
             <motion.h1
               className="text-[clamp(2.6rem,4.8vw,5.5rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-white whitespace-nowrap"
               initial={{ opacity: 0, y: 24 }}
@@ -208,11 +206,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
                 Send a Beam
                 <ArrowRight size={18} aria-hidden="true" />
               </button>
-              <a
-                href="#how-it-works"
-                className="btn-glass-ghost !px-7 !py-4 !text-base"
-                aria-label="How it works"
-              >
+              <a href="#how-it-works" className="btn-glass-ghost !px-7 !py-4 !text-base">
                 How it works
               </a>
             </motion.div>
@@ -236,10 +230,22 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
             </motion.div>
           </div>
 
-          {/* ── Right: floating asset rows ──────────────────────────── */}
-          <div className="w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto">
-            <AssetRows onAssetClick={handleSend} />
-          </div>
+          {/* ── Right: 4 independent rotating asset rows ─────────────── */}
+          <motion.div
+            className="w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto flex flex-col gap-3"
+            initial={{ opacity: 0, x: 32 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+          >
+            {ROW_OFFSETS.map((offset, i) => (
+              <AssetRow
+                key={i}
+                initialIndex={offset % FEATURED_ASSETS.length}
+                staggerMs={i * 600}
+                onClick={handleSend}
+              />
+            ))}
+          </motion.div>
         </div>
       </div>
     </section>
