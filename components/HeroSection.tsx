@@ -79,10 +79,10 @@ function AssetRow({
     <button
       type="button"
       onClick={onClick}
-      className="relative flex w-full items-center justify-between px-4 py-3.5
+      className="relative flex w-full items-center justify-between px-5 py-4
                  glass hover:bg-white/20 active:bg-white/25
                  transition-colors duration-150 overflow-hidden"
-      style={{ borderRadius: 20, height: 68 }}
+      style={{ borderRadius: 22, height: 80 }}
       aria-label={`Send ${asset.name}`}
     >
       <AnimatePresence mode="popLayout" initial={false}>
@@ -94,10 +94,10 @@ function AssetRow({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={40} />
+          <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={46} />
           <div className="text-left min-w-0">
-            <p className="text-[15px] font-semibold text-white leading-tight truncate">{asset.name}</p>
-            <p className="text-[12px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
+            <p className="text-[16px] font-semibold text-white leading-tight truncate">{asset.name}</p>
+            <p className="text-[13px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
           </div>
         </motion.div>
       </AnimatePresence>
@@ -111,10 +111,10 @@ function AssetRow({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="text-[11px] text-white/40 leading-tight">Today</span>
+          <span className="text-[12px] text-white/40 leading-tight">Today</span>
           <span
             className={[
-              'text-[14px] font-semibold leading-tight',
+              'text-[16px] font-semibold leading-tight',
               asset.positive ? 'text-emerald-300' : 'text-red-300',
             ].join(' ')}
           >
@@ -232,7 +232,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
 
           {/* ── Right: 4 independent rotating asset rows ─────────────── */}
           <motion.div
-            className="w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto flex flex-col gap-3"
+            className="w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto flex flex-col gap-4"
             initial={{ opacity: 0, x: 32 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
