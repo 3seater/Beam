@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { usePublicClient } from 'wagmi';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePublicClient, useWriteContract } from 'wagmi';
 import { decodeEventLog, formatUnits } from 'viem';
-import { Copy, Check, ExternalLink, Clock, Loader2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Clock, Loader2, XCircle } from 'lucide-react';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 import { loadBeamHistory, saveBeamEntry } from '@/lib/beam-history';
@@ -16,7 +16,7 @@ interface SentBeamsProps {
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-// ─── Onchain deposit index ─────────────────────────────────────────────────
+// ─── Onchain fetch ─────────────────────────────────────────────────────────
 
 interface OnchainDeposit {
   depositId: string;
@@ -75,7 +75,27 @@ async function fetchOnchainDeposits(
   }
 }
 
-// ─── Server-side link fetch ────────────────────────────────────────────────
+async function fetchDepositStatus(
+  depositId: string,
+  client: ReturnType<typeof usePublicClient>,
+): Promise<'unclaimed' | 'claimed' | 'cancelled' | 'unknown'> {
+  if (!client) return 'unknown';
+  try {
+    const result = await client.readContract({
+      address: BEAM_ESCROW_ADDRESS,
+      abi: BEAM_ESCROW_ABI,
+      functionName: 'getDeposit',
+      args: [BigInt(depositId)],
+    }) as { claimed: boolean; amount: bigint };
+
+    if (result.amount === 0n) return 'cancelled'; // cancelled deposits have amount=0 after refund
+    return result.claimed ? 'claimed' : 'unclaimed';
+  } catch {
+    return 'unknown';
+  }
+}
+
+// ─── Server fetch ──────────────────────────────────────────────────────────
 
 async function fetchServerLinks(walletAddress: string): Promise<StoredBeamLink[]> {
   try {
@@ -118,8 +138,25 @@ interface RowData {
   claimSigner: string;
 }
 
-function BeamRow({ row }: { row: RowData }) {
+function BeamRow({
+  row,
+  onCancelled,
+}: {
+  row: RowData;
+  onCancelled: (depositId: string) => void;
+}) {
+  const client = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
+
   const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<'unclaimed' | 'claimed' | 'cancelled' | 'unknown' | 'loading'>('loading');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelErr, setCancelErr] = useState<string | null>(null);
+
+  // Fetch claim status on mount
+  useEffect(() => {
+    fetchDepositStatus(row.depositId, client).then(setStatus);
+  }, [row.depositId, client]);
 
   const copy = useCallback(async () => {
     if (!row.beamLink) return;
@@ -133,50 +170,111 @@ function BeamRow({ row }: { row: RowData }) {
     setTimeout(() => setCopied(false), 2000);
   }, [row.beamLink]);
 
+  const handleCancel = useCallback(async () => {
+    if (!client) return;
+    setCancelling(true);
+    setCancelErr(null);
+    try {
+      const hash = await writeContractAsync({
+        address: BEAM_ESCROW_ADDRESS,
+        abi: BEAM_ESCROW_ABI,
+        functionName: 'cancel',
+        args: [BigInt(row.depositId)],
+      });
+      await client.waitForTransactionReceipt({ hash });
+      setStatus('cancelled');
+      onCancelled(row.depositId);
+    } catch (e) {
+      setCancelErr(e instanceof Error ? e.message.slice(0, 80) : 'Cancel failed');
+    } finally {
+      setCancelling(false);
+    }
+  }, [client, writeContractAsync, row.depositId, onCancelled]);
+
   const formattedAmt = formatAmount(row.amount, row.tokenDecimals);
 
+  // Status badge
+  const badge = (() => {
+    if (status === 'loading') return null;
+    if (status === 'claimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300">Claimed</span>;
+    if (status === 'cancelled') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/35">Cancelled</span>;
+    if (status === 'unclaimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300">Pending</span>;
+    return null;
+  })();
+
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-white/8 last:border-0">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">{formattedAmt} {row.tokenSymbol}</span>
-          {row.usdAmount != null && (
-            <span className="text-xs text-white/45">${row.usdAmount}</span>
+    <div className="flex flex-col gap-1.5 py-3 border-b border-white/8 last:border-0">
+      <div className="flex items-center gap-3">
+        {/* Amount + badge */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-sm font-semibold ${status === 'cancelled' ? 'text-white/35 line-through' : 'text-white'}`}>
+              {formattedAmt} {row.tokenSymbol}
+            </span>
+            {row.usdAmount != null && status !== 'cancelled' && (
+              <span className="text-xs text-white/45">${row.usdAmount}</span>
+            )}
+            {badge}
+          </div>
+          {row.createdAt != null && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <Clock size={9} className="text-white/30 shrink-0" aria-hidden="true" />
+              <span className="text-[11px] text-white/35">{timeAgo(row.createdAt)}</span>
+            </div>
           )}
         </div>
-        {row.createdAt != null && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Clock size={9} className="text-white/30 shrink-0" aria-hidden="true" />
-            <span className="text-[11px] text-white/35">{timeAgo(row.createdAt)}</span>
-          </div>
-        )}
-      </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        {row.beamLink && (
-          <>
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Copy + open — only when unclaimed and link exists */}
+          {row.beamLink && status === 'unclaimed' && (
+            <>
+              <button
+                type="button"
+                onClick={copy}
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
+                aria-label={copied ? 'Copied!' : 'Copy BeamLink'}
+              >
+                {copied
+                  ? <Check size={12} className="text-emerald-300" />
+                  : <Copy size={12} className="text-white/50" />}
+              </button>
+              <a
+                href={row.beamLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
+                aria-label="Open claim page"
+              >
+                <ExternalLink size={12} className="text-white/50" />
+              </a>
+            </>
+          )}
+
+          {/* Cancel — only when unclaimed */}
+          {status === 'unclaimed' && (
             <button
               type="button"
-              onClick={copy}
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
-              aria-label={copied ? 'Copied!' : 'Copy BeamLink'}
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg
+                         bg-white/8 hover:bg-red-400/15 text-white/40 hover:text-red-300
+                         transition-colors disabled:opacity-40"
+              aria-label="Cancel and recover funds"
             >
-              {copied
-                ? <Check size={12} className="text-emerald-300" />
-                : <Copy size={12} className="text-white/50" />}
+              {cancelling
+                ? <Loader2 size={10} className="animate-spin" />
+                : <XCircle size={11} />}
+              {cancelling ? 'Cancelling…' : 'Cancel'}
             </button>
-            <a
-              href={row.beamLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
-              aria-label="Open claim page"
-            >
-              <ExternalLink size={12} className="text-white/50" />
-            </a>
-          </>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Cancel error */}
+      {cancelErr && (
+        <p className="text-[11px] text-red-300 px-1">{cancelErr}</p>
+      )}
     </div>
   );
 }
@@ -188,32 +286,32 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
   const [rows, setRows] = useState<RowData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tokenMap, setTokenMap] = useState<Map<string, { symbol: string; decimals: number }>>(new Map());
 
-  // Load token metadata once
+  // Keep tokenMap in a ref so it never invalidates the `refresh` callback.
+  // The ref is populated once on mount and is stable for the component lifetime.
+  const tokenMapRef = useRef<Map<string, { symbol: string; decimals: number }>>(new Map());
+
   useEffect(() => {
     fetchRobinhoodTokens().then((tokens) => {
       const map = new Map<string, { symbol: string; decimals: number }>();
       for (const t of tokens) map.set(t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals });
-      setTokenMap(map);
+      tokenMapRef.current = map;
     });
   }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
 
-    // Fetch from all three sources in parallel
     const [onchain, serverLinks, localEntries] = await Promise.all([
       fetchOnchainDeposits(walletAddress, client),
       fetchServerLinks(walletAddress),
       Promise.resolve(loadBeamHistory(walletAddress)),
     ]);
 
-    // Server links take priority over local, local is fallback
     const serverMap = new Map(serverLinks.map((e) => [e.depositId, e]));
     const localMap = new Map(localEntries.map((e) => [e.depositId, e]));
 
-    // Back-fill localStorage from server (if server has entries local doesn't)
+    // Back-fill localStorage from server
     for (const entry of serverLinks) {
       if (!localMap.has(entry.depositId)) {
         saveBeamEntry(walletAddress, {
@@ -226,13 +324,12 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       }
     }
 
-    // Build merged rows from onchain deposits
     const merged: RowData[] = onchain.map((dep) => {
       const stored = serverMap.get(dep.depositId) ?? localMap.get(dep.depositId);
       const isNative = dep.token.toLowerCase() === ZERO_ADDRESS;
       const tokenInfo = isNative
         ? { symbol: 'ETH', decimals: 18 }
-        : (tokenMap.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18 });
+        : (tokenMapRef.current.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18 });
 
       return {
         depositId: dep.depositId,
@@ -248,9 +345,16 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
     setRows(merged);
     setLoading(false);
-  }, [walletAddress, client, tokenMap]);
+  }, [walletAddress, client]); // tokenMapRef is stable — intentionally excluded
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // When a row is cancelled, mark it locally so the UI updates immediately
+  const handleCancelled = useCallback((depositId: string) => {
+    setRows((prev) => prev.map((r) =>
+      r.depositId === depositId ? { ...r, amount: 0n } : r,
+    ));
+  }, []);
 
   if (loading) {
     return (
@@ -275,7 +379,9 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
           Refresh
         </button>
       </div>
-      {rows.map((row) => <BeamRow key={row.depositId} row={row} />)}
+      {rows.map((row) => (
+        <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} />
+      ))}
     </div>
   );
 }

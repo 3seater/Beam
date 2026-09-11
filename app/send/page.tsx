@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount, useDisconnect } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
@@ -53,9 +53,24 @@ function stepLabel(step: BeamStep, isERC20: boolean): string {
 /* ── Page ────────────────────────────────────────────────────────────────── */
 export default function SendPage() {
   const router = useRouter();
-  const { address: walletAddress, isConnected } = useAccount();
+  const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
   const { connectWallet, ready } = usePrivy();
   const { disconnect } = useDisconnect();
+
+  // Prevent hydration flicker: wagmi's store rehydrates after the first render,
+  // causing isConnected to briefly be false then flip to true. We wait until
+  // the account status is no longer 'connecting' / 'reconnecting' before
+  // showing wallet-dependent UI.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const hydrated = mounted && accountStatus !== 'connecting' && accountStatus !== 'reconnecting';
+
+  // Keep the last known address in a ref so SentBeams stays mounted during
+  // any transient disconnect (e.g. wallet switching), preventing a full remount
+  // and losing scroll position / loaded state.
+  const lastAddressRef = useRef<string | undefined>(undefined);
+  if (isConnected && walletAddress) lastAddressRef.current = walletAddress;
+  const stableAddress = lastAddressRef.current;
 
   const handleDisconnect = useCallback(() => disconnect(), [disconnect]);
 
@@ -75,9 +90,9 @@ export default function SendPage() {
   const usdAmount = parseFloat(dollarValue) || 0;
   const canConfirm =
     amountError === null &&
-    tokenAmount !== null &&  // 'pending' counts — firm quote fetched at send time
+    tokenAmount !== null &&
     usdAmount > 0 &&
-    isConnected &&
+    hydrated && isConnected &&
     walletAddress !== undefined &&
     step === 'idle';
 
@@ -179,7 +194,7 @@ export default function SendPage() {
               {/* ── Idle: send form ─────────────────────────────────────── */}
               {step === 'idle' && (
                 <>
-                  {isConnected && walletAddress && (
+                  {hydrated && isConnected && walletAddress && (
                     <ConnectedBar address={walletAddress} onDisconnect={handleDisconnect} />
                   )}
 
@@ -205,13 +220,13 @@ export default function SendPage() {
                   <Button
                     variant="primary"
                     size="lg"
-                    disabled={isConnected ? !canConfirm : !ready}
+                    disabled={hydrated && isConnected ? !canConfirm : !ready}
                     onClick={handleConfirm}
-                    aria-label={!isConnected ? 'Connect wallet to send' : 'Confirm and send'}
+                    aria-label={!hydrated || !isConnected ? 'Connect wallet to send' : 'Confirm and send'}
                     className="w-full !justify-center"
-                    leftIcon={!isConnected ? <Wallet size={16} /> : undefined}
+                    leftIcon={!hydrated || !isConnected ? <Wallet size={16} /> : undefined}
                   >
-                    {!isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
+                    {!hydrated || !isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
                   </Button>
 
                   <div className="flex items-center justify-center gap-2 -mt-2">
@@ -223,10 +238,11 @@ export default function SendPage() {
             </div>
           </div>
 
-          {/* Sent beams history — shown below the card when connected */}
-          {isConnected && walletAddress && (
+          {/* Sent beams history — stays mounted once we have an address so a
+              transient wallet reconnect doesn't wipe the loaded list */}
+          {stableAddress && (
             <div className="mt-4">
-              <SentBeams walletAddress={walletAddress} />
+              <SentBeams walletAddress={stableAddress} />
             </div>
           )}
         </motion.div>

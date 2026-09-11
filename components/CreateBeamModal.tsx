@@ -45,9 +45,15 @@ function ConnectedBar({ address, onDisconnect }: { address: string; onDisconnect
 
 /* ── Main modal ─────────────────────────────────────────────────────────── */
 export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
-  const { address: walletAddress, isConnected } = useAccount();
+  const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
   const { connectWallet, ready } = usePrivy();
   const { wallets } = useWallets();
+
+  // Same hydration guard as send/page.tsx — prevents the wallet bar from
+  // flashing "Connect Wallet" on first render before wagmi rehydrates.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const hydrated = mounted && accountStatus !== 'connecting' && accountStatus !== 'reconnecting';
 
   const handleDisconnect = useCallback(async () => {
     const active = wallets[0];
@@ -57,6 +63,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
   // When we open Privy's wallet picker we visually hide our modal so
   // there's no stacking-context conflict. It comes back once connected.
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [reopenAfterConnect, setReopenAfterConnect] = useState(false);
 
   /* ── Form state ───────────────────────────────────────────────────────── */
   const [selectedAsset, setSelectedAsset] = useState<SelectedAsset>({ type: 'native', symbol: 'ETH' });
@@ -81,7 +88,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
   const canConfirm =
     amountError === null && feeAvailable && amountWei !== null &&
-    isConnected && walletAddress !== undefined && step === 'idle';
+    hydrated && isConnected && walletAddress !== undefined && step === 'idle';
 
   // Reopen our modal once a wallet connects after we dismissed for Privy picker
   useEffect(() => {
@@ -125,13 +132,21 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       return;
     }
     if (!canConfirm) return;
+
+    const tokenAddr = isERC20 ? tokenAddress : null;
+    const tokenSymbol = isERC20
+      ? (selectedAsset as { type: 'erc20'; symbol: string }).symbol
+      : 'ETH';
+    const usdAmount = parseFloat(dollarValue) || 0;
+
     await startDeposit(
-      tokenAddress,
-      amountWei!,
+      tokenAddr,
+      usdAmount,
+      tokenSymbol,
       walletAddress,
       typeof window !== 'undefined' ? window.location.origin : '',
     );
-  }, [isConnected, walletAddress, canConfirm, connectWallet, tokenAddress, amountWei, startDeposit]);
+  }, [isConnected, walletAddress, canConfirm, connectWallet, isERC20, tokenAddress, selectedAsset, dollarValue, startDeposit]);
 
   const title = isLinkReady ? 'Your BeamLink is ready' : 'Send a Beam';
 
@@ -181,7 +196,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       {step === 'idle' && (
         <div className="flex flex-col gap-5">
 
-          {isConnected && walletAddress && (
+          {hydrated && isConnected && walletAddress && (
             <ConnectedBar address={walletAddress} onDisconnect={handleDisconnect} />
           )}
 
@@ -213,13 +228,13 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
           <Button
             variant="primary"
             size="lg"
-            disabled={isConnected ? !canConfirm : !ready}
+            disabled={hydrated && isConnected ? !canConfirm : !ready}
             onClick={handleConfirm}
-            aria-label={!isConnected ? 'Connect wallet to send' : 'Confirm and generate BeamLink'}
+            aria-label={!hydrated || !isConnected ? 'Connect wallet to send' : 'Confirm and generate BeamLink'}
             className="w-full !justify-center"
-            leftIcon={!isConnected ? <Wallet size={16} /> : undefined}
+            leftIcon={!hydrated || !isConnected ? <Wallet size={16} /> : undefined}
           >
-            {!isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
+            {!hydrated || !isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
           </Button>
 
           <div className="flex items-center justify-center gap-2 -mt-2">
