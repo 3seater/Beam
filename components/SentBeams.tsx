@@ -196,9 +196,9 @@ function BeamRow({
   // Status badge
   const badge = (() => {
     if (status === 'loading') return null;
-    if (status === 'claimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300">Claimed</span>;
-    if (status === 'cancelled') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/35">Cancelled</span>;
-    if (status === 'unclaimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300">Pending</span>;
+    if (status === 'claimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200">Claimed</span>;
+    if (status === 'cancelled') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white/50">Cancelled</span>;
+    if (status === 'unclaimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200">Pending</span>;
     return null;
   })();
 

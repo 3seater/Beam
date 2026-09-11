@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowRight, Send, Zap } from 'lucide-react';
 import Image from 'next/image';
 
@@ -24,6 +24,8 @@ const FEATURED_ASSETS = [
   { symbol: 'MU', name: 'Micron Technology', change: '+1.4%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/MU?format=png' },
 ];
 
+const ROW_H = 68; // px — height of each asset row
+
 /** Logo with initials fallback */
 function AssetLogo({ logoUrl, symbol, size = 40 }: { logoUrl: string; symbol: string; size?: number }) {
   const [err, setErr] = useState(false);
@@ -39,10 +41,7 @@ function AssetLogo({ logoUrl, symbol, size = 40 }: { logoUrl: string; symbol: st
   }
   return (
     <Image
-      src={logoUrl}
-      alt={symbol}
-      width={size}
-      height={size}
+      src={logoUrl} alt={symbol} width={size} height={size}
       className="rounded-xl object-contain bg-white/10 shrink-0"
       style={{ width: size, height: size }}
       onError={() => setErr(true)}
@@ -51,28 +50,53 @@ function AssetLogo({ logoUrl, symbol, size = 40 }: { logoUrl: string; symbol: st
   );
 }
 
-/* ── Animated asset card shown on the right ─────────────────────────────── */
-const VISIBLE_COUNT = 4; // rows visible at once in the card
-const INTERVAL_MS = 2200;
+/* ── Single asset row (non-interactive inside the scroll strip) ─────────── */
+function AssetRow({ asset, onClick }: { asset: typeof FEATURED_ASSETS[0]; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between px-5
+                 hover:bg-white/8 transition-colors duration-150
+                 border-b border-white/8 shrink-0"
+      style={{ height: ROW_H }}
+      aria-label={`Send ${asset.name}`}
+    >
+      <div className="flex items-center gap-3">
+        <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={38} />
+        <div className="text-left">
+          <p className="text-sm font-medium text-white leading-tight">{asset.name}</p>
+          <p className="text-[11px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2.5">
+        {/* Boosted contrast: solid bg + brighter text so it reads on glass */}
+        <span
+          className={[
+            'text-xs font-semibold rounded-full px-2.5 py-0.5 tabular-nums',
+            asset.positive
+              ? 'bg-emerald-500/30 text-emerald-200'
+              : 'bg-red-500/30 text-red-200',
+          ].join(' ')}
+        >
+          {asset.change}
+        </span>
+        <ArrowRight size={13} className="text-white/30" aria-hidden="true" />
+      </div>
+    </button>
+  );
+}
+
+/* ── Animated asset card ─────────────────────────────────────────────────── */
+// The scroll is pure CSS: we render the list twice end-to-end and animate
+// translateY from 0 → -100% of the original list height. Because the second
+// copy is identical it creates a seamless loop with zero JS.
+const SCROLL_DURATION = `${FEATURED_ASSETS.length * 1.8}s`; // ~20 s for 11 items
 
 function AssetCard({ onAssetClick }: { onAssetClick: () => void }) {
-  const [startIdx, setStartIdx] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Auto-scroll through assets
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setDirection(1);
-      setStartIdx((prev) => (prev + 1) % FEATURED_ASSETS.length);
-    }, INTERVAL_MS);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
-
-  // Circular slice of VISIBLE_COUNT items
-  const visible = Array.from({ length: VISIBLE_COUNT }, (_, i) =>
-    FEATURED_ASSETS[(startIdx + i) % FEATURED_ASSETS.length],
-  );
+  // Double the list so the loop is seamless
+  const doubled = [...FEATURED_ASSETS, ...FEATURED_ASSETS];
+  const stripHeight = FEATURED_ASSETS.length * ROW_H;
 
   return (
     <motion.div
@@ -82,7 +106,7 @@ function AssetCard({ onAssetClick }: { onAssetClick: () => void }) {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
       aria-label="Supported assets preview"
     >
-      {/* Card header */}
+      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/10">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center">
@@ -93,55 +117,34 @@ function AssetCard({ onAssetClick }: { onAssetClick: () => void }) {
             <p className="text-[11px] text-white/45 leading-tight">30+ stocks &amp; tokens</p>
           </div>
         </div>
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 border border-emerald-400/20">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/25">
           Live
         </span>
       </div>
 
-      {/* Scrolling asset rows */}
-      <div className="relative overflow-hidden" style={{ height: `${VISIBLE_COUNT * 68}px` }}>
-        <AnimatePresence initial={false} mode="popLayout">
-          {visible.map((asset, i) => (
-            <motion.button
-              key={`${asset.symbol}-${startIdx}-${i}`}
-              type="button"
-              onClick={onAssetClick}
-              className="flex w-full items-center justify-between px-5 py-3.5
-                         hover:bg-white/8 transition-colors duration-150
-                         border-b border-white/8 last:border-0"
-              style={{ height: 68 }}
-              initial={{ opacity: 0, y: direction > 0 ? 20 : -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: direction > 0 ? -20 : 20 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: i * 0.04 }}
-              aria-label={`Send ${asset.name}`}
-            >
-              <div className="flex items-center gap-3">
-                <AssetLogo logoUrl={asset.logoUrl} symbol={asset.symbol} size={38} />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-white leading-tight">{asset.name}</p>
-                  <p className="text-[11px] text-white/45 leading-tight mt-0.5">{asset.symbol}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span
-                  className={[
-                    'text-xs font-medium rounded-full px-2 py-0.5 tabular-nums',
-                    asset.positive
-                      ? 'bg-emerald-400/15 text-emerald-300'
-                      : 'bg-red-400/15 text-red-300',
-                  ].join(' ')}
-                >
-                  {asset.change}
-                </span>
-                <ArrowRight size={13} className="text-white/25" aria-hidden="true" />
-              </div>
-            </motion.button>
+      {/* Scroll window — shows 4 rows, fades top & bottom edges */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          height: ROW_H * 4,
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+        }}
+      >
+        {/* The animated strip — translateY from 0 to -stripHeight (one full copy) */}
+        <div
+          style={{
+            animation: `hero-scroll ${SCROLL_DURATION} linear infinite`,
+            willChange: 'transform',
+          }}
+        >
+          {doubled.map((asset, i) => (
+            <AssetRow key={`${asset.symbol}-${i}`} asset={asset} onClick={onAssetClick} />
           ))}
-        </AnimatePresence>
+        </div>
       </div>
 
-      {/* Card footer CTA */}
+      {/* Footer */}
       <div className="px-5 py-4 border-t border-white/10">
         <button
           type="button"
@@ -154,6 +157,14 @@ function AssetCard({ onAssetClick }: { onAssetClick: () => void }) {
           Send any asset as a link
         </button>
       </div>
+
+      {/* Keyframe injected as a style tag — no extra CSS file needed */}
+      <style>{`
+        @keyframes hero-scroll {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(-${stripHeight}px); }
+        }
+      `}</style>
     </motion.div>
   );
 }
