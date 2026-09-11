@@ -20,10 +20,10 @@ export function WhyBeamSection() {
           <motion.h2
             id="why-heading"
             className="text-5xl sm:text-6xl font-medium text-white tracking-tight"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5 }}
           >
             Why Beam
           </motion.h2>
@@ -47,13 +47,12 @@ export function WhyBeamSection() {
               key={label}
               className={[
                 'flex items-start gap-5 p-7 rounded-[24px]',
-                'hover:-translate-y-1 transition-transform duration-200',
                 i % 3 === 1 ? 'glass' : 'bg-white/6 border border-white/12',
               ].join(' ')}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: i * 0.07 }}
+              transition={{ duration: 0.4, delay: i * 0.06 }}
             >
               <span
                 className="inline-flex items-center justify-center w-11 h-11 rounded-2xl
