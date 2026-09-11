@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, RefreshCw, Zap } from 'lucide-react';
 import { parseUnits } from 'viem';
 import { fetchUniswapQuote, type UniswapQuote } from '@/lib/uniswap-swap';
@@ -134,30 +135,6 @@ export function DollarAmountInput({
 
   return (
     <div className={disabled ? 'opacity-50 pointer-events-none' : ''}>
-      {/* Step label */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0"
-            style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.90)' }}>
-            2
-          </span>
-          <p className="text-sm font-normal text-white/90">Set an amount</p>
-        </div>
-        <span className="text-xs text-white/55 flex items-center gap-1">
-          {quoteLoading && <Loader2 size={11} className="animate-spin" aria-hidden="true" />}
-          {!quoteLoading && quoteErr && !isNative && (
-            <button
-              type="button"
-              onClick={() => void fetchQuote(usdNum)}
-              className="flex items-center gap-1 text-white/40 hover:text-white transition-colors"
-              aria-label="Retry quote"
-            >
-              <RefreshCw size={11} />
-              Retry
-            </button>
-          )}
-        </span>
-      </div>
 
       {/* Big dollar display */}
       <div className="flex items-baseline gap-1 mb-4">
@@ -165,13 +142,25 @@ export function DollarAmountInput({
         <span className="text-5xl font-medium text-white tracking-tight leading-none">
           {dollarValue || '0'}
         </span>
-        {displayTokenAmt && displayTokenAmt !== 'pending' && (
-          <div className="flex flex-col ml-auto text-right shrink-0">
-            <span className="text-xs text-white/50 leading-tight">
+        <div className="flex items-center gap-1.5 ml-auto text-right shrink-0">
+          {quoteLoading && <Loader2 size={12} className="animate-spin text-white/40" aria-hidden="true" />}
+          {!quoteLoading && quoteErr && !isNative && (
+            <button
+              type="button"
+              onClick={() => void fetchQuote(usdNum)}
+              className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white transition-colors"
+              aria-label="Retry quote"
+            >
+              <RefreshCw size={10} />
+              Retry
+            </button>
+          )}
+          {displayTokenAmt && displayTokenAmt !== 'pending' && !quoteLoading && (
+            <span className="text-xs text-white/50">
               ≈ {displayTokenAmt} {symbol}
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Quick amounts */}
@@ -228,37 +217,59 @@ export function DollarAmountInput({
       )}
 
       {/* Live Uniswap quote panel */}
-      {!isNative && quote && usdNum > 0 && (
-        <div className="glass-sm px-3 py-3 rounded-xl" role="region" aria-label="Live quote">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Zap size={10} className="text-white/40" aria-hidden="true" />
-              <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
-                Live quote · Uniswap V3
-              </p>
+      <AnimatePresence>
+        {!isNative && quote && usdNum > 0 && (
+          <motion.div
+            key="uniswap-quote"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+            className="glass-sm px-3 py-3 rounded-xl"
+            role="region"
+            aria-label="Live quote"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Zap size={10} className="text-white/40" aria-hidden="true" />
+                <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
+                  Live quote · Uniswap V3
+                </p>
+              </div>
+              <span className="text-[11px] text-white/40">3% slippage</span>
             </div>
-            <span className="text-[11px] text-white/40">3% slippage</span>
-          </div>
-          <p className="text-sm font-semibold text-white mb-1">
-            {quote.amountOutFormatted} {symbol}
-            <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
-          </p>
-          <p className="text-[11px] text-white/40">
-            ETH → WETH → USDG → {symbol}
-          </p>
-        </div>
-      )}
+            <p className="text-sm font-semibold text-white mb-1">
+              {quote.amountOutFormatted} {symbol}
+              <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
+            </p>
+            <p className="text-[11px] text-white/40">
+              ETH → WETH → USDG → {symbol}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ETH native panel */}
-      {isNative && displayTokenAmt && usdNum > 0 && (
-        <div className="glass-sm px-3 py-2.5 rounded-xl">
-          <p className="text-sm font-semibold text-white">
-            {displayTokenAmt} ETH
-            <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
-          </p>
-          <p className="text-[11px] text-white/40 mt-0.5">Direct deposit · no swap needed</p>
-        </div>
-      )}
+      <AnimatePresence>
+        {isNative && displayTokenAmt && usdNum > 0 && (
+          <motion.div
+            key="eth-panel"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+            className="glass-sm px-3 py-2.5 rounded-xl"
+          >
+            <p className="text-sm font-semibold text-white">
+              {displayTokenAmt} ETH
+              <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
+            </p>
+            <p className="text-[11px] text-white/40 mt-0.5">Direct deposit · no swap needed</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
