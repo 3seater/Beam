@@ -19,6 +19,9 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// 30 s per upstream call — enough for slow chain responses
+const UPSTREAM_TIMEOUT_MS = 30_000;
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -30,6 +33,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     const data = await upstream.text();
@@ -57,6 +61,7 @@ export async function GET(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const data = await upstream.text();
     return new NextResponse(data, {

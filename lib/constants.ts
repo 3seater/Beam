@@ -2,6 +2,6 @@ export const BEAM_ESCROW_ADDRESS = (
   process.env.NEXT_PUBLIC_BEAM_ESCROW_ADDRESS ?? '0x0000000000000000000000000000000000000000'
 ) as `0x${string}`;
 
-export const DEPOSIT_TIMEOUT_MS = 60_000;
+export const DEPOSIT_TIMEOUT_MS = 300_000;   // 5 min — chain can be slow
 export const WALLET_PROVISION_TIMEOUT_MS = 30_000;
 export const DEPOSIT_QUERY_TIMEOUT_MS = 15_000;

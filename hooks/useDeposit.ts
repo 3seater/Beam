@@ -107,7 +107,12 @@ async function waitForTxReceipt(hash: `0x${string}`) {
   const { wagmiConfig } = await import('@/lib/wagmi-config');
   const client = getPublicClient(wagmiConfig);
   if (!client) throw new Error('No public client available');
-  return client.waitForTransactionReceipt({ hash, timeout: DEPOSIT_TIMEOUT_MS });
+  return client.waitForTransactionReceipt({
+    hash,
+    timeout: DEPOSIT_TIMEOUT_MS,
+    pollingInterval: 3_000,  // poll every 3s — reduces proxy load vs default 1s
+    confirmations: 1,
+  });
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
