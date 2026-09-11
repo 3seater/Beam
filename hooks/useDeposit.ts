@@ -7,7 +7,7 @@ import { decodeEventLog, parseUnits } from 'viem';
 import { generateEphemeralKey, constructBeamLink } from '@/lib/beam-link';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS, DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
-import { fetchUniswapQuote, buildSwapCalldata, quoteEthForUsdg } from '@/lib/uniswap-swap';
+import { fetchUniswapQuote, buildSwapCalldata } from '@/lib/uniswap-swap';
 import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { saveBeamEntry } from '@/lib/beam-history';
 import type { BeamStep } from '@/lib/types';
@@ -148,25 +148,54 @@ export function useDeposit(): UseDepositReturn {
     const { ephemeralPrivKey, claimSignerAddress } = generateEphemeralKey();
     ephemeralPrivKeyRef.current = ephemeralPrivKey;
 
-    // For ERC-20 path: get exact ETH needed for $usdAmount of USDG on-chain
-    // (USDG is pegged 1:1 USD, so $10 = 10 USDG = 10e18 wei of USDG)
-    // This avoids relying on a price feed that can diverge from pool prices.
-    // For native ETH path we still use the price API as a fallback.
+    // Get the most accurate ETH price possible right now:
+    // 1. Read WETH/USDG pool slot0 for the real on-chain price
+    // 2. Fall back to Robinhood price API if that fails
     let ethAmtWei: bigint;
-    if (tokenAddress !== null) {
-      const usdgNeeded = parseUnits(usdAmount.toFixed(6), 18); // $10 → 10e18 USDG
-      const quotedEth = await quoteEthForUsdg(usdgNeeded);
-      if (quotedEth) {
-        ethAmtWei = quotedEth;
-        console.log('[useDeposit] on-chain ETH quote:', ethAmtWei.toString(), 'for $', usdAmount, 'USDG');
+    try {
+      const { getPublicClient } = await import('wagmi/actions');
+      const { wagmiConfig } = await import('@/lib/wagmi-config');
+      const client = getPublicClient(wagmiConfig);
+
+      // Get the WETH/USDG pool address and read its current sqrtPriceX96
+      const WETH = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73' as `0x${string}`;
+      const USDG = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168' as `0x${string}`;
+      const FACTORY = '0x1f7d7550b1b028f7571e69a784071f0205fd2efa' as `0x${string}`;
+
+      const poolAddr = await client!.readContract({
+        address: FACTORY,
+        abi: [{ name: 'getPool', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenA', type: 'address' }, { name: 'tokenB', type: 'address' }, { name: 'fee', type: 'uint24' }], outputs: [{ name: '', type: 'address' }] }] as const,
+        functionName: 'getPool',
+        args: [WETH, USDG, 500],
+      }) as `0x${string}`;
+
+      const slot0 = await client!.readContract({
+        address: poolAddr,
+        abi: [{ name: 'slot0', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: 'sqrtPriceX96', type: 'uint160' }, { name: 'tick', type: 'int24' }, { name: 'observationIndex', type: 'uint16' }, { name: 'observationCardinality', type: 'uint16' }, { name: 'observationCardinalityNext', type: 'uint16' }, { name: 'feeProtocol', type: 'uint8' }, { name: 'unlocked', type: 'bool' }] }] as const,
+        functionName: 'slot0',
+      }) as readonly [bigint, number, number, number, number, number, boolean];
+
+      const sqrtPriceX96 = slot0[0];
+      // WETH is token0 or token1? Sort addresses to determine
+      const wethIsToken0 = WETH.toLowerCase() < USDG.toLowerCase();
+
+      // price = (sqrtPriceX96 / 2^96)^2
+      // If WETH=token0: price = USDG per WETH = ETH price in USDG
+      // If WETH=token1: price = WETH per USDG, so ETH price = 1/price
+      const Q96 = 2n ** 96n;
+      const priceRaw = Number((sqrtPriceX96 * sqrtPriceX96 * 10n ** 18n) / (Q96 * Q96)) / 1e18;
+      const ethPriceFromPool = wethIsToken0 ? priceRaw : 1 / priceRaw;
+
+      console.log('[useDeposit] pool ETH price:', ethPriceFromPool, 'wethIsToken0:', wethIsToken0);
+
+      if (ethPriceFromPool > 100 && ethPriceFromPool < 100_000) {
+        ethAmtWei = parseUnits((usdAmount / ethPriceFromPool).toFixed(18), 18);
+        console.log('[useDeposit] using pool price:', ethPriceFromPool, '→ ethAmtWei:', ethAmtWei.toString());
       } else {
-        // Fallback: price API
-        const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
-        const ethAmt = usdAmount / ethPrice;
-        ethAmtWei = parseUnits(ethAmt.toFixed(18), 18);
-        console.log('[useDeposit] fallback ETH price quote:', ethAmtWei.toString());
+        throw new Error(`pool price out of range: ${ethPriceFromPool}`);
       }
-    } else {
+    } catch (priceErr) {
+      console.warn('[useDeposit] pool price read failed, using API:', priceErr);
       const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
       ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
     }
