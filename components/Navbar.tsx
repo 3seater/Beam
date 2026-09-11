@@ -61,7 +61,7 @@ export function Navbar({ onSendClick }: NavbarProps) {
     <>
       <header
         className="fixed top-0 inset-x-0 z-50 flex justify-center pointer-events-none"
-        style={{ paddingTop: '16px' }}
+        style={{ paddingTop: '24px' }}
       >
         <motion.nav
           initial={{ opacity: 0, y: -12 }}
