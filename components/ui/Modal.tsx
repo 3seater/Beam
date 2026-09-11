@@ -87,10 +87,27 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
-  /* Lock scroll */
+  /* Lock scroll — compensate scrollbar width to prevent page shift */
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (isOpen) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+      // Also offset the fixed navbar so it doesn't jump
+      const navbar = document.querySelector<HTMLElement>('header[class*="fixed"]');
+      if (navbar) navbar.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      const navbar = document.querySelector<HTMLElement>('header[class*="fixed"]');
+      if (navbar) navbar.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      const navbar = document.querySelector<HTMLElement>('header[class*="fixed"]');
+      if (navbar) navbar.style.paddingRight = '';
+    };
   }, [isOpen]);
 
   /* Tab trap */

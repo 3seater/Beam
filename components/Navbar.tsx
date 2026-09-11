@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
@@ -20,13 +20,14 @@ const LINK_STYLE: React.CSSProperties = {
   fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif',
   fontSize: '15px',
   fontWeight: 400,
-  color: 'rgba(255,255,255,0.82)',
   letterSpacing: '0',
   whiteSpace: 'nowrap',
 };
 
 export function Navbar({ onSendClick }: NavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -65,7 +66,7 @@ export function Navbar({ onSendClick }: NavbarProps) {
         style={{ paddingTop: '16px' }}
       >
         <motion.nav
-          initial={{ opacity: 0, y: -12 }}
+          initial={isHome ? { opacity: 0, y: -12 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           aria-label="Main navigation"
@@ -79,14 +80,14 @@ export function Navbar({ onSendClick }: NavbarProps) {
             className="flex items-center justify-center rounded-full shrink-0
                        hover:bg-white/12 transition-colors duration-150
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            style={{ width: '40px', height: '40px' }}
+            style={{ width: '48px', height: '48px' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/svg star.svg"
               alt="Beam"
-              width={34}
-              height={34}
+              width={44}
+              height={44}
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           </a>
@@ -107,6 +108,7 @@ export function Navbar({ onSendClick }: NavbarProps) {
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noopener noreferrer' : undefined}
                 className="rounded-full flex items-center
+                           text-white/80 hover:text-white
                            hover:bg-white/12 transition-colors duration-150
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 style={{ ...LINK_STYLE, padding: '0 14px', height: '40px' }}
