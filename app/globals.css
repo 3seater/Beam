@@ -142,6 +142,57 @@ body::after {
   filter: blur(60px);
 }
 
+/* ------------------------------------------------------------
+   Giant background logo — fixed, blurred, slowly drifting
+   ------------------------------------------------------------ */
+.bg-logo {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 90vw;
+  height: 90vw;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.055;
+  filter: blur(4px) drop-shadow(0 0 120px rgba(168, 223, 247, 0.5));
+  animation: bg-logo-drift 28s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.bg-logo svg {
+  width: 100%;
+  height: 100%;
+  fill: white;
+}
+
+@keyframes bg-logo-drift {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.00);
+    opacity: 0.055;
+  }
+
+  25% {
+    transform: translate(-50%, -50%) rotate(6deg) scale(1.04);
+    opacity: 0.065;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.06);
+    opacity: 0.060;
+  }
+
+  75% {
+    transform: translate(-50%, -50%) rotate(-6deg) scale(1.04);
+    opacity: 0.065;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.00);
+    opacity: 0.055;
+  }
+}
+
 /* All page content above the ambient orbs */
 body>* {
   position: relative;
@@ -392,7 +443,6 @@ body>* {
   cursor: pointer;
   transition: background 160ms ease,
     border-color 160ms ease,
-    transform 160ms var(--ease-spring),
     box-shadow 160ms ease;
   user-select: none;
 }
@@ -400,7 +450,6 @@ body>* {
 .token-tile:hover {
   background: rgba(255, 255, 255, 0.20);
   border-color: rgba(255, 255, 255, 0.40);
-  transform: scale(1.05);
   box-shadow: 0 4px 16px rgba(10, 74, 110, 0.20);
 }
 
@@ -410,7 +459,6 @@ body>* {
   box-shadow:
     0 0 0 2px rgba(255, 255, 255, 0.40),
     0 4px 16px rgba(10, 74, 110, 0.25);
-  transform: scale(1.05);
 }
 
 /* ------------------------------------------------------------
