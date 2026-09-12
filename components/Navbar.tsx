@@ -75,34 +75,34 @@ function AccountChip() {
       padding: '0 18px'
     }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
                    hover:bg-white/20" aria-label="Connect wallet">
-        <span style={{
+      <span style={{
         ...labelStyle,
         color: '#24466b'
       }}>
-          Connect wallet
-        </span>
-      </button>;
+        Connect wallet
+      </span>
+    </button>;
   }
 
   // Connected
   const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
   return <>
-      <button ref={chipRef} type="button" onClick={() => setOpen(p => !p)} style={{
+    <button ref={chipRef} type="button" onClick={() => setOpen(p => !p)} style={{
       ...chipStyle,
       padding: '0 18px'
     }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40" aria-label="Open wallet menu" aria-expanded={open}>
-        <span style={{
+      <span style={{
         ...labelStyle,
         color: '#24466b'
       }}>
-          {short}
-        </span>
-      </button>
+        {short}
+      </span>
+    </button>
 
-      {createPortal(<AnimatePresence>
-        {open && <WalletDropdown address={address} triggerRef={chipRef} onClose={() => setOpen(false)} />}
-      </AnimatePresence>, document.body)}
-    </>;
+    {createPortal(<AnimatePresence>
+      {open && <WalletDropdown address={address} triggerRef={chipRef} onClose={() => setOpen(false)} />}
+    </AnimatePresence>, document.body)}
+  </>;
 }
 export function Navbar({
   onSendClick
@@ -128,5 +128,5 @@ export function Navbar({
       router.push('/send');
     }
   };
-  return <header className="premium-header"><div className="header-wallet"><AccountChip /></div><nav className="premium-nav" aria-label="Main navigation"><Link href="/" className="beam-wordmark" aria-label="Beam home"><BeamMark />beam</Link><div className="nav-links"><Link href="/#how-it-works">How it works</Link><Link href="/#faq">FAQ</Link><a href="https://docs.beam.finance" target="_blank" rel="noopener noreferrer">Docs</a><a href="https://twitter.com/beamfinance" target="_blank" rel="noopener noreferrer">Twitter</a></div><div className="nav-actions"><button onClick={send} className="premium-button nav-send">Send a Beam <ArrowUpRight size={15} /></button><button className="mobile-toggle" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(v => !v)}>{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button></div></nav>{mobileOpen && <div className="mobile-navigation" id="mobile-navigation"><Link href="/#how-it-works" onClick={() => setMobileOpen(false)}>How it works</Link><Link href="/#why-beam" onClick={() => setMobileOpen(false)}>Why Beam</Link><Link href="/#faq" onClick={() => setMobileOpen(false)}>FAQ</Link><Link href="/history">Your Beams</Link><button className="premium-button" onClick={send}>Send a Beam <ArrowUpRight size={16} /></button></div>}</header>;
+  return <header className="premium-header"><div className="header-wallet"><AccountChip /></div><nav className="premium-nav" aria-label="Main navigation"><Link href="/" className="beam-wordmark" aria-label="Beam home"><BeamMark />beam</Link><div className="nav-links"><Link href="/#how-it-works">How it works</Link><Link href="/#faq">FAQ</Link><Link href="/docs">Docs</Link><a href="https://twitter.com/beamfinance" target="_blank" rel="noopener noreferrer">Twitter</a></div><div className="nav-actions"><button onClick={send} className="premium-button nav-send">Send a Beam <ArrowUpRight size={15} /></button><button className="mobile-toggle" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(v => !v)}>{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button></div></nav>{mobileOpen && <div className="mobile-navigation" id="mobile-navigation"><Link href="/#how-it-works" onClick={() => setMobileOpen(false)}>How it works</Link><Link href="/#why-beam" onClick={() => setMobileOpen(false)}>Why Beam</Link><Link href="/#faq" onClick={() => setMobileOpen(false)}>FAQ</Link><Link href="/history">Your Beams</Link><button className="premium-button" onClick={send}>Send a Beam <ArrowUpRight size={16} /></button></div>}</header>;
 }
