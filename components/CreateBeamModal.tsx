@@ -124,13 +124,15 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       : 'ETH';
     const usdAmount = parseFloat(dollarValue) || 0;
 
-    try { await startDeposit(
-      tokenAddr,
-      usdAmount,
-      tokenSymbol,
-      walletAddress,
-      typeof window !== 'undefined' ? window.location.origin : '',
-    ); } finally { setSubmitting(false); }
+    try {
+      await startDeposit(
+        tokenAddr,
+        usdAmount,
+        tokenSymbol,
+        walletAddress,
+        typeof window !== 'undefined' ? window.location.origin : '',
+      );
+    } finally { setSubmitting(false); }
   }, [isConnected, walletAddress, canConfirm, connectWallet, isERC20, tokenAddress, selectedAsset, dollarValue, startDeposit]);
 
   const title = isLinkReady ? 'Your Beam link is ready' : 'Send a Beam';
@@ -152,7 +154,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
           <TokenPicker value={selectedAsset} onChange={handleAssetChange} />
 
-          <div className="h-px bg-white/12" aria-hidden="true" />
+          <div className="h-px bg-sky-200/50" aria-hidden="true" />
 
           <DollarAmountInput
             dollarValue={dollarValue}

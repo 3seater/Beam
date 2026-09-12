@@ -184,7 +184,7 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-white/15">
+            <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-sky-200/60">
               <h2
                 id={titleId}
                 className="text-base font-medium text-white tracking-tight"

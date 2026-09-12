@@ -199,10 +199,8 @@ export function DollarAmountInput({
               type="button"
               onClick={() => { onChange(String(amt)); setShowCustom(false); }}
               className={[
-                'flex-1 min-w-[52px] py-2 rounded-full text-sm font-semibold transition-all duration-150',
-                active
-                  ? 'bg-white/30 border border-white/60 text-white'
-                  : 'bg-white/10 border border-white/20 text-white/70 hover:bg-white/18 hover:border-white/35 hover:text-white',
+                'amt-preset flex-1 min-w-[52px] py-2 rounded-full text-sm font-semibold transition-all duration-150',
+                active ? 'active' : '',
               ].join(' ')}
             >
               ${amt}
@@ -213,10 +211,8 @@ export function DollarAmountInput({
           type="button"
           onClick={() => { setShowCustom(true); onChange(''); }}
           className={[
-            'flex-1 min-w-[64px] py-2 rounded-full text-sm font-semibold transition-all duration-150',
-            showCustom || (dollarValue !== '' && isCustom)
-              ? 'bg-white/30 border border-white/60 text-white'
-              : 'bg-white/10 border border-white/20 text-white/70 hover:bg-white/18 hover:border-white/35 hover:text-white',
+            'amt-preset flex-1 min-w-[64px] py-2 rounded-full text-sm font-semibold transition-all duration-150',
+            showCustom || (dollarValue !== '' && isCustom) ? 'active' : '',
           ].join(' ')}
         >
           Custom
@@ -259,7 +255,7 @@ export function DollarAmountInput({
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               style={{ overflow: 'hidden' }}
-              className={`glass-sm px-3 py-3 rounded-xl ${highImpact ? 'border border-amber-400/30' : ''}`}
+              className={`quote-panel glass-sm px-3 py-3 rounded-xl ${highImpact ? 'border-amber-400/30' : ''}`}
               role="region"
               aria-label="Live quote"
             >
@@ -305,7 +301,7 @@ export function DollarAmountInput({
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             style={{ overflow: 'hidden' }}
-            className="glass-sm px-3 py-2.5 rounded-xl"
+            className="quote-panel glass-sm px-3 py-2.5 rounded-xl"
           >
             <p className="text-sm font-semibold text-white">
               {displayTokenAmt} ETH
