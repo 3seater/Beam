@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                Beam ("we", "us", or "our") operates beam.finance, a non-custodial token transfer
+                Beam (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates beam.finance, a non-custodial token transfer
                 protocol built on Robinhood Chain. This Privacy Policy explains what information we
                 collect, how we use it, and your choices regarding that information.
               </p>
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
               Beam uses browser local storage and session storage solely to preserve your in-progress
               transaction state (e.g., remembering which step of the send flow you are on). We do not
               use tracking cookies, advertising cookies, or cross-site tracking technologies of any
-              kind. Authentication session tokens set by Privy are governed by Privy's cookie policy.
+              kind. Authentication session tokens set by Privy are governed by Privy&apos;s cookie policy.
             </p>
           ),
         },
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
               <p>
                 Because blockchain data is immutable, we cannot delete on-chain transaction records.
                 If you used Privy for authentication, you may request deletion of your Privy account
-                and associated data directly through Privy's platform or by contacting
+                and associated data directly through Privy&apos;s platform or by contacting
                 hello@beam.finance.
               </p>
             </>

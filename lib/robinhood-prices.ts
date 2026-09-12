@@ -35,8 +35,8 @@ const priceCache = new Map<string, CacheEntry>();
  * Returns the mid-market USD price for a given stock/token symbol.
  * Returns null if the fetch fails or the asset is halted.
  */
-export async function fetchTokenPriceUsd(symbol: string): Promise<number | null> {
-  const key = symbol.toUpperCase();
+export async function fetchTokenPriceUsd(symbol: string, address?: string): Promise<number | null> {
+  const key = `${symbol.toUpperCase()}:${address?.toLowerCase() ?? ""}`;
   const cached = priceCache.get(key);
   const now = Date.now();
 
@@ -46,7 +46,7 @@ export async function fetchTokenPriceUsd(symbol: string): Promise<number | null>
 
   try {
     // Use our server-side proxy to avoid CORS and client-side network issues
-    const res = await fetch(`/api/price/${key}`);
+    const res = await fetch(`/api/price/${encodeURIComponent(symbol.toUpperCase())}${address ? `?address=${encodeURIComponent(address)}` : ""}`);
     if (!res.ok) return null;
 
     const data: RHJPricesResponse = await res.json();
@@ -55,7 +55,7 @@ export async function fetchTokenPriceUsd(symbol: string): Promise<number | null>
 
     const bid = parseFloat(quote.bid);
     const ask = parseFloat(quote.ask);
-    if (isNaN(bid) || isNaN(ask)) return null;
+    if (!Number.isFinite(bid) || !Number.isFinite(ask) || bid <= 0 || ask <= 0) return null;
 
     const mid = (bid + ask) / 2;
     priceCache.set(key, { mid, fetchedAt: now });
@@ -71,6 +71,7 @@ export async function fetchTokenPriceUsd(symbol: string): Promise<number | null>
  * e.g. dollarToTokens(10, 130.5, 18) → "0.0766284"
  */
 export function dollarToTokens(usdAmount: number, priceUsd: number, _decimals = 18): string {
+  void _decimals;
   if (priceUsd <= 0) return '0';
   const tokens = usdAmount / priceUsd;
   return formatTokenValue(tokens);

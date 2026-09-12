@@ -19,7 +19,7 @@ export function HistoryPageClient() {
   const hydrated = mounted && ready && accountStatus !== 'connecting' && accountStatus !== 'reconnecting';
 
   return (
-    <main className="min-h-screen flex flex-col items-center px-4 py-28">
+    <main className="app-page min-h-screen flex flex-col items-center px-4 py-28">
       <motion.div
         className="w-full max-w-xl"
         initial={{ opacity: 0, y: 24 }}
@@ -33,7 +33,7 @@ export function HistoryPageClient() {
             <h1 className="text-3xl font-medium text-white tracking-tight">Your Beams</h1>
           </div>
           <p className="text-white/50 text-sm pl-9">
-            All beams you've sent — copy links, track status, or cancel unclaimed ones.
+            All beams you&apos;ve sent — copy links, track status, or cancel unclaimed ones.
           </p>
         </div>
 
@@ -46,7 +46,7 @@ export function HistoryPageClient() {
             <div>
               <p className="text-base font-medium text-white mb-1">Connect your wallet</p>
               <p className="text-sm text-white/50">
-                Connect to see the beams you've sent.
+                Connect to see the beams you&apos;ve sent.
               </p>
             </div>
             <button

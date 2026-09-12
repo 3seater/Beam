@@ -145,7 +145,7 @@ export async function fetchRobinhoodTokens(): Promise<RHToken[]> {
   if (_cache) return _cache;
 
   try {
-    const res = await fetch('https://api.robinhood.com/rhj/assets', { next: { revalidate: 300 } });
+    const res = await fetch('/api/tokens', { signal: AbortSignal.timeout(12_000) });
     if (!res.ok) throw new Error(`RHJ assets HTTP ${res.status}`);
 
     const data: RHJAssetsResponse = await res.json();

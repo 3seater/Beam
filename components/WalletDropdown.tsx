@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePublicClient, useWriteContract } from 'wagmi';
-import { useWallets } from '@privy-io/react-auth';
-import { decodeEventLog, formatUnits } from 'viem';
+import { usePublicClient, useDisconnect } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
+import { formatUnits } from 'viem';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Copy, Check, LogOut, Clock, Loader2, ChevronRight } from 'lucide-react';
@@ -92,8 +92,9 @@ interface WalletDropdownProps {
 
 export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownProps) {
   const client = usePublicClient();
-  const { wallets } = useWallets();
-  const { writeContractAsync: _wc } = useWriteContract();
+  const { logout } = usePrivy();
+  const { disconnectAsync } = useDisconnect();
+
 
   const [copied, setCopied] = useState(false);
   const [rows, setRows] = useState<RowData[]>([]);
@@ -123,8 +124,10 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
   useEffect(() => {
     if (!client) return;
     setLoading(true);
+    let cancelled = false;
+    setRows([]);
     const local = loadBeamHistory(address);
-    const preview = local.slice(0, PREVIEW_COUNT);
+    let preview = local.slice(0, PREVIEW_COUNT);
 
     // Resolve logos — token map may already be populated from the other effect,
     // or we fetch inline here if it isn't yet.
@@ -149,16 +152,24 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
       }));
 
     // If token map already has entries use it immediately, otherwise fetch first
-    const seedRows = tokenMapRef.current.size > 0
+    const seedRows = fetch('/api/beams?wallet=' + address).then(async response => {
+      if (response.ok) {
+        const data = await response.json();
+        const merged = new Map(local.map(entry => [entry.depositId, entry]));
+        for (const entry of data.entries ?? []) if (!merged.has(entry.depositId)) merged.set(entry.depositId, entry);
+        preview = [...merged.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, PREVIEW_COUNT);
+      }
+    }).catch(() => {}).then(() => tokenMapRef.current.size > 0
       ? Promise.resolve(buildRows(tokenMapRef.current))
       : fetchRobinhoodTokens().then((tokens) => {
         const map = new Map<string, { symbol: string; decimals: number; logoUrl: string }>();
         for (const t of tokens) map.set(t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals, logoUrl: t.logoUrl });
         tokenMapRef.current = map;
         return buildRows(map);
-      });
+      }));
 
     seedRows.then((seeded) => {
+      if (cancelled) return [];
       setRows(seeded);
       setLoading(false);
       return Promise.all(
@@ -167,6 +178,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
         )
       );
     }).then((results) => {
+      if (cancelled) return;
       setRows((prev) =>
         prev.map((r) => {
           const found = results.find((res) => res.depositId === r.depositId);
@@ -174,6 +186,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
         })
       );
     });
+    return () => { cancelled = true; };
   }, [address, client]);
 
   const copyAddress = useCallback(async () => {
@@ -188,10 +201,10 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
   }, [address]);
 
   const handleDisconnect = useCallback(async () => {
-    const active = wallets[0];
-    if (active) await active.disconnect();
+    await disconnectAsync();
+    await logout();
     onClose();
-  }, [wallets, onClose]);
+  }, [disconnectAsync, logout, onClose]);
 
   return (
     <motion.div
@@ -202,9 +215,9 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
       transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
       className="fixed z-50 w-72"
       style={{
-        top: '72px',
+        top: '100px',
         right: '24px',
-        background: 'rgba(255,255,255,0.18)',
+        background: 'rgba(36,70,104,0.94)',
         border: '1px solid rgba(255,255,255,0.28)',
         backdropFilter: 'blur(32px) saturate(1.8)',
         WebkitBackdropFilter: 'blur(32px) saturate(1.8)',

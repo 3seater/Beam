@@ -12,6 +12,7 @@ import { fetchRobinhoodTokens, stockLogoUrl } from '@/lib/robinhood-tokens';
 import { useClaim } from '@/hooks/useClaim';
 import type { Deposit } from '@/lib/types';
 
+import { BeamMoment } from '@/components/BeamGiftCard';
 import { DepositCard } from './DepositCard';
 import { ClaimButton } from './ClaimButton';
 import { ClaimSuccess } from './ClaimSuccess';
@@ -56,59 +57,20 @@ function LinkEntryPanel() {
     }
   }, [value]);
 
-  return (
-    <motion.div
-      className="glass-strong rounded-[28px] w-full max-w-sm overflow-hidden"
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {/* Header */}
-      <div className="flex flex-col items-center gap-3 px-7 pt-8 pb-6 border-b border-white/10">
-        <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
-          <Link2 size={ICON_SIZE.lg} className="text-white/70" aria-hidden="true" />
-        </div>
-        <div className="text-center">
-          <h2 className="text-base font-semibold text-white">Enter your Beam link</h2>
-          <p className="text-sm text-white/50 mt-1 leading-relaxed">
-            Paste the full link you received to claim your tokens.
-          </p>
-        </div>
-      </div>
-
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="px-7 py-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => { setValue(e.target.value); setError(null); }}
-            placeholder="https://beam.finance/claim#key=…"
-            className="input-glass !text-sm !py-3"
-            aria-label="Beam link"
-            autoFocus
-            spellCheck={false}
-            autoComplete="off"
-          />
-          {error && (
-            <p className="text-xs text-red-300/90 px-1">{error}</p>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          className="btn-glass-primary w-full !justify-center flex items-center gap-2 !py-3 !text-sm"
-        >
-          Claim tokens
-          <ArrowRight size={ICON_SIZE.sm} aria-hidden="true" />
-        </button>
-
-        <p className="text-center text-xs text-white/30">
-          Don&apos;t have a link? Ask the sender to share it with you.
-        </p>
+  return <div className="claim-entry-shell">
+    <BeamMoment title="Something good awaits." description="A little link from someone thinking of you." />
+    <motion.div className="claim-entry-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="claim-entry-intro"><span className="eyebrow">YOURS TO OPEN</span><h2>Open your Beam.</h2><p>Paste your link. We’ll take it from here.</p></div>
+      <form onSubmit={handleSubmit} className="claim-entry-form">
+        <label htmlFor="beam-claim-link">Your Beam link</label>
+        <div className="claim-link-input"><Link2 size={17} strokeWidth={1.5} /><input id="beam-claim-link" type="text" value={value} onChange={e => { setValue(e.target.value); setError(null); }} placeholder="Paste your link here" aria-label="Beam link" aria-invalid={!!error} aria-describedby={error ? 'claim-link-error' : undefined} spellCheck={false} autoComplete="off" /></div>
+        {error && <p id="claim-link-error" className="claim-entry-error" role="alert">{error}</p>}
+        <button type="submit" className="premium-button receipt-copy">Open my Beam <ArrowRight size={17} /></button>
       </form>
+      <div className="claim-entry-footer"><span className="status-dot" /> No wallet? No problem.</div>
     </motion.div>
-  );
+    <p className="receipt-private">Sign in with Apple or Google when you claim.</p>
+  </div>;
 }
 
 export function ClaimPageClient() {
@@ -209,7 +171,7 @@ export function ClaimPageClient() {
   return (
     <>
       <main
-        className="min-h-screen flex flex-col items-center justify-center px-4 py-20 gap-8"
+        className="app-page beam-flow-page min-h-screen flex flex-col items-center justify-center px-4 py-20 gap-8"
         aria-label="Beam claim page"
       >
         {/* ── Parsing ────────────────────────────────────────────────────── */}
@@ -226,7 +188,7 @@ export function ClaimPageClient() {
         {/* ── Invalid link — show entry panel with error context ─────────── */}
         {pageState === 'invalid-link' && (
           <motion.div
-            className="flex flex-col items-center gap-4 w-full max-w-sm"
+            className="flex flex-col items-center gap-4 w-full max-w-lg"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -323,7 +285,7 @@ export function ClaimPageClient() {
 
             {/* Deposit card + claim button — share the same max-w-sm column */}
             {claimStep !== 'success' && (
-              <div className="w-full max-w-sm flex flex-col gap-4">
+              <div className="claim-receive-shell w-full flex flex-col gap-5">
                 {!deposit.claimed && (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
@@ -331,9 +293,7 @@ export function ClaimPageClient() {
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     className="text-center"
                   >
-                    <p className="text-sm font-medium text-white/60 tracking-wide">
-                      You received a beam
-                    </p>
+                    <BeamMoment title="This one’s for you." description="A little something. A lovely surprise." />
                   </motion.div>
                 )}
                 <motion.div

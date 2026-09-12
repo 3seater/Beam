@@ -31,18 +31,30 @@ async function readStore(): Promise<Store> {
   try {
     const raw = await fs.readFile(DATA_FILE, 'utf8');
     return JSON.parse(raw) as Store;
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     return {};
   }
 }
 
 async function writeStore(store: Store): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(store, null, 2), 'utf8');
+  const temporary = DATA_FILE + '.tmp';
+  await fs.writeFile(temporary, JSON.stringify(store, null, 2), 'utf8');
+  await fs.rename(temporary, DATA_FILE);
 }
 
-export async function saveBeamLink(entry: StoredBeamLink): Promise<void> {
+let writes: Promise<void> = Promise.resolve();
+export function saveBeamLink(entry: StoredBeamLink): Promise<void> {
+  const write = writes.then(() => writeEntry(entry));
+  writes = write.catch(() => {});
+  return write;
+}
+
+async function writeEntry(entry: StoredBeamLink): Promise<void> {
   const store = await readStore();
+  const existing = store[entry.depositId];
+  if (existing && (existing.walletAddress.toLowerCase() !== entry.walletAddress.toLowerCase() || new URL(existing.beamLink).hash !== new URL(entry.beamLink).hash)) throw new Error('A different backup already exists for this deposit');
   store[entry.depositId] = {
     ...entry,
     walletAddress: entry.walletAddress.toLowerCase(),

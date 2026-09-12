@@ -8,18 +8,6 @@ import { NextRequest, NextResponse } from 'next/server';
  * For DEX tokens (unknown to Robinhood), falls back to DexScreener using address.
  */
 
-const DEV_MOCK_PRICES: Record<string, number> = {
-  NVDA: 135,
-  AAPL: 215,
-  TSLA: 250,
-  MSFT: 420,
-  META: 580,
-  GOOGL: 185,
-  AMZN: 205,
-  SPCX: 35,
-  MU: 110,
-  USDG: 1,
-};
 
 async function fetchEthPriceFromCoinGecko(): Promise<number | null> {
   try {
@@ -49,7 +37,7 @@ async function fetchDexScreenerPrice(address: string): Promise<number | null> {
     // Prefer Robinhood Chain pairs (chainId "robinhood" or "4663"), then any pair
     const pairs = data.pairs ?? [];
     const rhPair = pairs.find((p) => p.chainId === 'robinhood' || p.chainId === '4663');
-    const best = rhPair ?? pairs[0];
+    const best = rhPair;
     const price = best?.priceUsd ? parseFloat(best.priceUsd) : null;
     return price && isFinite(price) ? price : null;
   } catch {
@@ -80,7 +68,8 @@ export async function GET(
   // ETH/WETH: not a Robinhood stock token — use CoinGecko
   if (symbol === 'ETH' || symbol === 'WETH') {
     const price = await fetchEthPriceFromCoinGecko();
-    const mid = price ?? 2500;
+    if (!price || !Number.isFinite(price) || price <= 0) return NextResponse.json({ error: 'Live ETH price unavailable' }, { status: 502 });
+    const mid = price;
     return NextResponse.json(makeMockResponse(symbol, mid), {
       headers: {
         'Cache-Control': 's-maxage=30, stale-while-revalidate=15',
@@ -100,14 +89,6 @@ export async function GET(
       headers: { 'Cache-Control': 's-maxage=10, stale-while-revalidate=5' },
     });
   } catch {
-    // Try mock prices first
-    const mock = DEV_MOCK_PRICES[symbol];
-    if (mock) {
-      return NextResponse.json(makeMockResponse(symbol, mock), {
-        headers: { 'X-Price-Source': 'mock' },
-      });
-    }
-
     // For DEX tokens (not in Robinhood): try DexScreener by address
     if (address) {
       const dexPrice = await fetchDexScreenerPrice(address);

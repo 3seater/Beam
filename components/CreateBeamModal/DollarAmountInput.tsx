@@ -53,7 +53,7 @@ export function DollarAmountInput({
 
   useEffect(() => {
     if (!isNative && selectedAsset.type === 'erc20') {
-      fetchTokenPriceUsd(selectedAsset.symbol).then((p) => {
+      fetchTokenPriceUsd(selectedAsset.symbol, selectedAsset.address).then((p) => {
         setTokenPriceUsd(p);
       });
     } else {

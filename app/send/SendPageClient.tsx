@@ -4,14 +4,16 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { ArrowLeft, Zap, Wallet, Check } from 'lucide-react';
+import { ArrowLeft, Zap, Wallet } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 import { TokenPicker, type SelectedAsset } from '@/components/CreateBeamModal/TokenPicker';
 import { DollarAmountInput } from '@/components/CreateBeamModal/DollarAmountInput';
-import { BeamLinkDisplay } from '@/components/CreateBeamModal/BeamLinkDisplay';
+import { TxProgress } from '@/components/TxProgress';
+import { BeamSentReceipt } from '@/components/BeamSentReceipt';
+import { BeamGiftCard } from '@/components/BeamGiftCard';
 import { Button } from '@/components/ui/Button';
 import { useDeposit } from '@/hooks/useDeposit';
 import type { BeamStep } from '@/lib/types';
@@ -20,18 +22,6 @@ import type { BeamStep } from '@/lib/types';
 type WizardStep = 1 | 2 | 3; // 1=asset, 2=amount, 3=confirm/tx
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function txStepLabel(step: BeamStep, symbol?: string): string {
-  switch (step) {
-    case 'swap-pending': return 'Waiting for swap';
-    case 'swap-confirming': return symbol ? `Swapping ETH → ${symbol}` : 'Swapping';
-    case 'approval-pending': return 'Waiting for approval';
-    case 'approval-confirming': return 'Confirming approval';
-    case 'deposit-pending': return 'Depositing';
-    case 'deposit-confirming': return 'Confirming on-chain';
-    default: return '';
-  }
-}
-
 const TX_STEPS: BeamStep[] = [
   'swap-pending', 'swap-confirming',
   'approval-pending', 'approval-confirming',
@@ -67,82 +57,7 @@ function AssetChip({ asset, onClick }: { asset: SelectedAsset; onClick: () => vo
 // ── Confirm summary ───────────────────────────────────────────────────────────
 function ConfirmSummary({ asset, usdAmount }: { asset: SelectedAsset; usdAmount: number }) {
   const symbol = asset.type === 'native' ? 'ETH' : asset.symbol;
-  const logoUrl = asset.type === 'erc20' ? asset.logoUrl : 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628';
-  const [imgErr, setImgErr] = useState(false);
-
-  return (
-    <div className="flex flex-col items-center gap-6 py-8">
-      {/* Token logo */}
-      <div className="relative">
-        {!imgErr && logoUrl
-          ? <Image src={logoUrl} alt={symbol} width={96} height={96} className="rounded-2xl object-contain bg-white/10" onError={() => setImgErr(true)} unoptimized />
-          : <span className="rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-2xl font-semibold text-white/80" style={{ width: 96, height: 96 }}>{symbol.slice(0, 2)}</span>
-        }
-      </div>
-
-      {/* Amount */}
-      <div className="text-center">
-        <p className="text-6xl font-semibold text-white tracking-tight">${usdAmount}</p>
-        <p className="text-lg text-white/50 mt-2">of {symbol}</p>
-      </div>
-    </div>
-  );
-}
-
-function AnimatedDots() {
-  const [count, setCount] = useState(1);
-  useEffect(() => {
-    const id = setInterval(() => setCount((c) => (c % 3) + 1), 500);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="inline-block w-5 text-left" aria-hidden="true">
-      {'.'.repeat(count)}
-    </span>
-  );
-}
-
-// ── In-progress spinner ───────────────────────────────────────────────────────
-function TxProgress({ step, isERC20, symbol }: { step: BeamStep; isERC20: boolean; symbol?: string }) {
-  const stages = isERC20
-    ? ['Swap', 'Approve', 'Deposit']
-    : ['Deposit'];
-
-  const stageIdx = isERC20
-    ? step.startsWith('swap') ? 0 : step.startsWith('approval') ? 1 : 2
-    : 0;
-
-  return (
-    <div className="flex flex-col items-center gap-8 py-8">
-      {/* Icon tile with animated border tracer */}
-      <div className="w-20 h-20 rounded-[18px] glass flex items-center justify-center shadow-glass animate-glow-pulse border-tracer">
-        <Zap size={ICON_SIZE.xl} className="text-white" />
-      </div>
-
-      {/* Stage pills */}
-      <div className="flex items-center gap-2">
-        {stages.map((label, i) => (
-          <div key={label} className="flex items-center gap-2">
-            <div className={[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
-              i < stageIdx ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/20' :
-                i === stageIdx ? 'bg-white/20 text-white border border-white/30' :
-                  'bg-white/8 text-white/30 border border-white/10',
-            ].join(' ')}>
-              {i < stageIdx && <Check size={ICON_SIZE.xs} />}
-              {i === stageIdx && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-              {label}
-            </div>
-            {i < stages.length - 1 && <div className="w-4 h-px bg-white/20" />}
-          </div>
-        ))}
-      </div>
-
-      <p className="text-sm text-white/50 text-center">
-        {txStepLabel(step, symbol)}<AnimatedDots />
-      </p>
-    </div>
-  );
+  return <BeamGiftCard amount={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(usdAmount)} symbol={symbol} logoUrl={asset.type === 'erc20' ? asset.logoUrl : undefined} label="Your Beam" status="Review & send" />;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -208,8 +123,10 @@ export function SendPageClient() {
     setSubmitting(true);
     const tokenAddr = selectedAsset?.type === 'erc20' ? selectedAsset.address : null;
     const tokenSymbol = selectedAsset?.type === 'native' ? 'ETH' : (selectedAsset?.symbol ?? 'ETH');
-    await startDeposit(tokenAddr, usdAmount, tokenSymbol, walletAddress,
-      typeof window !== 'undefined' ? window.location.origin : '');
+    try {
+      await startDeposit(tokenAddr, usdAmount, tokenSymbol, walletAddress,
+        typeof window !== 'undefined' ? window.location.origin : '');
+    } finally { setSubmitting(false); }
   }, [hydrated, isConnected, walletAddress, selectedAsset, usdAmount, startDeposit, connectWallet]);
 
   const handleSendAnother = useCallback(() => {
@@ -246,17 +163,17 @@ export function SendPageClient() {
 
   return (
     <>
-      <main className="min-h-screen flex flex-col items-center justify-center px-4 py-28">
+      <main className="app-page beam-flow-page min-h-screen flex flex-col items-center justify-center px-4 py-28">
         <motion.div
-          className="w-full max-w-xl"
+          className="w-full max-w-lg"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="glass-strong rounded-[32px] overflow-hidden">
+          <div className={isLinkReady ? "flow-finished" : "glass-strong flow-wizard rounded-[32px] overflow-hidden"}>
 
             {/* ── Card header ─────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-white/10">
+            <div className={isLinkReady ? "hidden" : "flow-wizard-header flex items-center justify-between px-7 pt-6 pb-5 border-b border-white/10"}>
               {/* Back / close */}
               {!isInProgress && !isLinkReady ? (
                 <button
@@ -276,7 +193,7 @@ export function SendPageClient() {
             </div>
 
             {/* ── Card body ───────────────────────────────────────────── */}
-            <div className="px-7 py-7 min-h-[400px] flex flex-col">
+            <div className={isLinkReady ? "" : "px-7 py-7 min-h-[400px] flex flex-col"}>
               <AnimatePresence mode="wait" custom={dir}>
                 {/* ── STEP 1: Pick asset ──────────────────────────────── */}
                 {!isInProgress && !isLinkReady && wizardStep === 1 && (
@@ -362,9 +279,6 @@ export function SendPageClient() {
                       >
                         {!hydrated || !isConnected ? 'Connect Wallet to Send' : 'Send Beam'}
                       </Button>
-                      <p className="text-center text-xs text-white/35">
-                        Recipients claim gaslessly — no gas, no wallet.
-                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -389,25 +303,7 @@ export function SendPageClient() {
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     className="flex flex-col gap-5 flex-1"
                   >
-                    <div className="flex flex-col items-center gap-3 py-4 text-center">
-                      <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
-                        <Check size={ICON_SIZE.lg} className="text-emerald-300" />
-                      </div>
-                      <p className="text-sm text-white/60 max-w-[28ch]">
-                        Send this link. They claim in seconds.
-                      </p>
-                    </div>
-
-                    <BeamLinkDisplay beamLink={beamLink} />
-
-                    <div className="mt-auto">
-                      <button
-                        type="button" onClick={handleSendAnother}
-                        className="btn-glass-ghost w-full !justify-center !py-3 !text-sm"
-                      >
-                        Send another Beam
-                      </button>
-                    </div>
+                    <BeamSentReceipt beamLink={beamLink} logoUrl={selectedAsset?.type === 'erc20' ? selectedAsset.logoUrl : undefined} warning={depositError} amount={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(usdAmount)} symbol={selectedAsset?.symbol ?? 'ETH'} onSendAnother={handleSendAnother} />
                   </motion.div>
                 )}
               </AnimatePresence>

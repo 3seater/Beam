@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePublicClient, useWriteContract } from 'wagmi';
+import { usePublicClient, useWriteContract, useSignMessage } from 'wagmi';
 import { decodeEventLog, formatUnits } from 'viem';
 import { formatTokenValue } from '@/lib/format';
 import { Copy, Check, ExternalLink, Loader2, X, RefreshCw } from 'lucide-react';
@@ -12,6 +12,9 @@ import { loadBeamHistory, saveBeamEntry } from '@/lib/beam-history';
 import { fetchRobinhoodTokens, stockLogoUrl } from '@/lib/robinhood-tokens';
 import type { StoredBeamLink } from '@/lib/beam-store';
 import Image from 'next/image';
+import { recoveryMessage } from '@/lib/beam-recovery';
+
+type ServerEntry = Omit<StoredBeamLink, 'beamLink'> & { beamLink?: string };
 
 interface SentBeamsProps {
   walletAddress: string;
@@ -100,11 +103,11 @@ async function fetchDepositStatus(
 
 // ─── Server fetch ──────────────────────────────────────────────────────────
 
-async function fetchServerLinks(walletAddress: string): Promise<StoredBeamLink[]> {
+async function fetchServerLinks(walletAddress: string): Promise<ServerEntry[]> {
   try {
     const res = await fetch(`/api/beams?wallet=${walletAddress}`);
     if (!res.ok) return [];
-    const data = await res.json() as { entries: StoredBeamLink[] };
+    const data = await res.json() as { entries: ServerEntry[] };
     return data.entries ?? [];
   } catch {
     return [];
@@ -324,6 +327,26 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   const client = usePublicClient();
 
   const [rows, setRows] = useState<RowData[]>([]);
+  const { signMessageAsync } = useSignMessage();
+  const [restoring, setRestoring] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const walletRef = useRef(walletAddress);
+  walletRef.current = walletAddress;
+  const requestRef = useRef(0);
+  const restoreLinks = async () => {
+    setRestoring(true); setRecoveryError(null);
+    try {
+      const timestamp = Date.now();
+      const signature = await signMessageAsync({ account: walletAddress as `0x${string}`, message: recoveryMessage(walletAddress, window.location.origin, timestamp) });
+      const response = await fetch('/api/beams?wallet=' + walletAddress, { headers: { 'x-beam-signature': signature, 'x-beam-timestamp': String(timestamp) } });
+      if (!response.ok) throw new Error('Could not restore links. Please try again.');
+      const { entries } = await response.json() as { entries: StoredBeamLink[] };
+      if (walletRef.current !== walletAddress) return;
+      for (const entry of entries) saveBeamEntry(walletAddress, entry);
+      setRows(previous => previous.map(row => ({ ...row, beamLink: entries.find(entry => entry.depositId === row.depositId)?.beamLink ?? row.beamLink })));
+    } catch { if (walletRef.current === walletAddress) setRecoveryError('Sign with this wallet to restore your links. No transaction is needed.'); }
+    finally { setRestoring(false); }
+  };
   // 'idle' = not started yet, 'loading' = onchain fetch in flight, 'done' = finished
   const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'done'>('idle');
 
@@ -341,7 +364,8 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   // Seed rows immediately from localStorage so something shows before onchain fetch
   useEffect(() => {
     const local = loadBeamHistory(walletAddress);
-    if (local.length > 0) {
+    setRecoveryError(null);
+    {
       setRows(local.map((e) => ({
         depositId: e.depositId,
         tokenSymbol: e.tokenSymbol,
@@ -360,6 +384,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     // Don't fire until wagmi client is ready
     if (!client) return;
 
+    const request = ++requestRef.current;
     setFetchState('loading');
 
     const [onchain, serverLinks, localEntries] = await Promise.all([
@@ -368,12 +393,13 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       Promise.resolve(loadBeamHistory(walletAddress)),
     ]);
 
+    if (walletRef.current !== walletAddress || request !== requestRef.current) return;
     const serverMap = new Map(serverLinks.map((e) => [e.depositId, e]));
     const localMap = new Map(localEntries.map((e) => [e.depositId, e]));
 
     // Back-fill localStorage from server
     for (const entry of serverLinks) {
-      if (!localMap.has(entry.depositId)) {
+      if (entry.beamLink && !localMap.has(entry.depositId)) {
         saveBeamEntry(walletAddress, {
           beamLink: entry.beamLink,
           depositId: entry.depositId,
@@ -396,7 +422,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         tokenSymbol: stored?.tokenSymbol ?? tokenInfo.symbol,
         tokenDecimals: tokenInfo.decimals,
         amount: dep.amount,
-        beamLink: stored?.beamLink ?? null,
+        beamLink: stored?.beamLink ?? localMap.get(dep.depositId)?.beamLink ?? null,
         usdAmount: stored?.usdAmount ?? null,
         createdAt: stored?.createdAt ?? null,
         claimSigner: dep.claimSigner,
@@ -404,8 +430,12 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       };
     });
 
-    // Only update rows if we actually got onchain data; otherwise keep localStorage rows
-    if (merged.length > 0) setRows(merged);
+    // Keep saved history visible even when the RPC cannot scan deposit events.
+    for (const entry of [...serverLinks, ...localEntries]) {
+      if (merged.some(row => row.depositId === entry.depositId)) continue;
+      merged.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: 18, amount: 0n, beamLink: entry.beamLink ?? localMap.get(entry.depositId)?.beamLink ?? null, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: null });
+    }
+    setRows(merged);
     setFetchState('done');
   }, [walletAddress, client]);
 
@@ -421,7 +451,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   }, []);
 
   // Never render anything if there's genuinely nothing to show
-  if (rows.length === 0 && fetchState !== 'loading') return null;
+
 
   return (
     <div className="glass-sm rounded-2xl px-4 py-3">
@@ -438,6 +468,9 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
           }
         </button>
       </div>
+      {rows.some(row => !row.beamLink) && <button type="button" onClick={restoreLinks} disabled={restoring} className="glass-button-primary px-4 py-2 rounded-xl mb-3">{restoring ? 'Check your wallet…' : 'Restore my links'}</button>}
+      {recoveryError && <p role="alert" className="text-sm mb-3">{recoveryError}</p>}
+      {rows.length === 0 && <p className="text-sm py-3">{fetchState === 'loading' ? 'Loading your Beams…' : 'No saved Beams found. Refresh to check again.'}</p>}
       <div className="flex flex-col divide-y divide-white/[0.06]">
         {rows.map((row) => (
           <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} />

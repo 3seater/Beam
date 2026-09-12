@@ -6,7 +6,7 @@ import { ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight } from 'luc
 import { ICON_SIZE } from '@/lib/icons';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { isAddress, parseUnits } from 'viem';
-import Image from 'next/image';
+import { BeamGiftCard, BeamMoment } from '@/components/BeamGiftCard';
 
 /* ── Confetti ────────────────────────────────────────────────────────────── */
 interface Particle {
@@ -196,7 +196,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
 
   const [activePanel, setActivePanel] = useState<'send' | 'export' | null>(null);
   const [copiedAddr, setCopiedAddr] = useState(false);
-  const [imgErr, setImgErr] = useState(false);
+
 
   // Reconstruct raw bigint amount from formatted string for sending
   const rawAmount = (() => {
@@ -211,56 +211,19 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
 
   return (
     <>
-      <ConfettiCanvas />
+      {txHash && <ConfettiCanvas />}
 
       <motion.div
-        className="glass-strong flex flex-col gap-5 p-6 w-full max-w-sm mx-auto"
+        className="claim-success-shell flex flex-col gap-5 w-full mx-auto"
         initial={{ opacity: 0, scale: 0.92, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 340, damping: 28 }}
         role="status"
         aria-live="polite"
       >
-        {/* Header */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <motion.div
-            className="relative"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.15, type: 'spring', stiffness: 400, damping: 20 }}
-          >
-            {/* Token logo */}
-            {tokenLogoUrl && !imgErr ? (
-              <Image
-                src={tokenLogoUrl}
-                alt={symbol}
-                width={56}
-                height={56}
-                className="rounded-2xl object-contain bg-white/10"
-                style={{ width: 56, height: 56 }}
-                onError={() => setImgErr(true)}
-                unoptimized
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center text-lg font-semibold text-white/80">
-                {symbol.slice(0, 2).toUpperCase()}
-              </div>
-            )}
-            {/* Green check badge */}
-            <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center ring-2 ring-white/10">
-              <Check size={11} className="text-white" strokeWidth={3} />
-            </div>
-          </motion.div>
-          <div>
-            <h2 className="text-lg font-medium text-white">You received a Beam</h2>
-            <p className="text-sm text-white/50 mt-0.5">
-              <span className="text-white font-medium">{amount} {symbol}</span> is now in your wallet
-            </p>
-          </div>
-        </div>
-
-        <div className="h-px bg-white/12" />
-
+        <BeamMoment title={txHash ? 'Just like that. All yours.' : 'Your Beam wallet.'} description={txHash ? 'A little possibility, now in your hands.' : 'Your next move, made simple.'} />
+        <BeamGiftCard amount={amount} symbol={symbol} logoUrl={tokenLogoUrl} label="A little something" status={txHash ? 'Claimed' : 'Connected'} detail="On Robinhood Chain" />
+        <details className="receipt-wallet-details"><summary>Your wallet & next steps <ChevronRight size={16} /></summary><div className="receipt-wallet-content">
         {/* Wallet address */}
         <div className="flex flex-col gap-1.5">
           <p className="text-xs text-white/50 tracking-wider">Your wallet</p>
@@ -380,6 +343,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
           </AnimatePresence>
         </div>
 
+        </div></details>
       </motion.div>
     </>
   );

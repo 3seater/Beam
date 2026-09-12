@@ -15,7 +15,7 @@ interface LegalPageProps {
 export function LegalPage({ title, subtitle, effectiveDate, sections }: LegalPageProps) {
   return (
     <>
-      <main className="min-h-screen pt-32 pb-20 px-4">
+      <main className="app-page min-h-screen pt-32 pb-20 px-4">
         <div className="max-w-2xl mx-auto">
 
           {/* Header */}

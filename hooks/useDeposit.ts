@@ -2,13 +2,14 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useWriteContract, useSendTransaction } from 'wagmi';
-import { decodeEventLog, parseUnits } from 'viem';
+import { useWriteContract, useSendTransaction, useSwitchChain } from 'wagmi';
+import { decodeEventLog, parseUnits, erc20Abi } from 'viem';
 import { generateEphemeralKey, constructBeamLink } from '@/lib/beam-link';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS, DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
-import { fetchUniswapQuote, fetchFirmQuote, buildSwapCalldata } from '@/lib/uniswap-swap'; import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
+import { fetchFirmQuote, buildSwapCalldata } from '@/lib/uniswap-swap'; import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { saveBeamEntry } from '@/lib/beam-history';
+import { robinhoodChain } from '@/lib/chains';
 import type { BeamStep } from '@/lib/types';
 
 // ─── Save beam link both locally and server-side ──────────────────────────
@@ -32,14 +33,16 @@ async function persistBeamLink(entry: {
 
   // Save to server-side store so it survives browser data clears
   try {
-    await fetch('/api/beams', {
+    const response = await fetch('/api/beams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
     });
+    if (!response.ok) throw new Error('Server backup unavailable');
+    return true;
   } catch (e) {
     console.warn('[useDeposit] server beam save failed:', e);
-    // Non-fatal — link is still in localStorage
+    return false;
   }
 }
 
@@ -106,12 +109,14 @@ async function waitForTxReceipt(hash: `0x${string}`) {
   const { wagmiConfig } = await import('@/lib/wagmi-config');
   const client = getPublicClient(wagmiConfig);
   if (!client) throw new Error('No public client available');
-  return client.waitForTransactionReceipt({
+  const receipt = await client.waitForTransactionReceipt({
     hash,
     timeout: DEPOSIT_TIMEOUT_MS,
     pollingInterval: 3_000,  // poll every 3s — reduces proxy load vs default 1s
     confirmations: 1,
   });
+  if (receipt.status !== 'success') throw new Error('Transaction reverted. No Beam was created.');
+  return receipt;
 }
 
 // ─── Friendly error messages ──────────────────────────────────────────────────
@@ -180,6 +185,8 @@ export function useDeposit(): UseDepositReturn {
   const [beamLink, setBeamLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const busyRef = useRef(false);
+  const { switchChainAsync } = useSwitchChain();
   const ephemeralPrivKeyRef = useRef<`0x${string}` | null>(null);
 
   const { writeContractAsync: writeApprove } = useWriteContract();
@@ -199,24 +206,30 @@ export function useDeposit(): UseDepositReturn {
     ownerAddress: `0x${string}`,
     origin: string,
   ) => {
-    if (step !== 'idle') return;
+    if (step !== 'idle' || busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setBeamLink(null);
 
     const { ephemeralPrivKey, claimSignerAddress } = generateEphemeralKey();
     ephemeralPrivKeyRef.current = ephemeralPrivKey;
 
-    // Compute ETH amount from USD using live ETH price (used for native ETH deposits
-    // and as a fallback estimate for ERC-20 swaps when EXACT_OUTPUT isn't available)
-    const ethPrice = await fetchTokenPriceUsd('ETH') ?? 2500;
-    const ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
-    console.log('[useDeposit] ETH price:', ethPrice, '| ethAmtWei:', ethAmtWei.toString());
-
     try {
+      if (!Number.isFinite(usdAmount) || usdAmount <= 0) throw new Error('Enter a valid amount.');
+      await switchChainAsync({ chainId: robinhoodChain.id });
+      const ethPrice = await fetchTokenPriceUsd('ETH');
+      if (!ethPrice) throw new Error('Live ETH price unavailable. Please try again shortly.');
+      const ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
+      const { getPublicClient } = await import('wagmi/actions');
+      const { wagmiConfig } = await import('@/lib/wagmi-config');
+      const publicClient = getPublicClient(wagmiConfig);
+      if (!publicClient) throw new Error('No public client available');
       // ── Native ETH path: deposit directly ─────────────────────────────
       if (tokenAddress === null) {
         setStep('deposit-pending');
         const depositHash = await writeDeposit({
+          chainId: robinhoodChain.id,
+          account: ownerAddress,
           address: BEAM_ESCROW_ADDRESS,
           abi: BEAM_ESCROW_ABI,
           functionName: 'depositNative',
@@ -229,7 +242,8 @@ export function useDeposit(): UseDepositReturn {
         const link = constructBeamLink(origin, ephemeralPrivKeyRef.current!, depositId);
         const now = Date.now();
 
-        await persistBeamLink({ depositId: depositId.toString(), walletAddress: ownerAddress, beamLink: link, tokenSymbol, usdAmount, createdAt: now });
+        const backedUp = await persistBeamLink({ depositId: depositId.toString(), walletAddress: ownerAddress, beamLink: link, tokenSymbol, usdAmount, createdAt: now });
+        if (!backedUp) setError('Beam sent, but server backup failed. Copy and keep this link before clearing browser data.');
         setBeamLink(link);
         setStep('link-generated');
         return;
@@ -237,34 +251,16 @@ export function useDeposit(): UseDepositReturn {
 
       // ── ERC-20 path: swap ETH → token via Uniswap Trading API (V4/V3/UniswapX), then deposit ────
 
-      // 1. Use EXACT_OUTPUT: compute how many tokens $usdAmount buys, then ask
-      //    the API for exactly that many tokens. This way the user gets exactly
-      //    $usdAmount of tokens regardless of ETH price fluctuations.
-      let exactOutputWei: bigint | undefined;
-      try {
-        const tokenPrice = await fetchTokenPriceUsd(tokenSymbol);
-        if (tokenPrice && tokenPrice > 0) {
-          const tokenAmount = usdAmount / tokenPrice;
-          exactOutputWei = parseUnits(tokenAmount.toFixed(18), 18);
-          console.log('[useDeposit] EXACT_OUTPUT | tokenPrice=', tokenPrice, '| tokenAmount=', tokenAmount, '| wei=', exactOutputWei.toString());
-        }
-      } catch {
-        // fall through to EXACT_INPUT
-      }
-
-      // 1. Fetch a firm quote with swap calldata
-      const quote = await fetchFirmQuote(tokenAddress, ethAmtWei, ownerAddress, exactOutputWei);
-      if (!quote) {
-        throw new Error(
-          'No liquidity found for this token. ' +
-          'Try a larger amount or use ETH instead.',
-        );
-      }
-
+      // Fix the ETH spending budget; token output comes from a live executable quote.
+      const quote = await fetchFirmQuote(tokenAddress, ethAmtWei, ownerAddress);
+      if (!quote) throw new Error('A live swap quote is unavailable for this token. Please try again shortly.');
+      const balanceBefore = await publicClient.readContract({ address: tokenAddress, abi: erc20Abi, functionName: 'balanceOf', args: [ownerAddress] });
       // 2. Execute the swap (V4 via UniversalRouter, or V3 fallback)
       setStep('swap-pending');
       const swapTx = buildSwapCalldata(quote, ownerAddress);
       const swapHash = await sendSwapTx({
+          chainId: robinhoodChain.id,
+          account: ownerAddress,
         to: swapTx.to,
         data: swapTx.data,
         value: swapTx.value,
@@ -272,33 +268,9 @@ export function useDeposit(): UseDepositReturn {
       setStep('swap-confirming');
       await waitForTxReceipt(swapHash);
 
-      // Token is now in the wallet. Read actual received balance rather than
-      // using amountOutMin — slippage means we could have received more, and
-      // using the wrong amount would cause depositToken to revert.
-      let depositAmount: bigint;
-      try {
-        const { getPublicClient } = await import('wagmi/actions');
-        const { wagmiConfig } = await import('@/lib/wagmi-config');
-        const publicClient = getPublicClient(wagmiConfig);
-        if (!publicClient) throw new Error('no client');
-        depositAmount = await publicClient.readContract({
-          address: tokenAddress,
-          abi: [{
-            name: 'balanceOf',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [{ name: 'account', type: 'address' }],
-            outputs: [{ name: '', type: 'uint256' }],
-          }] as const,
-          functionName: 'balanceOf',
-          args: [ownerAddress],
-        }) as bigint;
-        if (depositAmount === 0n) throw new Error('zero balance after swap');
-        console.log('[useDeposit] actual token balance after swap:', depositAmount.toString());
-      } catch (balErr) {
-        console.warn('[useDeposit] could not read post-swap balance, falling back to amountOutMin:', balErr);
-        depositAmount = quote.amountOutMin;
-      }
+      const balanceAfter = await publicClient.readContract({ address: tokenAddress, abi: erc20Abi, functionName: 'balanceOf', args: [ownerAddress] });
+      const depositAmount = balanceAfter - balanceBefore;
+      if (depositAmount <= 0n) throw new Error('No tokens received from the swap. Check your wallet before retrying.');
 
       // 3. Approve BeamEscrow to spend the received tokens
       let needsApproval = true;
@@ -320,6 +292,8 @@ export function useDeposit(): UseDepositReturn {
       if (needsApproval) {
         setStep('approval-pending');
         const approveHash = await writeApprove({
+          chainId: robinhoodChain.id,
+          account: ownerAddress,
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: 'approve',
@@ -332,6 +306,8 @@ export function useDeposit(): UseDepositReturn {
       // 4. Deposit into BeamEscrow
       setStep('deposit-pending');
       const depositHash = await writeDeposit({
+          chainId: robinhoodChain.id,
+          account: ownerAddress,
         address: BEAM_ESCROW_ADDRESS,
         abi: BEAM_ESCROW_ABI,
         functionName: 'depositToken',
@@ -343,7 +319,8 @@ export function useDeposit(): UseDepositReturn {
       const link = constructBeamLink(origin, ephemeralPrivKeyRef.current!, depositId);
       const now = Date.now();
 
-      await persistBeamLink({ depositId: depositId.toString(), walletAddress: ownerAddress, beamLink: link, tokenSymbol, usdAmount, createdAt: now });
+      const backedUp = await persistBeamLink({ depositId: depositId.toString(), walletAddress: ownerAddress, beamLink: link, tokenSymbol, usdAmount, createdAt: now });
+        if (!backedUp) setError('Beam sent, but server backup failed. Copy and keep this link before clearing browser data.');
       setBeamLink(link);
       setStep('link-generated');
 
@@ -353,7 +330,7 @@ export function useDeposit(): UseDepositReturn {
       const isUserRejection = /user rejected|user denied|rejected the request/i.test(msg);
       discardAndFail(isUserRejection ? null : toFriendlyError(msg));
     }
-  }, [step, sendSwapTx, writeApprove, writeDeposit, discardAndFail]);
+  }, [step, switchChainAsync, sendSwapTx, writeApprove, writeDeposit, discardAndFail]);
 
   const reset = useCallback(() => {
     ephemeralPrivKeyRef.current = null;

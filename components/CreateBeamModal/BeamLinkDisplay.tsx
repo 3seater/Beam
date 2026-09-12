@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Copy, Check, MessageCircle, X as XIcon, Send, Phone } from 'lucide-react';
-import { ICON_SIZE } from '@/lib/icons';
+import { useState, useCallback, useEffect } from 'react';
+import { Copy, Check } from 'lucide-react';
+import { ShareAppIcon } from '@/components/ShareAppIcon';
 
 export interface BeamLinkDisplayProps {
   beamLink: string;
@@ -22,24 +22,24 @@ interface ShareChannel {
 const SHARE_CHANNELS: ShareChannel[] = [
   {
     label: 'iMessage',
-    icon: <MessageCircle size={ICON_SIZE.sm} aria-hidden="true" />,
+    icon: <ShareAppIcon app="messages" />,
     href: (link) => `sms:&body=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
   },
   {
     label: 'X',
-    icon: <XIcon size={ICON_SIZE.sm} aria-hidden="true" />,
+    icon: <ShareAppIcon app="x" />,
     href: (link) =>
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
   },
   {
     label: 'WhatsApp',
-    icon: <Phone size={ICON_SIZE.sm} aria-hidden="true" />,
+    icon: <ShareAppIcon app="whatsapp" />,
     href: (link) =>
       `https://wa.me/?text=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
   },
   {
     label: 'Telegram',
-    icon: <Send size={ICON_SIZE.sm} aria-hidden="true" />,
+    icon: <ShareAppIcon app="telegram" />,
     href: (link) =>
       `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(SHARE_MESSAGE)}`,
   },
@@ -47,81 +47,33 @@ const SHARE_CHANNELS: ShareChannel[] = [
 
 export function BeamLinkDisplay({ beamLink, className = '' }: BeamLinkDisplayProps) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2200);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   const handleCopy = useCallback(async () => {
+    setCopyError(false);
     try {
-      await navigator.clipboard.writeText(beamLink);
-    } catch {
-      const el = Object.assign(document.createElement('textarea'), { value: beamLink });
-      Object.assign(el.style, { position: 'fixed', opacity: '0' });
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+      try { await navigator.clipboard.writeText(beamLink); }
+      catch {
+        const el = Object.assign(document.createElement('textarea'), { value: beamLink });
+        Object.assign(el.style, { position: 'fixed', opacity: '0' });
+        document.body.appendChild(el);
+        try { el.select(); if (!document.execCommand('copy')) throw new Error('Copy failed'); }
+        finally { el.remove(); }
+      }
+      setCopied(true);
+    } catch { setCopyError(true); }
   }, [beamLink]);
 
-  return (
-    <div className={`flex flex-col gap-4 ${className}`}>
-
-      {/* Link + copy button */}
-      <div className="flex items-stretch gap-2">
-        <div
-          className="glass-sm flex min-w-0 flex-1 items-center px-3 py-2.5"
-          aria-label="Beam link"
-        >
-          <span className="truncate font-mono text-xs text-white/70">{beamLink}</span>
-        </div>
-        <button
-          type="button"
-          onClick={handleCopy}
-          aria-label={copied ? 'Copied!' : 'Copy link'}
-          className={[
-            'glass-sm shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium',
-            'transition-all duration-200 focus-visible:outline-none whitespace-nowrap',
-            copied
-              ? 'bg-emerald-400/20 border-emerald-300/40 text-emerald-200'
-              : 'hover:bg-white/20 text-white/70 hover:text-white',
-          ].join(' ')}
-        >
-          {copied
-            ? <><Check size={ICON_SIZE.xs} aria-hidden="true" /> Copied</>
-            : <><Copy size={ICON_SIZE.xs} aria-hidden="true" /> Copy</>
-          }
-        </button>
-      </div>
-
-      {/* Share buttons */}
-      <div className="flex flex-col gap-2">
-        <p className="text-xs text-white/50">Share via</p>
-        <div className="flex items-center gap-2">
-          {SHARE_CHANNELS.map(({ label, icon, href }) => (
-            <a
-              key={label}
-              href={href(beamLink)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Share via ${label}`}
-              className="flex flex-col items-center gap-1.5 group"
-            >
-              <span
-                className={[
-                  'flex items-center justify-center w-10 h-10 rounded-xl',
-                  'glass-sm text-white/70',
-                  'group-hover:bg-white/20 group-hover:text-white transition-all duration-150',
-                ].join(' ')}
-              >
-                {icon}
-              </span>
-              <span className="text-[11px] text-white/50 group-hover:text-white/70 transition-colors">
-                {label}
-              </span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className={`receipt-sharing ${className}`}>
+    <button type="button" onClick={handleCopy} className="premium-button receipt-copy" aria-label={copied ? 'Copied!' : 'Copy link'}>{copied ? <Check size={17} /> : <Copy size={16} />}{copied ? 'Link copied' : 'Copy Beam link'}</button>
+    <span className="sr-only" role="status">{copied ? 'Beam link copied to clipboard.' : ''}</span>
+    {copyError && <div role="alert" className="receipt-copy-error"><p>Couldn’t copy. Select your link below.</p><input aria-label="Your Beam link" readOnly value={beamLink} onFocus={e => e.currentTarget.select()} /></div>}
+    <div className="receipt-channels">{SHARE_CHANNELS.map(({ label, icon, href }) => <a key={label} href={href(beamLink)} target="_blank" rel="noopener noreferrer" aria-label={`Share via ${label}`}><span>{icon}</span>{label}</a>)}</div>
+    <p className="receipt-private">Anyone with this link can claim. Share it privately.</p>
+  </div>;
 }

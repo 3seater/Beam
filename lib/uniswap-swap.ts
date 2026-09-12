@@ -1,25 +1,4 @@
-/**
- * lib/uniswap-swap.ts
- *
- * Swap helpers for Robinhood Chain (chainId 4663).
- *
- * Quote strategy (in priority order):
- *  1. Uniswap Trading API (trade-api.gateway.uniswap.org) — if UNISWAP_API_KEY set
- *     POST /quote → POST /swap (CLASSIC) → executable calldata
- *  2. V4 StateView on-chain — reads sqrtPriceX96 from PoolManager storage
- *  3. V3 QuoterV2 on-chain — direct pool read, shallow but always available
- *
- * Official Uniswap V4 addresses on Robinhood Chain (chainId 4663):
- *   Source: https://developers.uniswap.org/docs/protocols/v4/deployments.md
- *   PoolManager:      0x8366a39cc670b4001a1121b8f6a443a643e40951
- *   StateView:        0xf3334192d15450cdd385c8b70e03f9a6bd9e673b
- *   V4Quoter:         0x8dc178efb8111bb0973dd9d722ebeff267c98f94
- *   PositionManager:  0x58daec3116aae6d93017baaea7749052e8a04fa7
- *   UniversalRouter:  0x8876789976decbfcbbbe364623c63652db8c0904
- *   Permit2:          0x000000000022d473030f116ddee9f6b43ac78ba3
- */
-
-import { encodeAbiParameters, encodeFunctionData, keccak256, formatUnits } from 'viem';
+import { formatUnits } from 'viem';
 import { formatTokenValue } from '@/lib/format';
 
 // ── Addresses ─────────────────────────────────────────────────────────────────
@@ -40,125 +19,6 @@ export const POOL_MANAGER_ADDR = POOL_MANAGER; // alias
 const NATIVE_ETH = '0x0000000000000000000000000000000000000000' as `0x${string}`;
 const CHAIN_ID = 4663;
 const SLIPPAGE_BPS = 100; // 1%
-
-// ── V4 fee/tickSpacing candidates ─────────────────────────────────────────────
-const V4_CANDIDATES = [
-  { fee: 3000, tickSpacing: 60 },
-  { fee: 10000, tickSpacing: 200 },
-  { fee: 500, tickSpacing: 10 },
-  { fee: 100, tickSpacing: 1 },
-];
-
-// ── ABIs ─────────────────────────────────────────────────────────────────────
-
-const STATE_VIEW_ABI = [
-  {
-    name: 'getSlot0',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'poolId', type: 'bytes32' }],
-    outputs: [
-      { name: 'sqrtPriceX96', type: 'uint160' },
-      { name: 'tick', type: 'int24' },
-      { name: 'protocolFee', type: 'uint24' },
-      { name: 'lpFee', type: 'uint24' },
-    ],
-  },
-] as const;
-
-const UNIVERSAL_ROUTER_ABI = [
-  {
-    name: 'execute',
-    type: 'function',
-    stateMutability: 'payable',
-    inputs: [
-      { name: 'commands', type: 'bytes' },
-      { name: 'inputs', type: 'bytes[]' },
-      { name: 'deadline', type: 'uint256' },
-    ],
-    outputs: [],
-  },
-] as const;
-
-const V3_FACTORY_ABI = [
-  {
-    name: 'getPool', type: 'function', stateMutability: 'view',
-    inputs: [
-      { name: 'tokenA', type: 'address' },
-      { name: 'tokenB', type: 'address' },
-      { name: 'fee', type: 'uint24' },
-    ],
-    outputs: [{ name: '', type: 'address' }]
-  },
-] as const;
-
-const V3_QUOTER_ABI = [
-  {
-    name: 'quoteExactInputSingle', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{
-      name: 'params', type: 'tuple', components: [
-        { name: 'tokenIn', type: 'address' },
-        { name: 'tokenOut', type: 'address' },
-        { name: 'amountIn', type: 'uint256' },
-        { name: 'fee', type: 'uint24' },
-        { name: 'sqrtPriceLimitX96', type: 'uint160' },
-      ]
-    }],
-    outputs: [
-      { name: 'amountOut', type: 'uint256' },
-      { name: 'sqrtPriceX96After', type: 'uint160' },
-      { name: 'initializedTicksCrossed', type: 'uint32' },
-      { name: 'gasEstimate', type: 'uint256' },
-    ]
-  },
-] as const;
-
-const V3_ROUTER_ABI = [
-  {
-    name: 'exactInputSingle', type: 'function', stateMutability: 'payable',
-    inputs: [{
-      name: 'params', type: 'tuple', components: [
-        { name: 'tokenIn', type: 'address' },
-        { name: 'tokenOut', type: 'address' },
-        { name: 'fee', type: 'uint24' },
-        { name: 'recipient', type: 'address' },
-        { name: 'amountIn', type: 'uint256' },
-        { name: 'amountOutMinimum', type: 'uint256' },
-        { name: 'sqrtPriceLimitX96', type: 'uint160' },
-      ]
-    }],
-    outputs: [{ name: 'amountOut', type: 'uint256' }]
-  },
-] as const;
-
-// ── PoolId ────────────────────────────────────────────────────────────────────
-function poolId(
-  token: `0x${string}`,
-  fee: number,
-  tickSpacing: number,
-): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(
-      [
-        { type: 'address' }, // currency0 = ETH (address(0))
-        { type: 'address' }, // currency1 = token
-        { type: 'uint24' }, // fee
-        { type: 'int24' }, // tickSpacing
-        { type: 'address' }, // hooks = address(0)
-      ],
-      [NATIVE_ETH, token, fee, tickSpacing, NATIVE_ETH],
-    ),
-  );
-}
-
-// ── Spot price from sqrtPriceX96 ─────────────────────────────────────────────
-// Pool: currency0=ETH (addr 0), currency1=token
-// sqrtPriceX96 = sqrt(token/ETH) * 2^96
-// tokenOut = ethIn * sqrtPriceX96^2 / 2^192
-function spotAmountOut(sqrtPriceX96: bigint, ethAmountWei: bigint): bigint {
-  if (sqrtPriceX96 === 0n) return 0n;
-  return (ethAmountWei * sqrtPriceX96 * sqrtPriceX96) / (2n ** 192n);
-}
 
 // ── Public quote type ─────────────────────────────────────────────────────────
 export interface UniswapQuote {
@@ -189,21 +49,8 @@ export async function fetchUniswapQuote(
   tokenAddress: `0x${string}`,
   ethAmountWei: bigint,
 ): Promise<UniswapQuote | null> {
-  // Race Trading API against V4 StateView — whoever resolves first wins.
-  // V4 is a single on-chain read (~50–150 ms); the Trading API is typically
-  // ~500 ms–2 s. If both fail we fall back to V3.
-  try {
-    const result = await Promise.any([
-      tryTradingApiQuote(tokenAddress, ethAmountWei, null),
-      tryV4Quote(tokenAddress, ethAmountWei),
-    ]);
-    if (result) return result;
-  } catch {
-    // Promise.any rejects only if ALL promises reject — fall through to V3
-  }
-
-  // V3 last resort
-  return tryV3Quote(tokenAddress, ethAmountWei);
+  // Slot0 is a spot price, not a liquidity-aware executable quote.
+  return tryTradingApiQuote(tokenAddress, ethAmountWei, null);
 }
 
 // ── Firm quote (includes swap calldata for execution) ─────────────────────────
@@ -220,12 +67,7 @@ export async function fetchFirmQuote(
     if (withCalldata) return withCalldata;
   }
 
-  // 2. V4 on-chain quote + build calldata ourselves
-  const v4Quote = await tryV4Quote(tokenAddress, ethAmountWei);
-  if (v4Quote) return v4Quote;
-
-  // 3. V3 fallback
-  return tryV3Quote(tokenAddress, ethAmountWei);
+  return null;
 }
 
 // ── Trading API /quote ────────────────────────────────────────────────────────
@@ -335,200 +177,11 @@ async function attachSwapCalldata(quote: UniswapQuote): Promise<UniswapQuote | n
   }
 }
 
-// ── V4 StateView on-chain quote ───────────────────────────────────────────────
-async function tryV4Quote(
-  tokenAddress: `0x${string}`,
-  ethAmountWei: bigint,
-): Promise<UniswapQuote | null> {
-  try {
-    const { getPublicClient } = await import('wagmi/actions');
-    const { wagmiConfig } = await import('@/lib/wagmi-config');
-    const client = getPublicClient(wagmiConfig);
-    if (!client) return null;
-
-    for (const { fee, tickSpacing } of V4_CANDIDATES) {
-      try {
-        const pid = poolId(tokenAddress, fee, tickSpacing);
-
-        const slot0 = await client.readContract({
-          address: STATE_VIEW,
-          abi: STATE_VIEW_ABI,
-          functionName: 'getSlot0',
-          args: [pid],
-        }) as readonly [bigint, number, number, number];
-
-        const sqrtPriceX96 = slot0[0];
-        if (sqrtPriceX96 === 0n) continue;
-
-        const amountOut = spotAmountOut(sqrtPriceX96, ethAmountWei);
-        if (amountOut === 0n) continue;
-
-        const amountOutMin = (amountOut * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
-
-        console.log('[swap] V4 StateView | fee=', fee, 'tick=', tickSpacing,
-          '| sqrtP=', sqrtPriceX96.toString(), '| out=', amountOut.toString());
-
-        return {
-          amountIn: ethAmountWei, amountOut, amountOutMin,
-          amountOutFormatted: fmt(amountOut),
-          tokenOut: tokenAddress, fee, tickSpacing,
-          hooks: NATIVE_ETH, isV4: true,
-          swapTo: UNIVERSAL_ROUTER, swapData: '0x', swapValue: ethAmountWei,
-          _apiQuoteObj: null, _routing: 'V4_STATEVIEW',
-          wethUsdgFee: fee, usdgTokenFee: fee, path: pid,
-        };
-      } catch { continue; }
-    }
-    return null;
-  } catch (err) {
-    console.warn('[swap] V4 StateView error:', err);
-    return null;
-  }
-}
-
-// ── V3 fallback ───────────────────────────────────────────────────────────────
-async function tryV3Quote(
-  tokenAddress: `0x${string}`,
-  ethAmountWei: bigint,
-): Promise<UniswapQuote | null> {
-  try {
-    const { getPublicClient } = await import('wagmi/actions');
-    const { wagmiConfig } = await import('@/lib/wagmi-config');
-    const client = getPublicClient(wagmiConfig);
-    if (!client) return null;
-
-    const ZERO = '0x0000000000000000000000000000000000000000';
-    for (const fee of [3000, 500, 10000]) {
-      try {
-        const pool = await client.readContract({
-          address: UNISWAP_FACTORY, abi: V3_FACTORY_ABI,
-          functionName: 'getPool', args: [WETH_ADDRESS, tokenAddress, fee],
-        }) as string;
-        if (!pool || pool === ZERO) continue;
-
-        const result = await client.readContract({
-          address: UNISWAP_QUOTER_V2, abi: V3_QUOTER_ABI,
-          functionName: 'quoteExactInputSingle',
-          args: [{ tokenIn: WETH_ADDRESS, tokenOut: tokenAddress, amountIn: ethAmountWei, fee, sqrtPriceLimitX96: 0n }],
-        }) as [bigint, bigint, number, bigint];
-
-        const amountOut = result[0];
-        const amountOutMin = (amountOut * BigInt(10000 - SLIPPAGE_BPS)) / 10000n;
-        console.warn('[swap] V3 fallback | fee=', fee, '| out=', amountOut.toString());
-
-        return {
-          amountIn: ethAmountWei, amountOut, amountOutMin,
-          amountOutFormatted: fmt(amountOut),
-          tokenOut: tokenAddress, fee, tickSpacing: 60,
-          hooks: NATIVE_ETH, isV4: false,
-          swapTo: UNISWAP_SWAP_ROUTER_02, swapData: '0x', swapValue: ethAmountWei,
-          _apiQuoteObj: null, _routing: 'V3_FALLBACK',
-          wethUsdgFee: fee, usdgTokenFee: fee, path: '0x',
-        };
-      } catch { continue; }
-    }
-    return null;
-  } catch (err) {
-    console.warn('[swap] V3 fallback error:', err);
-    return null;
-  }
-}
-
-// ── buildSwapCalldata ─────────────────────────────────────────────────────────
-export function buildSwapCalldata(
-  quote: UniswapQuote,
-  recipient: `0x${string}`,
-  deadlineSeconds = 300,
-): { to: `0x${string}`; data: `0x${string}`; value: bigint } {
-  // Trading API provided ready-to-use calldata
-  if (quote.swapData && quote.swapData !== '0x' &&
-    quote.swapTo !== '0x0000000000000000000000000000000000000000') {
-    return { to: quote.swapTo, data: quote.swapData, value: quote.swapValue };
-  }
-
-  // V4 — build UniversalRouter V4_SWAP calldata
-  if (quote.isV4) {
-    return buildV4Calldata(quote, deadlineSeconds);
-  }
-
-  // V3 — SwapRouter02
-  return buildV3Calldata(quote, recipient, deadlineSeconds);
-}
-
-// ── V4 UniversalRouter calldata ───────────────────────────────────────────────
-// Command 0x10 = V4_SWAP (exactInputSingle, native ETH → token)
-function buildV4Calldata(
-  quote: UniswapQuote,
-  deadlineSeconds: number,
-): { to: `0x${string}`; data: `0x${string}`; value: bigint } {
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineSeconds);
-
-  const swapInput = encodeAbiParameters(
-    [{
-      type: 'tuple',
-      components: [
-        {
-          name: 'poolKey', type: 'tuple', components: [
-            { name: 'currency0', type: 'address' },
-            { name: 'currency1', type: 'address' },
-            { name: 'fee', type: 'uint24' },
-            { name: 'tickSpacing', type: 'int24' },
-            { name: 'hooks', type: 'address' },
-          ]
-        },
-        { name: 'zeroForOne', type: 'bool' },
-        { name: 'amountIn', type: 'uint128' },
-        { name: 'amountOutMinimum', type: 'uint128' },
-        { name: 'hookData', type: 'bytes' },
-      ],
-    },
-    { name: 'takeClaims', type: 'bool' },
-    { name: 'settleUsingBurn', type: 'bool' },
-    ],
-    [{
-      poolKey: {
-        currency0: NATIVE_ETH,
-        currency1: quote.tokenOut,
-        fee: quote.fee,
-        tickSpacing: quote.tickSpacing,
-        hooks: quote.hooks,
-      },
-      zeroForOne: true,
-      amountIn: quote.amountIn,
-      amountOutMinimum: quote.amountOutMin,
-      hookData: '0x' as `0x${string}`,
-    },
-      false, // takeClaims
-      false, // settleUsingBurn
-    ],
-  );
-
-  const data = encodeFunctionData({
-    abi: UNIVERSAL_ROUTER_ABI,
-    functionName: 'execute',
-    args: ['0x10' as `0x${string}`, [swapInput], deadline],
-  });
-
-  return { to: UNIVERSAL_ROUTER, data, value: quote.amountIn };
-}
-
-// ── V3 calldata ───────────────────────────────────────────────────────────────
-function buildV3Calldata(
-  quote: UniswapQuote,
-  recipient: `0x${string}`,
-  deadlineSeconds: number,
-): { to: `0x${string}`; data: `0x${string}`; value: bigint } {
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineSeconds);
-  const data = encodeFunctionData({
-    abi: V3_ROUTER_ABI, functionName: 'exactInputSingle',
-    args: [{
-      tokenIn: WETH_ADDRESS, tokenOut: quote.tokenOut, fee: quote.fee,
-      recipient, amountIn: quote.amountIn,
-      amountOutMinimum: quote.amountOutMin, sqrtPriceLimitX96: 0n,
-    }],
-  });
-  void deadline;
-  return { to: UNISWAP_SWAP_ROUTER_02, data, value: quote.amountIn };
+// Only execute calldata obtained from the live Trading API.
+export function buildSwapCalldata(quote: UniswapQuote, recipient: `0x${string}`) {
+  void recipient;
+  if (!quote.swapData || quote.swapData === '0x' || quote.swapValue <= 0n || quote.swapValue > quote.amountIn || quote.swapTo.toLowerCase() !== UNIVERSAL_ROUTER.toLowerCase()) throw new Error('Invalid or unavailable swap transaction. Request a new quote.');
+  return { to: quote.swapTo, data: quote.swapData, value: quote.swapValue };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -537,4 +190,4 @@ function fmt(amount: bigint): string {
 }
 
 // ── Deprecated ────────────────────────────────────────────────────────────────
-export async function quoteEthForUsdg(_: bigint): Promise<bigint | null> { return null; }
+export async function quoteEthForUsdg(_: bigint): Promise<bigint | null> { void _; return null; }

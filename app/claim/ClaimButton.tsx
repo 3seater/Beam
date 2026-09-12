@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Wallet, AlertCircle } from 'lucide-react';
+import { ArrowUpRight, AlertCircle } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { Button } from '@/components/ui/Button';
 import type { ClaimStep } from '@/hooks/useClaim';
@@ -45,17 +45,17 @@ export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim }: Claim
         loadingLabel={isLoading ? loadingLabel(claimStep) : undefined}
         disabled={alreadyClaimed}
         onClick={isLoading || alreadyClaimed ? undefined : onClaim}
-        leftIcon={<Wallet size={ICON_SIZE.md} aria-hidden="true" />}
-        aria-label={alreadyClaimed ? 'Already claimed' : isError ? 'Retry claim' : 'Claim to wallet'}
+        leftIcon={<ArrowUpRight size={ICON_SIZE.md} aria-hidden="true" />}
+        aria-label={alreadyClaimed ? 'Already claimed' : isError ? 'Retry claim' : 'Claim my Beam'}
         className="w-full !justify-center !py-4 !text-base"
       >
-        {alreadyClaimed ? 'Already claimed' : isError ? 'Retry claim' : 'Claim to Wallet'}
+        {alreadyClaimed ? 'Already claimed' : isError ? 'Retry claim' : 'Claim my Beam'}
       </Button>
 
       {/* Gasless note */}
       {!alreadyClaimed && (
         <p className="text-xs text-white/45">
-          Recipients claim gaslessly — no gas, no wallet.
+          Sign in. Claim. It’s yours. No gas needed.
         </p>
       )}
 

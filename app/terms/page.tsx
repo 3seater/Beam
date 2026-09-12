@@ -17,9 +17,9 @@ export default function TermsPage() {
           heading: '1. Acceptance of Terms',
           body: (
             <p>
-              By accessing or using beam.finance (the "Site") or the Beam smart contract protocol
-              (collectively, the "Service"), you agree to be bound by these Terms of Service
-              ("Terms"). If you do not agree to these Terms, do not use the Service. These Terms
+              By accessing or using beam.finance (the &quot;Site&quot;) or the Beam smart contract protocol
+              (collectively, the &quot;Service&quot;), you agree to be bound by these Terms of Service
+              (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. These Terms
               apply to all visitors, senders, and recipients who interact with the Beam protocol.
             </p>
           ),
@@ -163,7 +163,7 @@ export default function TermsPage() {
           heading: '9. Disclaimer of Warranties',
           body: (
             <p>
-              THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND,
+              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND,
               EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
               FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE
               SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT DEFECTS WILL BE CORRECTED. USE

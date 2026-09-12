@@ -272,7 +272,7 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
       {/* Step label */}
       <div className="flex items-center gap-2 mb-3">
         <span className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0"
-          style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.90)' }}>
+          style={{ fontSize: '11px', fontWeight: 500, color: 'inherit' }}>
           1
         </span>
         <p className="text-sm font-normal text-white/90">Choose a token</p>

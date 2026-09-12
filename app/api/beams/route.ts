@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicClient, http } from 'viem';
+import { privateKeyToAddress } from 'viem/accounts';
+import { recoveryMessage, validRecoveryTime } from '@/lib/beam-recovery';
+import { parseBeamLink } from '@/lib/beam-link';
+import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
+import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
+import { robinhoodChain } from '@/lib/chains';
 import { saveBeamLink, getBeamLinksForWallet } from '@/lib/beam-store';
+
+export const dynamic = 'force-dynamic';
+const client = createPublicClient({ chain: robinhoodChain, transport: http(process.env.NEXT_PUBLIC_RPC_URL ?? 'https://rpc.mainnet.chain.robinhood.com') });
 
 /**
  * GET /api/beams?wallet=0x...
@@ -11,7 +21,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
   }
   const entries = await getBeamLinksForWallet(wallet);
-  return NextResponse.json({ entries });
+  const signature = req.headers.get('x-beam-signature');
+  if (!signature) return NextResponse.json({ entries: entries.map(entry => ({ depositId: entry.depositId, walletAddress: entry.walletAddress, tokenSymbol: entry.tokenSymbol, usdAmount: entry.usdAmount, createdAt: entry.createdAt })) }, { headers: { 'Cache-Control': 'no-store' } });
+  const timestamp = Number(req.headers.get('x-beam-timestamp'));
+  if (!validRecoveryTime(timestamp) || !/^0x[0-9a-fA-F]+$/.test(signature)) return NextResponse.json({ error: 'Recovery signature expired. Please sign again.' }, { status: 401 });
+  try {
+    const valid = await client.verifyMessage({ address: wallet as `0x${string}`, message: recoveryMessage(wallet, req.nextUrl.origin, timestamp), signature: signature as `0x${string}` });
+    if (!valid) return NextResponse.json({ error: 'Wallet ownership could not be verified' }, { status: 401 });
+  } catch { return NextResponse.json({ error: 'Wallet verification unavailable' }, { status: 503 }); }
+  return NextResponse.json({ entries }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 /**
@@ -26,6 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   const { depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt } =
     body as Record<string, unknown>;
 
@@ -39,6 +58,14 @@ export async function POST(req: NextRequest) {
   ) {
     return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
   }
+
+  if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress) || !/^(0|[1-9]\d*)$/.test(depositId) || !Number.isFinite(usdAmount) || usdAmount <= 0 || !Number.isSafeInteger(createdAt)) return NextResponse.json({ error: 'Invalid fields' }, { status: 400 });
+  try {
+    const parsed = parseBeamLink(new URL(beamLink).hash);
+    if (parsed.depositId.toString() !== depositId) throw new Error('Deposit mismatch');
+    const deposit = await client.readContract({ address: BEAM_ESCROW_ADDRESS, abi: BEAM_ESCROW_ABI, functionName: 'getDeposit', args: [parsed.depositId] });
+    if (deposit.sender.toLowerCase() !== walletAddress.toLowerCase() || deposit.claimSigner.toLowerCase() !== privateKeyToAddress(parsed.ephemeralPrivKey).toLowerCase()) return NextResponse.json({ error: 'Link does not match this deposit' }, { status: 403 });
+  } catch { return NextResponse.json({ error: 'Could not verify deposit backup' }, { status: 503 }); }
 
   // Basic sanity: beamLink must contain a #key= fragment
   if (!beamLink.includes('#key=')) {

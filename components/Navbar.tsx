@@ -1,37 +1,31 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { createPortal } from 'react-dom';
+import { AnimatePresence } from 'framer-motion';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { ICON_SIZE } from '@/lib/icons';
-import { WalletDropdown } from '@/components/WalletDropdown';
-
+import { WalletDropdown } from './WalletDropdown';
+import { BeamMark } from './BeamMark';
 export interface NavbarProps {
   onSendClick?: () => void;
 }
-
-const NAV_LINKS = [
-  { label: 'How it works', href: '#how-it-works', external: false },
-  { label: 'FAQ', href: '#faq', external: false },
-  { label: 'Docs', href: 'https://docs.beam.finance', external: true },
-  { label: 'Twitter', href: 'https://twitter.com/beamfinance', external: true },
-];
-
-const LINK_STYLE: React.CSSProperties = {
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif',
-  fontSize: '15px',
-  fontWeight: 400,
-  letterSpacing: '0',
-  whiteSpace: 'nowrap',
+const LINK_STYLE = {
+  fontFamily: 'inherit'
 };
-
-/* ── Account chip — always visible top-right, connect or wallet menu ─────── */
 function AccountChip() {
-  const { address, isConnected, status } = useAccount();
-  const { ready, connectWallet } = usePrivy();
+  const {
+    address,
+    isConnected,
+    status
+  } = useAccount();
+  const {
+    ready,
+    connectWallet
+  } = usePrivy();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const chipRef = useRef<HTMLButtonElement>(null);
@@ -42,11 +36,10 @@ function AccountChip() {
   // `ready` = Privy has finished reading its session from storage — must be
   // true before we show "Connect", otherwise it flashes on every navigation.
   const hydrated = mounted && ready && status !== 'connecting' && status !== 'reconnecting';
-
   const chipStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: '24px',
-    right: '24px',
+    position: 'relative',
+    top: 'auto',
+    right: 'auto',
     zIndex: 50,
     height: '40px',
     borderRadius: '999px',
@@ -58,260 +51,82 @@ function AccountChip() {
     display: 'inline-flex',
     alignItems: 'center',
     transition: 'background 200ms ease',
-    cursor: 'pointer',
+    cursor: 'pointer'
   };
-
   const labelStyle: React.CSSProperties = {
     fontSize: '13px',
     fontFamily: LINK_STYLE.fontFamily,
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap'
   };
 
   // Placeholder while hydrating — same size, no text flash
   if (!mounted) {
-    return (
-      <div
-        style={{ ...chipStyle, width: '120px', opacity: 0.6 }}
-        aria-hidden="true"
-      />
-    );
+    return <div style={{
+      ...chipStyle,
+      width: '120px',
+      opacity: 0.6
+    }} aria-hidden="true" />;
   }
 
   // Not connected
   if (!hydrated || !isConnected || !address) {
-    return (
-      <button
-        type="button"
-        onClick={() => connectWallet()}
-        style={{ ...chipStyle, padding: '0 18px' }}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
-                   hover:bg-white/20"
-        aria-label="Connect wallet"
-      >
-        <span style={{ ...labelStyle, color: 'rgba(255,255,255,0.85)' }}>
-          Connect
+    return <button type="button" onClick={() => connectWallet()} style={{
+      ...chipStyle,
+      padding: '0 18px'
+    }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+                   hover:bg-white/20" aria-label="Connect wallet">
+        <span style={{
+        ...labelStyle,
+        color: '#24466b'
+      }}>
+          Connect wallet
         </span>
-      </button>
-    );
+      </button>;
   }
 
   // Connected
   const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
-  return (
-    <>
-      <button
-        ref={chipRef}
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        style={{ ...chipStyle, padding: '0 18px' }}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-        aria-label="Open wallet menu"
-        aria-expanded={open}
-      >
-        <span style={{ ...labelStyle, color: 'rgba(255,255,255,0.85)' }}>
+  return <>
+      <button ref={chipRef} type="button" onClick={() => setOpen(p => !p)} style={{
+      ...chipStyle,
+      padding: '0 18px'
+    }} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40" aria-label="Open wallet menu" aria-expanded={open}>
+        <span style={{
+        ...labelStyle,
+        color: '#24466b'
+      }}>
           {short}
         </span>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <WalletDropdown address={address} triggerRef={chipRef} onClose={() => setOpen(false)} />
-        )}
-      </AnimatePresence>
-    </>
-  );
+      {createPortal(<AnimatePresence>
+        {open && <WalletDropdown address={address} triggerRef={chipRef} onClose={() => setOpen(false)} />}
+      </AnimatePresence>, document.body)}
+    </>;
 }
-
-export function Navbar({ onSendClick }: NavbarProps) {
+export function Navbar({
+  onSendClick
+}: NavbarProps) {
   const router = useRouter();
-  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  // Only animate in on the very first mount — not on every page navigation
-  const [hasAnimated, setHasAnimated] = useState(false);
-  useEffect(() => { setHasAnimated(true); }, []);
-
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 16);
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
-
-  const handleSend = useCallback(() => {
     setMobileOpen(false);
-    if (onSendClick) { onSendClick(); } else { router.push('/send'); }
-  }, [onSendClick, router]);
-
-  const pillStyle: React.CSSProperties = {
-    height: '56px',
-    borderRadius: '999px',
-    background: scrolled ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.18)',
-    border: '1px solid rgba(255,255,255,0.28)',
-    backdropFilter: 'blur(24px) saturate(1.6)',
-    WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-    boxShadow: scrolled
-      ? '0 8px 32px rgba(10,74,110,0.28), inset 0 1px 0 rgba(255,255,255,0.38)'
-      : '0 2px 16px rgba(10,74,110,0.15), inset 0 1px 0 rgba(255,255,255,0.32)',
-    transition: 'box-shadow 300ms ease, background 300ms ease',
-    padding: '0 8px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '2px',
+  }, [pathname]);
+  useEffect(() => {
+    const close = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, []);
+  const send = () => {
+    setMobileOpen(false);
+    if (onSendClick) {
+      onSendClick();
+    } else {
+      router.push('/send');
+    }
   };
-
-  return (
-    <>
-      {/* Floating account chip */}
-      <AccountChip />
-
-      <header
-        className="fixed top-0 inset-x-0 z-50 flex justify-center pointer-events-none"
-        style={{ paddingTop: '24px' }}
-      >
-        <motion.nav
-          initial={hasAnimated ? false : { opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          aria-label="Main navigation"
-          className="pointer-events-auto"
-          style={pillStyle}
-        >
-          {/* Logo */}
-          <a
-            href="/"
-            aria-label="Beam home"
-            className="flex items-center justify-center rounded-full shrink-0
-                       hover:bg-white/12 transition-colors duration-150
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            style={{ width: '48px', height: '48px' }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/svg star.svg"
-              alt="Beam"
-              width={44}
-              height={44}
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-          </a>
-
-          {/* Separator */}
-          <div
-            className="hidden sm:block shrink-0 mx-2"
-            style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.20)' }}
-            aria-hidden="true"
-          />
-
-          {/* Nav links */}
-          <div className="hidden sm:flex items-center gap-0.5">
-            {NAV_LINKS.map(({ label, href, external }) => (
-              <a
-                key={label}
-                href={href}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                className="rounded-full flex items-center
-                           text-white/80 hover:text-white
-                           hover:bg-white/12 transition-colors duration-150
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                style={{ ...LINK_STYLE, padding: '0 14px', height: '40px' }}
-              >
-                {label}
-              </a>
-            ))}
-          </div>
-
-          {/* Separator */}
-          <div
-            className="hidden sm:block shrink-0 mx-2"
-            style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.20)' }}
-            aria-hidden="true"
-          />
-
-          {/* CTA */}
-          <button
-            onClick={handleSend}
-            className="hidden sm:flex items-center justify-center shrink-0
-                       rounded-full transition-all duration-200
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
-                       cta-glow-border"
-            style={{
-              ...LINK_STYLE,
-              color: 'rgba(255,255,255,0.95)',
-              padding: '0 20px',
-              height: '40px',
-              background: 'rgba(255,255,255,0.14)',
-              border: '1px solid rgba(255,255,255,0.25)',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.22)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.14)'; }}
-            aria-label="Send a Beam"
-          >
-            Send a Beam
-          </button>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen((p) => !p)}
-            className="sm:hidden ml-1 w-9 h-9 rounded-full flex items-center justify-center
-                       border border-white/25 bg-white/10 text-white
-                       hover:bg-white/20 transition-colors focus-visible:outline-none"
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileOpen ? <X size={ICON_SIZE.md} /> : <Menu size={ICON_SIZE.md} />}
-          </button>
-        </motion.nav>
-      </header>
-
-      {/* Mobile dropdown */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            key="mobile-menu"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed z-40 sm:hidden flex flex-col gap-0.5 p-2"
-            style={{
-              top: '80px', left: '16px', right: '16px',
-              borderRadius: '18px',
-              background: 'rgba(255,255,255,0.20)',
-              border: '1px solid rgba(255,255,255,0.28)',
-              backdropFilter: 'blur(24px) saturate(1.6)',
-              WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-              boxShadow: '0 8px 32px rgba(10,74,110,0.22)',
-            }}
-          >
-            {NAV_LINKS.map(({ label, href, external }) => (
-              <a
-                key={label}
-                href={href}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                onClick={() => setMobileOpen(false)}
-                className="px-4 py-3 rounded-2xl hover:bg-white/10 transition-colors"
-                style={{ ...LINK_STYLE, fontSize: '14px' }}
-              >
-                {label}
-              </a>
-            ))}
-            <div className="h-px bg-white/15 my-1" />
-            <button
-              onClick={handleSend}
-              className="w-full py-3 rounded-2xl hover:bg-white/10 transition-colors"
-              style={{
-                ...LINK_STYLE,
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.90)',
-                border: '1px solid rgba(255,255,255,0.28)',
-                background: 'rgba(255,255,255,0.10)',
-              }}
-            >
-              Send a Beam
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
+  return <header className="premium-header"><div className="header-wallet"><AccountChip /></div><nav className="premium-nav" aria-label="Main navigation"><Link href="/" className="beam-wordmark" aria-label="Beam home"><BeamMark />beam</Link><div className="nav-links"><Link href="/#how-it-works">How it works</Link><Link href="/#faq">FAQ</Link><a href="https://docs.beam.finance" target="_blank" rel="noopener noreferrer">Docs</a><a href="https://twitter.com/beamfinance" target="_blank" rel="noopener noreferrer">Twitter</a></div><div className="nav-actions"><button onClick={send} className="premium-button nav-send">Send a Beam <ArrowUpRight size={15} /></button><button className="mobile-toggle" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(v => !v)}>{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button></div></nav>{mobileOpen && <div className="mobile-navigation" id="mobile-navigation"><Link href="/#how-it-works" onClick={() => setMobileOpen(false)}>How it works</Link><Link href="/#why-beam" onClick={() => setMobileOpen(false)}>Why Beam</Link><Link href="/#faq" onClick={() => setMobileOpen(false)}>FAQ</Link><Link href="/history">Your Beams</Link><button className="premium-button" onClick={send}>Send a Beam <ArrowUpRight size={16} /></button></div>}</header>;
 }

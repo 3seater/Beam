@@ -4,17 +4,17 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { parseUnits } from 'viem';
-import { ArrowLeft, Zap, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { GaslessBadge } from '@/components/ui/Badge';
+import { TxProgress } from '@/components/TxProgress';
 import { TokenPicker, type SelectedAsset } from '@/components/CreateBeamModal/TokenPicker';
 import { DollarAmountInput } from '@/components/CreateBeamModal/DollarAmountInput';
 import { FeeEstimate } from '@/components/CreateBeamModal/FeeEstimate';
 import { StepIndicator } from '@/components/CreateBeamModal/StepIndicator';
-import { BeamLinkDisplay } from '@/components/CreateBeamModal/BeamLinkDisplay';
+import { BeamSentReceipt } from '@/components/BeamSentReceipt';
 import { useDeposit } from '@/hooks/useDeposit';
 
 const ESTIMATE_SIGNER: `0x${string}` = '0x1111111111111111111111111111111111111111';
@@ -25,18 +25,7 @@ export interface CreateBeamModalProps {
 }
 
 /* ── Animated ellipsis ───────────────────────────────────────────────────────── */
-function AnimatedDots() {
-  const [count, setCount] = useState(1);
-  useEffect(() => {
-    const id = setInterval(() => setCount((c) => (c % 3) + 1), 500);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="inline-block w-5 text-left" aria-hidden="true">
-      {'.'.repeat(count)}
-    </span>
-  );
-}
+
 
 /* ── Main modal ─────────────────────────────────────────────────────────── */
 export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
@@ -66,7 +55,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
   /* ── Derived ──────────────────────────────────────────────────────────── */
   const isERC20 = selectedAsset?.type === 'erc20';
-  const isInProgress = ['approval-pending', 'approval-confirming', 'deposit-pending', 'deposit-confirming'].includes(step);
+  const isInProgress = ['swap-pending', 'swap-confirming', 'approval-pending', 'approval-confirming', 'deposit-pending', 'deposit-confirming'].includes(step);
   const isLinkReady = step === 'link-generated';
   const tokenAddress = isERC20 ? (selectedAsset as { type: 'erc20'; address: `0x${string}` }).address : null;
 
@@ -135,13 +124,13 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       : 'ETH';
     const usdAmount = parseFloat(dollarValue) || 0;
 
-    await startDeposit(
+    try { await startDeposit(
       tokenAddr,
       usdAmount,
       tokenSymbol,
       walletAddress,
       typeof window !== 'undefined' ? window.location.origin : '',
-    );
+    ); } finally { setSubmitting(false); }
   }, [isConnected, walletAddress, canConfirm, connectWallet, isERC20, tokenAddress, selectedAsset, dollarValue, startDeposit]);
 
   const title = isLinkReady ? 'Your Beam link is ready' : 'Send a Beam';
@@ -150,39 +139,11 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
     <Modal isOpen={isOpen} onClose={handleClose} title={title} className="!max-w-lg">
 
       {/* ── In-progress ──────────────────────────────────────────────────── */}
-      {isInProgress && (
-        <div className="flex flex-col items-center gap-8 py-6">
-          <div className="w-16 h-16 rounded-[18px] glass flex items-center justify-center shadow-glass animate-glow-pulse border-tracer">
-            <Zap size={ICON_SIZE.xl} className="text-white" />
-          </div>
-          <StepIndicator step={step} isERC20={isERC20} />
-          <p className="text-sm text-white/55 text-center">
-            {step === 'approval-pending' && <>Waiting for approval<AnimatedDots /></>}
-            {step === 'approval-confirming' && <>Confirming approval<AnimatedDots /></>}
-            {step === 'deposit-pending' && <>Waiting for deposit<AnimatedDots /></>}
-            {step === 'deposit-confirming' && <>Confirming on-chain<AnimatedDots /></>}
-          </p>
-        </div>
-      )}
+      {isInProgress && <TxProgress step={step} isERC20={isERC20} symbol={selectedAsset?.symbol ?? 'ETH'} />}
 
       {/* ── Link ready ───────────────────────────────────────────────────── */}
       {isLinkReady && beamLink && (
-        <div className="flex flex-col gap-5">
-          <div className="glass-sm flex items-center justify-center gap-2 py-3 px-4">
-            <span className="w-5 h-5 rounded-full bg-emerald-400/30 flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-emerald-300" aria-hidden="true" />
-            </span>
-            <span className="text-sm text-white/80">Beam sent successfully</span>
-          </div>
-          <p className="text-sm text-white/55">
-            Send this link. They claim in seconds.
-          </p>
-          <BeamLinkDisplay beamLink={beamLink} />
-          <div className="pt-2"><StepIndicator step={step} isERC20={isERC20} /></div>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={ICON_SIZE.sm} />} onClick={handleClose} className="self-start">
-            Send another
-          </Button>
-        </div>
+        <BeamSentReceipt beamLink={beamLink} logoUrl={selectedAsset?.type === 'erc20' ? selectedAsset.logoUrl : undefined} warning={depositError} amount={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(Number(dollarValue) || 0)} symbol={selectedAsset?.symbol ?? 'ETH'} onSendAnother={handleClose} />
       )}
 
       {/* ── Idle: send form ──────────────────────────────────────────────── */}
@@ -229,10 +190,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
             {!hydrated || !isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
           </Button>
 
-          <div className="flex items-center justify-center gap-2 -mt-2">
-            <GaslessBadge />
-            <span className="text-xs text-white/50">Recipients claim gaslessly — no gas, no wallet.</span>
-          </div>
+
         </div>
       )}
     </Modal>

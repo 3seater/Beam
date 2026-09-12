@@ -1,5 +1,6 @@
 // lib/wagmi-config.ts
-import { createConfig, http } from 'wagmi';
+import { http } from 'wagmi';
+import { createConfig } from '@privy-io/wagmi';
 import { robinhoodChain } from './chains';
 
 // In the browser we route all RPC calls through /api/rpc (our Next.js proxy)
