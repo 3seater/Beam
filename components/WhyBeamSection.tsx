@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 const FEATURES = [
   { icon: ShieldCheck, label: 'Cryptographically secure', description: 'Each link holds an ephemeral key that never touches a server. Only the link holder can claim.' },
@@ -44,7 +45,7 @@ export function WhyBeamSection() {
                            bg-white/12 border border-white/18 shrink-0 mt-0.5"
                 aria-hidden="true"
               >
-                <Icon size={20} className="text-white/75" />
+                <Icon size={ICON_SIZE.lg} className="text-white/70" />
               </span>
               <div>
                 <h3 className="text-lg font-medium text-white mb-2">{label}</h3>

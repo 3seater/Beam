@@ -4,21 +4,18 @@ import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiConfig } from '@/lib/wagmi-config';
 import { robinhoodChain } from '@/lib/chains';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const queryClient = new QueryClient();
 
-// Placeholder used during SSR/static-generation so the build can complete
-// without a real Privy App ID. At runtime (client-side) we validate the
-// real value inside the component.
 const PLACEHOLDER_APP_ID = 'placeholder-app-id';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? PLACEHOLDER_APP_ID;
 
-  // Validate the env var at runtime on the client only, not during
-  // static generation. Missing ID causes the SDK to fail gracefully with
-  // its own error rather than crashing the build.
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
       console.error(
@@ -28,25 +25,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // IMPORTANT: providers must stay mounted at all times so wagmi can reconnect
+  // in the background without losing the session. Only gate *children* rendering,
+  // not the provider tree itself — returning null here would destroy the wagmi
+  // context on every navigation and force a full reconnect on each page.
   return (
     <PrivyProvider
       appId={privyAppId}
       config={{
-        // Social login for claimers (embedded wallet auto-provisioned)
         loginMethods: ['apple', 'google', 'twitter', 'wallet'],
         embeddedWallets: {
           ethereum: {
             createOnLogin: 'users-without-wallets',
           },
         },
-        // External wallet options for senders — wagmi handles connector setup via wagmiConfig
         defaultChain: robinhoodChain,
         supportedChains: [robinhoodChain],
         appearance: {
-          // Match Beam's sky-blue glass aesthetic
-          theme: 'dark',
-          accentColor: '#4db8f0',        // --sky-light
-          logo: 'https://beam.finance/svg star.svg', // update to your hosted logo URL
+          theme: 'light',
+          accentColor: '#1a7ab5',
+          logo: 'https://beam.finance/svg star.svg',
           landingHeader: 'Sign in to Beam',
           loginMessage: 'Send and receive any token as a shareable link.',
           walletChainType: 'ethereum-only',
@@ -55,7 +53,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          {children}
+          {/* Gate children — not the providers — to avoid hydration mismatches */}
+          {mounted ? children : null}
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>

@@ -8,6 +8,8 @@
  * Results are cached for 15 s (the API's own cache window).
  */
 
+import { formatTokenValue } from '@/lib/format';
+
 interface RHJPriceEntry {
   tokenSymbol: string;
   bid: string;
@@ -68,13 +70,10 @@ export async function fetchTokenPriceUsd(symbol: string): Promise<number | null>
  * Respects the token's decimal precision for display (defaults to 18).
  * e.g. dollarToTokens(10, 130.5, 18) → "0.0766284"
  */
-export function dollarToTokens(usdAmount: number, priceUsd: number, decimals = 18): string {
+export function dollarToTokens(usdAmount: number, priceUsd: number, _decimals = 18): string {
   if (priceUsd <= 0) return '0';
   const tokens = usdAmount / priceUsd;
-  // Clamp display precision to actual token decimals
-  const maxDecimals = Math.min(decimals, 8);
-  return tokens.toPrecision(6).replace(/\.?0+$/, '');
-  void maxDecimals; // used by callers that need the raw value for parseUnits
+  return formatTokenValue(tokens);
 }
 
 /**

@@ -29,7 +29,7 @@ export function stockLogoUrl(ticker: string): string {
   return `https://assets.parqet.com/logos/symbol/${ticker.toUpperCase()}?format=png`;
 }
 
-/* ── WETH & USDG hardcoded (not in /rhj/assets, from official docs) ──────── */
+/* ── WETH, USDG, and community tokens hardcoded (not in /rhj/assets) ──────── */
 const CHAIN_TOKENS: RHToken[] = [
   {
     symbol: 'WETH',
@@ -45,6 +45,41 @@ const CHAIN_TOKENS: RHToken[] = [
     address: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
     decimals: 18,
     logoUrl: 'https://coin-images.coingecko.com/coins/images/51281/small/GDN_USDG_Token_200x200.png?1730484111',
+    isStock: false,
+  },
+  // ── Top community / meme tokens on Robinhood Chain ──────────────────────
+  // Addresses verified from Phemex, Gate.io, Binance, Bitget, OKX (Sept 2026)
+  // Logos: DexScreener CDN — sourced directly from each token's verified pair page
+  {
+    symbol: 'CASHCAT',
+    name: 'Cash Cat',
+    address: '0x020bfC650A365f8BB26819deAAbF3E21291018b4',
+    decimals: 18,
+    logoUrl: 'https://cdn.dexscreener.com/cms/images/Lq7a3pS9Wn8EuGp0?width=64&height=64&quality=95&format=auto',
+    isStock: false,
+  },
+  {
+    symbol: 'PONS',
+    name: 'Pons',
+    address: '0x39dBED3a2bd333467115dE45665cC57F813C4571',
+    decimals: 18,
+    logoUrl: 'https://cdn.dexscreener.com/cms/images/dkmXs8KYMyMXjuU1?width=64&height=64&quality=95&format=auto',
+    isStock: false,
+  },
+  {
+    symbol: 'AI',
+    name: 'Artificial Inu',
+    address: '0x2e8c31162b855a2ffa90f6f8634643ad6f111e18',
+    decimals: 18,
+    logoUrl: 'https://cdn.dexscreener.com/cms/images/U6RIzs8Fm7Jar6GE?width=64&height=64&quality=95&format=auto',
+    isStock: false,
+  },
+  {
+    symbol: 'MEME',
+    name: 'A Meme Coin',
+    address: '0x385f4f8ae47651ce5f58f5265395a669f8281e18',
+    decimals: 18,
+    logoUrl: 'https://cdn.dexscreener.com/cms/images/pPWqEwHoGm1tbUMt?width=64&height=64&quality=95&format=auto',
     isStock: false,
   },
 ];
@@ -153,4 +188,5 @@ export function clearTokenCache() {
  */
 export const POPULAR_SYMBOLS = [
   'NVDA', 'AAPL', 'TSLA', 'MSFT', 'META', 'GOOGL', 'AMZN', 'SPCX', 'MU', 'USDG',
+  'CASHCAT', 'PONS', 'AI', 'MEME',
 ];

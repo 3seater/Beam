@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
+import { ICON_SIZE } from '@/lib/icons';
+import { WalletDropdown } from '@/components/WalletDropdown';
 
 export interface NavbarProps {
   onSendClick?: () => void;
@@ -24,10 +28,107 @@ const LINK_STYLE: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
+/* ── Account chip — always visible top-right, connect or wallet menu ─────── */
+function AccountChip() {
+  const { address, isConnected, status } = useAccount();
+  const { ready, connectWallet } = usePrivy();
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const chipRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setMounted(true), []);
+
+  // During SSR / before hydration, render a stable placeholder so the
+  // pill never flashes or disappears between page navigations.
+  // `ready` = Privy has finished reading its session from storage — must be
+  // true before we show "Connect", otherwise it flashes on every navigation.
+  const hydrated = mounted && ready && status !== 'connecting' && status !== 'reconnecting';
+
+  const chipStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: '24px',
+    right: '24px',
+    zIndex: 50,
+    height: '40px',
+    borderRadius: '999px',
+    background: open ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.28)',
+    backdropFilter: 'blur(24px) saturate(1.6)',
+    WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+    boxShadow: '0 2px 16px rgba(10,74,110,0.15), inset 0 1px 0 rgba(255,255,255,0.32)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    transition: 'background 200ms ease',
+    cursor: 'pointer',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '13px',
+    fontFamily: LINK_STYLE.fontFamily,
+    whiteSpace: 'nowrap',
+  };
+
+  // Placeholder while hydrating — same size, no text flash
+  if (!mounted) {
+    return (
+      <div
+        style={{ ...chipStyle, width: '120px', opacity: 0.6 }}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  // Not connected
+  if (!hydrated || !isConnected || !address) {
+    return (
+      <button
+        type="button"
+        onClick={() => connectWallet()}
+        style={{ ...chipStyle, padding: '0 18px' }}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+                   hover:bg-white/20"
+        aria-label="Connect wallet"
+      >
+        <span style={{ ...labelStyle, color: 'rgba(255,255,255,0.85)' }}>
+          Connect
+        </span>
+      </button>
+    );
+  }
+
+  // Connected
+  const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
+  return (
+    <>
+      <button
+        ref={chipRef}
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        style={{ ...chipStyle, padding: '0 18px' }}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        aria-label="Open wallet menu"
+        aria-expanded={open}
+      >
+        <span style={{ ...labelStyle, color: 'rgba(255,255,255,0.85)' }}>
+          {short}
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <WalletDropdown address={address} triggerRef={chipRef} onClose={() => setOpen(false)} />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 export function Navbar({ onSendClick }: NavbarProps) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Only animate in on the very first mount — not on every page navigation
+  const [hasAnimated, setHasAnimated] = useState(false);
+  useEffect(() => { setHasAnimated(true); }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 16);
@@ -59,12 +160,15 @@ export function Navbar({ onSendClick }: NavbarProps) {
 
   return (
     <>
+      {/* Floating account chip */}
+      <AccountChip />
+
       <header
         className="fixed top-0 inset-x-0 z-50 flex justify-center pointer-events-none"
         style={{ paddingTop: '24px' }}
       >
         <motion.nav
-          initial={{ opacity: 0, y: -12 }}
+          initial={hasAnimated ? false : { opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           aria-label="Main navigation"
@@ -153,7 +257,7 @@ export function Navbar({ onSendClick }: NavbarProps) {
                        hover:bg-white/20 transition-colors focus-visible:outline-none"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
-            {mobileOpen ? <X size={15} /> : <Menu size={15} />}
+            {mobileOpen ? <X size={ICON_SIZE.md} /> : <Menu size={ICON_SIZE.md} />}
           </button>
         </motion.nav>
       </header>

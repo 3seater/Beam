@@ -14,6 +14,7 @@
  */
 
 import { formatUnits } from 'viem';
+import { formatTokenValue } from '@/lib/format';
 
 // Native ETH sentinel used by 0x
 export const ZERO_EX_NATIVE_ETH = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -156,7 +157,7 @@ function normalisePrice(data: Record<string, unknown>): SwapPrice {
     route: (data.route as SwapRoute) ?? { fills: [] },
     totalNetworkFee: String(data.totalNetworkFee ?? '0'),
     liquidityAvailable: Boolean(data.liquidityAvailable ?? true),
-    buyAmountFormatted: Number(buyAmountFormatted).toPrecision(6).replace(/\.?0+$/, ''),
+    buyAmountFormatted: formatTokenValue(Number(buyAmountFormatted)),
     priceImpactBps,
   };
 }

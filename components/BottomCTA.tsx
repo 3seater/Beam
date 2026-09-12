@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 export interface BottomCTAProps {
   onSendClick?: () => void;
@@ -40,7 +41,7 @@ export function BottomCTA({ onSendClick }: BottomCTAProps) {
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           >
-            <Zap size={28} />
+            <Zap size={ICON_SIZE.xl} />
           </motion.div>
 
           <h2
@@ -61,7 +62,7 @@ export function BottomCTA({ onSendClick }: BottomCTAProps) {
             aria-label="Send a Beam"
           >
             Send a Beam
-            <ArrowRight size={16} aria-hidden="true" />
+            <ArrowRight size={ICON_SIZE.md} aria-hidden="true" />
           </button>
         </motion.div>
       </div>

@@ -1,12 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Copy, Check } from 'lucide-react';
-import {
-  TwitterShareButton, TwitterIcon,
-  WhatsappShareButton, WhatsappIcon,
-  TelegramShareButton, TelegramIcon,
-} from 'react-share';
+import { Copy, Check, MessageCircle, X as XIcon, Send, Phone } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 export interface BeamLinkDisplayProps {
   beamLink: string;
@@ -14,8 +10,40 @@ export interface BeamLinkDisplayProps {
 }
 
 const SHARE_MESSAGE = 'You received a Beam — claim your tokens with just a social login. No wallet needed:';
-const ICON_SIZE = 40;
-const BORDER_RADIUS = 10;
+
+/* ── Share channel config ────────────────────────────────────────────────── */
+interface ShareChannel {
+  label: string;
+  icon: React.ReactNode;
+  /** Returns the URL to open, or null if handled via onClick */
+  href: (link: string) => string;
+}
+
+const SHARE_CHANNELS: ShareChannel[] = [
+  {
+    label: 'iMessage',
+    icon: <MessageCircle size={ICON_SIZE.sm} aria-hidden="true" />,
+    href: (link) => `sms:&body=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
+  },
+  {
+    label: 'X',
+    icon: <XIcon size={ICON_SIZE.sm} aria-hidden="true" />,
+    href: (link) =>
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
+  },
+  {
+    label: 'WhatsApp',
+    icon: <Phone size={ICON_SIZE.sm} aria-hidden="true" />,
+    href: (link) =>
+      `https://wa.me/?text=${encodeURIComponent(`${SHARE_MESSAGE}\n${link}`)}`,
+  },
+  {
+    label: 'Telegram',
+    icon: <Send size={ICON_SIZE.sm} aria-hidden="true" />,
+    href: (link) =>
+      `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(SHARE_MESSAGE)}`,
+  },
+];
 
 export function BeamLinkDisplay({ beamLink, className = '' }: BeamLinkDisplayProps) {
   const [copied, setCopied] = useState(false);
@@ -34,9 +62,6 @@ export function BeamLinkDisplay({ beamLink, className = '' }: BeamLinkDisplayPro
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [beamLink]);
-
-  // iMessage uses the SMS URL scheme — not in react-share, handled manually
-  const iMessageUrl = `sms:&body=${encodeURIComponent(`${SHARE_MESSAGE}\n${beamLink}`)}`;
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
@@ -62,71 +87,39 @@ export function BeamLinkDisplay({ beamLink, className = '' }: BeamLinkDisplayPro
           ].join(' ')}
         >
           {copied
-            ? <><Check size={13} aria-hidden="true" /> Copied</>
-            : <><Copy size={13} aria-hidden="true" /> Copy</>
+            ? <><Check size={ICON_SIZE.xs} aria-hidden="true" /> Copied</>
+            : <><Copy size={ICON_SIZE.xs} aria-hidden="true" /> Copy</>
           }
         </button>
       </div>
 
       {/* Share buttons */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-white/40">Share via</p>
-        <div className="flex items-center gap-3">
-
-          {/* iMessage — SMS scheme, manual */}
-          <a
-            href={iMessageUrl}
-            aria-label="Share via iMessage"
-            className="opacity-90 hover:opacity-100 transition-opacity"
-          >
-            <span className="flex flex-col items-center gap-1">
+        <p className="text-xs text-white/50">Share via</p>
+        <div className="flex items-center gap-2">
+          {SHARE_CHANNELS.map(({ label, icon, href }) => (
+            <a
+              key={label}
+              href={href(beamLink)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Share via ${label}`}
+              className="flex flex-col items-center gap-1.5 group"
+            >
               <span
-                className="flex items-center justify-center rounded-[10px] text-white text-lg font-bold"
-                style={{ width: ICON_SIZE, height: ICON_SIZE, background: '#34C759' }}
-                aria-hidden="true"
+                className={[
+                  'flex items-center justify-center w-10 h-10 rounded-xl',
+                  'glass-sm text-white/70',
+                  'group-hover:bg-white/20 group-hover:text-white transition-all duration-150',
+                ].join(' ')}
               >
-                &#9993;
+                {icon}
               </span>
-              <span className="text-[10px] text-white/50">iMessage</span>
-            </span>
-          </a>
-
-          {/* X / Twitter */}
-          <span className="flex flex-col items-center gap-1">
-            <TwitterShareButton
-              url={beamLink}
-              title={SHARE_MESSAGE}
-              aria-label="Share via X"
-            >
-              <TwitterIcon size={ICON_SIZE} borderRadius={BORDER_RADIUS} />
-            </TwitterShareButton>
-            <span className="text-[10px] text-white/50">X</span>
-          </span>
-
-          {/* WhatsApp */}
-          <span className="flex flex-col items-center gap-1">
-            <WhatsappShareButton
-              url={beamLink}
-              title={SHARE_MESSAGE}
-              aria-label="Share via WhatsApp"
-            >
-              <WhatsappIcon size={ICON_SIZE} borderRadius={BORDER_RADIUS} />
-            </WhatsappShareButton>
-            <span className="text-[10px] text-white/50">WhatsApp</span>
-          </span>
-
-          {/* Telegram */}
-          <span className="flex flex-col items-center gap-1">
-            <TelegramShareButton
-              url={beamLink}
-              title={SHARE_MESSAGE}
-              aria-label="Share via Telegram"
-            >
-              <TelegramIcon size={ICON_SIZE} borderRadius={BORDER_RADIUS} />
-            </TelegramShareButton>
-            <span className="text-[10px] text-white/50">Telegram</span>
-          </span>
-
+              <span className="text-[11px] text-white/50 group-hover:text-white/70 transition-colors">
+                {label}
+              </span>
+            </a>
+          ))}
         </div>
       </div>
     </div>

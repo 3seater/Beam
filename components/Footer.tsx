@@ -84,8 +84,7 @@ export function Footer() {
                     fontSize: '12px',
                     fontWeight: 500,
                     color: 'rgba(255,255,255,0.40)',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '0.01em',
                     marginBottom: '4px',
                   }}
                 >

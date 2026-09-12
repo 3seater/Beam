@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Copy, MessageCircle, CheckCircle2 } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import { ChainBadge, GaslessBadge } from '@/components/ui/Badge';
 
 export function BeamPreviewCard() {
@@ -16,7 +17,7 @@ export function BeamPreviewCard() {
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[0.625rem] text-white/40 tracking-wider font-normal mb-1">You received</p>
+          <p className="text-xs text-white/60 tracking-wider font-normal mb-1">You received</p>
           <p className="text-3xl font-medium text-white tracking-tight leading-none">0.05 ETH</p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -27,7 +28,7 @@ export function BeamPreviewCard() {
 
       {/* Success state */}
       <div className="glass-sm flex items-center gap-2 px-3 py-2">
-        <CheckCircle2 size={14} className="text-emerald-300 shrink-0" aria-hidden="true" />
+        <CheckCircle2 size={ICON_SIZE.sm} className="text-emerald-300 shrink-0" aria-hidden="true" />
         <span className="text-xs text-white/75">Claimed 0.05 ETH</span>
       </div>
 
@@ -48,13 +49,13 @@ export function BeamPreviewCard() {
       {/* Actions */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-2">
-          <span className="glass-pill flex items-center gap-1 px-2.5 py-1 text-[0.6rem] font-normal text-white/65">
-            <MessageCircle size={9} aria-hidden="true" />
+          <span className="glass-pill flex items-center gap-1.5 px-2.5 py-1 text-xs font-normal text-white/70">
+            <MessageCircle size={ICON_SIZE.xs} aria-hidden="true" />
             iMessage
           </span>
         </div>
-        <span className="glass-pill flex items-center gap-1 px-2.5 py-1 text-[0.6rem] font-normal text-white/65">
-          <Copy size={9} aria-hidden="true" />
+        <span className="glass-pill flex items-center gap-1.5 px-2.5 py-1 text-xs font-normal text-white/70">
+          <Copy size={ICON_SIZE.xs} aria-hidden="true" />
           Copy link
         </span>
       </div>

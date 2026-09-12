@@ -20,6 +20,7 @@
  */
 
 import { encodeAbiParameters, encodeFunctionData, keccak256, formatUnits } from 'viem';
+import { formatTokenValue } from '@/lib/format';
 
 // ── Addresses ─────────────────────────────────────────────────────────────────
 export const POOL_MANAGER = '0x8366a39cc670b4001a1121b8f6a443a643e40951' as `0x${string}`;
@@ -188,15 +189,20 @@ export async function fetchUniswapQuote(
   tokenAddress: `0x${string}`,
   ethAmountWei: bigint,
 ): Promise<UniswapQuote | null> {
-  // 1. Trading API (if key available)
-  const apiQuote = await tryTradingApiQuote(tokenAddress, ethAmountWei, null);
-  if (apiQuote) return apiQuote;
+  // Race Trading API against V4 StateView — whoever resolves first wins.
+  // V4 is a single on-chain read (~50–150 ms); the Trading API is typically
+  // ~500 ms–2 s. If both fail we fall back to V3.
+  try {
+    const result = await Promise.any([
+      tryTradingApiQuote(tokenAddress, ethAmountWei, null),
+      tryV4Quote(tokenAddress, ethAmountWei),
+    ]);
+    if (result) return result;
+  } catch {
+    // Promise.any rejects only if ALL promises reject — fall through to V3
+  }
 
-  // 2. V4 StateView on-chain
-  const v4Quote = await tryV4Quote(tokenAddress, ethAmountWei);
-  if (v4Quote) return v4Quote;
-
-  // 3. V3 fallback
+  // V3 last resort
   return tryV3Quote(tokenAddress, ethAmountWei);
 }
 
@@ -527,7 +533,7 @@ function buildV3Calldata(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(amount: bigint): string {
-  return Number(formatUnits(amount, 18)).toPrecision(6).replace(/\.?0+$/, '');
+  return formatTokenValue(Number(formatUnits(amount, 18)));
 }
 
 // ── Deprecated ────────────────────────────────────────────────────────────────

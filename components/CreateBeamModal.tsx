@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { usePrivy } from '@privy-io/react-auth';
 import { parseUnits } from 'viem';
-import { ArrowLeft, Zap, Wallet, LogOut } from 'lucide-react';
+import { ArrowLeft, Zap, Wallet } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -23,23 +24,17 @@ export interface CreateBeamModalProps {
   onClose: () => void;
 }
 
-/* ── Connected wallet bar ────────────────────────────────────────────────── */
-function ConnectedBar({ address, onDisconnect }: { address: string; onDisconnect: () => void }) {
-  const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
+/* ── Animated ellipsis ───────────────────────────────────────────────────────── */
+function AnimatedDots() {
+  const [count, setCount] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => setCount((c) => (c % 3) + 1), 500);
+    return () => clearInterval(id);
+  }, []);
   return (
-    <div className="flex items-center gap-2 glass-sm rounded-xl px-3 py-2">
-      <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" aria-hidden="true" />
-      <span className="text-xs text-white/70 flex-1 font-mono">{short}</span>
-      <button
-        type="button"
-        onClick={onDisconnect}
-        className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors"
-        aria-label="Disconnect wallet"
-      >
-        <LogOut size={11} />
-        Disconnect
-      </button>
-    </div>
+    <span className="inline-block w-5 text-left" aria-hidden="true">
+      {'.'.repeat(count)}
+    </span>
   );
 }
 
@@ -47,7 +42,6 @@ function ConnectedBar({ address, onDisconnect }: { address: string; onDisconnect
 export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
   const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
   const { connectWallet, ready } = usePrivy();
-  const { wallets } = useWallets();
 
   // Same hydration guard as send/page.tsx — prevents the wallet bar from
   // flashing "Connect Wallet" on first render before wagmi rehydrates.
@@ -55,32 +49,34 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
   useEffect(() => setMounted(true), []);
   const hydrated = mounted && accountStatus !== 'connecting' && accountStatus !== 'reconnecting';
 
-  const handleDisconnect = useCallback(async () => {
-    const active = wallets[0];
-    if (active) await active.disconnect();
-  }, [wallets]);
-
   // When we open Privy's wallet picker we visually hide our modal so
   // there's no stacking-context conflict. It comes back once connected.
   const [reopenAfterConnect, setReopenAfterConnect] = useState(false);
 
   /* ── Form state ───────────────────────────────────────────────────────── */
-  const [selectedAsset, setSelectedAsset] = useState<SelectedAsset>({ type: 'native', symbol: 'ETH' });
+  const [selectedAsset, setSelectedAsset] = useState<SelectedAsset | null>(null);
   const [dollarValue, setDollarValue] = useState('');
   const [tokenAmount, setTokenAmount] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>('Please enter an amount');
   const [feeAvailable, setFeeAvailable] = useState(true);
+  // Covers the gap between button click and step leaving 'idle' (wallet prompt, RPC call)
+  const [submitting, setSubmitting] = useState(false);
 
   const { step, beamLink, error: depositError, startDeposit, reset } = useDeposit();
 
   /* ── Derived ──────────────────────────────────────────────────────────── */
-  const isERC20 = selectedAsset.type === 'erc20';
+  const isERC20 = selectedAsset?.type === 'erc20';
   const isInProgress = ['approval-pending', 'approval-confirming', 'deposit-pending', 'deposit-confirming'].includes(step);
   const isLinkReady = step === 'link-generated';
   const tokenAddress = isERC20 ? (selectedAsset as { type: 'erc20'; address: `0x${string}` }).address : null;
 
+  // Once step leaves idle (tx kicked off or errored), clear the local submitting flag
+  useEffect(() => {
+    if (step !== 'idle') setSubmitting(false);
+  }, [step]);
+
   const amountWei: bigint | null = useMemo(() => {
-    if (!tokenAmount || amountError !== null) return null;
+    if (!selectedAsset || !tokenAmount || amountError !== null) return null;
     const decimals = selectedAsset.type === 'erc20' ? selectedAsset.decimals : 18;
     try { return parseUnits(tokenAmount, decimals); } catch { return null; }
   }, [tokenAmount, amountError, selectedAsset]);
@@ -98,7 +94,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
   }, [isConnected, reopenAfterConnect, onClose]);
   useEffect(() => {
     if (isOpen && step === 'idle') {
-      setSelectedAsset({ type: 'native', symbol: 'ETH' });
+      setSelectedAsset(null);
       setDollarValue('');
       setTokenAmount(null);
       setAmountError('Please enter an amount');
@@ -109,7 +105,8 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
   const handleClose = useCallback(() => {
     if (isInProgress) return;
     reset();
-    setSelectedAsset({ type: 'native', symbol: 'ETH' });
+    setSubmitting(false);
+    setSelectedAsset(null);
     setDollarValue('');
     setTokenAmount(null);
     setAmountError('Please enter an amount');
@@ -117,7 +114,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
     onClose();
   }, [isInProgress, reset, onClose]);
 
-  const handleAssetChange = useCallback((asset: SelectedAsset) => {
+  const handleAssetChange = useCallback((asset: SelectedAsset | null) => {
     setSelectedAsset(asset);
     setDollarValue('');
     setTokenAmount(null);
@@ -126,11 +123,11 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
   const handleConfirm = useCallback(async () => {
     if (!isConnected || !walletAddress) {
-      // Open Privy's own wallet picker — correctly z-indexed, handles MetaMask/WC/etc.
       connectWallet();
       return;
     }
     if (!canConfirm) return;
+    setSubmitting(true);
 
     const tokenAddr = isERC20 ? tokenAddress : null;
     const tokenSymbol = isERC20
@@ -155,18 +152,15 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       {/* ── In-progress ──────────────────────────────────────────────────── */}
       {isInProgress && (
         <div className="flex flex-col items-center gap-8 py-6">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full glass flex items-center justify-center animate-glow-pulse">
-              <Zap size={28} className="text-white" />
-            </div>
-            <div className="absolute inset-0 rounded-full bg-white/10 blur-lg" aria-hidden="true" />
+          <div className="w-16 h-16 rounded-[18px] glass flex items-center justify-center shadow-glass animate-glow-pulse border-tracer">
+            <Zap size={ICON_SIZE.xl} className="text-white" />
           </div>
           <StepIndicator step={step} isERC20={isERC20} />
           <p className="text-sm text-white/55 text-center">
-            {step === 'approval-pending' && 'Waiting for approval…'}
-            {step === 'approval-confirming' && 'Confirming approval…'}
-            {step === 'deposit-pending' && 'Waiting for deposit…'}
-            {step === 'deposit-confirming' && 'Confirming on-chain…'}
+            {step === 'approval-pending' && <>Waiting for approval<AnimatedDots /></>}
+            {step === 'approval-confirming' && <>Confirming approval<AnimatedDots /></>}
+            {step === 'deposit-pending' && <>Waiting for deposit<AnimatedDots /></>}
+            {step === 'deposit-confirming' && <>Confirming on-chain<AnimatedDots /></>}
           </p>
         </div>
       )}
@@ -185,7 +179,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
           </p>
           <BeamLinkDisplay beamLink={beamLink} />
           <div className="pt-2"><StepIndicator step={step} isERC20={isERC20} /></div>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />} onClick={handleClose} className="self-start">
+          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={ICON_SIZE.sm} />} onClick={handleClose} className="self-start">
             Send another
           </Button>
         </div>
@@ -194,10 +188,6 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
       {/* ── Idle: send form ──────────────────────────────────────────────── */}
       {step === 'idle' && (
         <div className="flex flex-col gap-5">
-
-          {hydrated && isConnected && walletAddress && (
-            <ConnectedBar address={walletAddress} onDisconnect={handleDisconnect} />
-          )}
 
           <TokenPicker value={selectedAsset} onChange={handleAssetChange} />
 
@@ -208,7 +198,8 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
             onChange={setDollarValue}
             onTokenAmount={setTokenAmount}
             onError={setAmountError}
-            selectedAsset={selectedAsset}
+            selectedAsset={selectedAsset ?? { type: 'native', symbol: 'ETH' }}
+            disabled={selectedAsset === null}
           />
 
           <FeeEstimate
@@ -227,18 +218,20 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
           <Button
             variant="primary"
             size="lg"
+            isLoading={submitting}
+            loadingLabel={!hydrated || !isConnected ? 'Connecting' : 'Sending'}
             disabled={hydrated && isConnected ? !canConfirm : !ready}
             onClick={handleConfirm}
             aria-label={!hydrated || !isConnected ? 'Connect wallet to send' : 'Confirm and generate Beam link'}
             className="w-full !justify-center"
-            leftIcon={!hydrated || !isConnected ? <Wallet size={16} /> : undefined}
+            leftIcon={!hydrated || !isConnected ? <Wallet size={ICON_SIZE.md} /> : undefined}
           >
             {!hydrated || !isConnected ? 'Connect Wallet to Send' : 'Confirm & Send'}
           </Button>
 
           <div className="flex items-center justify-center gap-2 -mt-2">
             <GaslessBadge />
-            <span className="text-xs text-white/40">Recipients claim gaslessly — no gas, no wallet.</span>
+            <span className="text-xs text-white/50">Recipients claim gaslessly — no gas, no wallet.</span>
           </div>
         </div>
       )}

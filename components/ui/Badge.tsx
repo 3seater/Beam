@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { Zap, Link2 } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 export type BadgeVariant = 'chain' | 'gasless' | 'status' | 'success' | 'warn';
 
@@ -16,7 +17,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   chain: 'bg-white/15 border-white/30 text-white/90',
   gasless: 'bg-white/15 border-white/30 text-white/90',
   status: 'bg-white/10 border-white/20 text-white/75',
-  success: 'bg-emerald-400/15 border-emerald-300/30 text-emerald-100',
+  success: 'bg-white/20 border-white/35 text-white',
   warn: 'bg-amber-400/15  border-amber-300/30  text-amber-100',
 };
 
@@ -29,8 +30,8 @@ const defaultLabels: Record<BadgeVariant, string> = {
 };
 
 function DefaultIcon({ variant }: { variant: BadgeVariant }) {
-  if (variant === 'chain') return <Link2 size={10} aria-hidden="true" className="shrink-0" />;
-  if (variant === 'gasless') return <Zap size={10} aria-hidden="true" className="shrink-0" />;
+  if (variant === 'chain') return <Link2 size={ICON_SIZE.xs} aria-hidden="true" className="shrink-0" />;
+  if (variant === 'gasless') return <Zap size={ICON_SIZE.xs} aria-hidden="true" className="shrink-0" />;
   return null;
 }
 

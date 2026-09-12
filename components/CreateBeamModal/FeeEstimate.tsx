@@ -4,6 +4,7 @@ import { useEffect, useId } from 'react';
 import { useEstimateGas, useAccount } from 'wagmi';
 import { formatEther, encodeFunctionData } from 'viem';
 import { Fuel, AlertTriangle, Loader2 } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 
@@ -59,7 +60,7 @@ export function FeeEstimate({
   const feeWei = gasEstimate !== undefined ? gasEstimate * GAS_PRICE_WEI : null;
   const feeEth = feeWei !== null ? formatEther(feeWei) : null;
   const feeDisplay = feeEth !== null
-    ? Number(feeEth).toFixed(8).replace(/\.?0+$/, '') || '< 0.00000001'
+    ? Number(feeEth).toFixed(6).replace(/\.?0+$/, '') || '< 0.000001'
     : null;
   const available = !isLoading && !isError && feeDisplay !== null;
 
@@ -72,14 +73,14 @@ export function FeeEstimate({
 
   if (isLoading) return (
     <div className={`flex items-center gap-2 text-sm text-white/50 ${className}`} aria-live="polite" aria-busy="true">
-      <Loader2 size={13} className="animate-spin shrink-0" aria-hidden="true" />
+      <Loader2 size={ICON_SIZE.sm} className="animate-spin shrink-0" aria-hidden="true" />
       <span>Estimating fee…</span>
     </div>
   );
 
   if (isError || feeDisplay === null) return (
     <div className={`flex items-center gap-2 text-sm text-amber-300 ${className}`} role="alert" aria-describedby={descriptionId}>
-      <AlertTriangle size={13} className="shrink-0" aria-hidden="true" />
+      <AlertTriangle size={ICON_SIZE.sm} className="shrink-0" aria-hidden="true" />
       <span id={descriptionId}>Fee estimation unavailable</span>
     </div>
   );
@@ -87,7 +88,7 @@ export function FeeEstimate({
   return (
     <div className={`flex items-center justify-between text-sm ${className}`} aria-live="polite">
       <span className="flex items-center gap-1.5 text-white/50">
-        <Fuel size={12} aria-hidden="true" className="shrink-0" />
+        <Fuel size={ICON_SIZE.sm} aria-hidden="true" className="shrink-0" />
         Estimated fee
       </span>
       <span className="font-mono text-white/80">{feeDisplay} ETH</span>

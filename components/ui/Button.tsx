@@ -19,6 +19,8 @@ export interface ButtonProps
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
+  /** Override the label shown while loading. Defaults to children. */
+  loadingLabel?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   'aria-label'?: string;
@@ -43,12 +45,24 @@ const sizeClass: Record<ButtonSize, string> = {
 
 const spinnerSize: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
 
+/** Three bouncing dots shown inline while loading */
+function LoadingDots() {
+  return (
+    <span className="btn-dots flex items-center gap-[3px] ml-1" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       variant = 'primary',
       size = 'md',
       isLoading = false,
+      loadingLabel,
       leftIcon,
       rightIcon,
       disabled,
@@ -59,13 +73,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const isDisabled = disabled || isLoading;
+
     const cls = [
       variantClass[variant],
       variant !== 'link' ? sizeClass[size] : '',
+      // shimmer sweep + cursor:wait when loading (primary only — ghost has no fill to sweep)
+      isLoading && variant === 'primary' ? 'btn-loading' : '',
       className,
     ]
       .filter(Boolean)
       .join(' ');
+
+    const label = isLoading && loadingLabel ? loadingLabel : children;
 
     return (
       <motion.button
@@ -79,6 +98,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ duration: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
         {...rest}
       >
+        {/* Icon slot: spinner when loading, otherwise leftIcon */}
         {isLoading ? (
           <span className="shrink-0" aria-hidden="true">
             <Loader2 className="animate-spin" size={spinnerSize[size]} />
@@ -87,8 +107,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           leftIcon && <span className="shrink-0" aria-hidden="true">{leftIcon}</span>
         )}
 
-        {children}
+        {/* Label + bouncing dots */}
+        <span className="flex items-center">
+          {label}
+          {isLoading && <LoadingDots />}
+        </span>
 
+        {/* Right icon — hidden while loading so dots have breathing room */}
         {!isLoading && rightIcon && (
           <span className="shrink-0" aria-hidden="true">{rightIcon}</span>
         )}

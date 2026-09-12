@@ -1,12 +1,7 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import './globals.css';
 import { Navbar } from '@/components/Navbar';
-
-const Providers = dynamic(
-  () => import('@/components/providers/PrivyProviderWrapper').then((m) => m.Providers),
-  { ssr: false },
-);
+import { Providers } from '@/components/providers/PrivyProviderWrapper';
 
 export const metadata: Metadata = {
   title: 'Beam',

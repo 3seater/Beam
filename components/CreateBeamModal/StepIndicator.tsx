@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import type { BeamStep } from '@/lib/types';
 
 type StepStatus = 'upcoming' | 'active' | 'completed';
@@ -32,7 +33,7 @@ function resolveStatus(def: StepDef, step: BeamStep): StepStatus {
 function StepNode({ status }: { status: StepStatus }) {
   if (status === 'completed') return (
     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80" aria-hidden="true">
-      <Check size={13} strokeWidth={3} className="text-sky-mid" />
+      <Check size={ICON_SIZE.sm} strokeWidth={3} className="text-sky-mid" />
     </span>
   );
   if (status === 'active') return (

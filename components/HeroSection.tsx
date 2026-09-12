@@ -4,6 +4,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import Image from 'next/image';
 
 export interface HeroSectionProps {
@@ -22,6 +23,10 @@ const FEATURED_ASSETS = [
   { symbol: 'ETH', name: 'Ethereum', logoUrl: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' },
   { symbol: 'USDG', name: 'Global Dollar', logoUrl: 'https://coin-images.coingecko.com/coins/images/51281/small/GDN_USDG_Token_200x200.png?1730484111' },
   { symbol: 'MU', name: 'Micron Technology', logoUrl: 'https://assets.parqet.com/logos/symbol/MU?format=png' },
+  { symbol: 'CASHCAT', name: 'Cash Cat', logoUrl: 'https://cdn.dexscreener.com/cms/images/Lq7a3pS9Wn8EuGp0?width=64&height=64&quality=95&format=auto' },
+  { symbol: 'PONS', name: 'Pons', logoUrl: 'https://cdn.dexscreener.com/cms/images/dkmXs8KYMyMXjuU1?width=64&height=64&quality=95&format=auto' },
+  { symbol: 'AI', name: 'Artificial Inu', logoUrl: 'https://cdn.dexscreener.com/cms/images/U6RIzs8Fm7Jar6GE?width=64&height=64&quality=95&format=auto' },
+  { symbol: 'MEME', name: 'A Meme Coin', logoUrl: 'https://cdn.dexscreener.com/cms/images/pPWqEwHoGm1tbUMt?width=64&height=64&quality=95&format=auto' },
 ];
 
 // 4 rows, each starting at a different offset so they don't all rotate together
@@ -195,7 +200,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
                 aria-label="Send a Beam"
               >
                 Send a Beam
-                <ArrowRight size={18} aria-hidden="true" />
+                <ArrowRight size={ICON_SIZE.md} aria-hidden="true" />
               </button>
               <a href="#how-it-works" className="btn-glass-ghost !px-7 !py-4 !text-base">
                 How it works

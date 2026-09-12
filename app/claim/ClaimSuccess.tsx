@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight } from 'lucide-react';
+import { ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { isAddress, parseUnits } from 'viem';
+import Image from 'next/image';
 
 /* ── Confetti ────────────────────────────────────────────────────────────── */
 interface Particle {
@@ -68,6 +70,7 @@ interface ClaimSuccessProps {
   recipientAddress: `0x${string}`;
   tokenAddress?: `0x${string}` | null; // null = native ETH
   txHash?: `0x${string}` | null;
+  tokenLogoUrl?: string;
 }
 
 const EXPLORER_BASE = 'https://robinhoodchain.blockscout.com';
@@ -85,11 +88,17 @@ function SendPanel({
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
 
   const [dest, setDest] = useState('');
+  const [focused, setFocused] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const isValidDest = isAddress(dest.trim());
+  const trimmed = dest.trim();
+  const isValidDest = isAddress(trimmed);
+  // Show truncated address when blurred and valid
+  const displayValue = !focused && isValidDest
+    ? `${trimmed.slice(0, 6)}...${trimmed.slice(-4)}`
+    : dest;
 
   const handleSend = useCallback(async () => {
     if (!embeddedWallet || !isValidDest) return;
@@ -107,14 +116,14 @@ function SendPanel({
           method: 'eth_sendTransaction',
           params: [{
             from: embeddedWallet.address,
-            to: dest.trim(),
+            to: trimmed,
             value: '0x' + rawAmount.toString(16),
           }],
         }) as string;
       } else {
         // ERC-20 transfer(address,uint256)
         const data = '0xa9059cbb'
-          + dest.trim().slice(2).toLowerCase().padStart(64, '0')
+          + trimmed.slice(2).toLowerCase().padStart(64, '0')
           + rawAmount.toString(16).padStart(64, '0');
         txHash = await provider.request({
           method: 'eth_sendTransaction',
@@ -132,7 +141,7 @@ function SendPanel({
     } finally {
       setSending(false);
     }
-  }, [embeddedWallet, isValidDest, dest, tokenAddress, rawAmount]);
+  }, [embeddedWallet, isValidDest, trimmed, tokenAddress, rawAmount]);
 
   if (sent) {
     return (
@@ -143,7 +152,7 @@ function SendPanel({
           target="_blank" rel="noopener noreferrer"
           className="text-xs text-white/50 hover:text-white transition-colors flex items-center justify-center gap-1"
         >
-          View on Blockscout <ExternalLink size={11} />
+          View on Blockscout <ExternalLink size={ICON_SIZE.xs} />
         </a>
       </div>
     );
@@ -153,8 +162,10 @@ function SendPanel({
     <div className="flex flex-col gap-3">
       <input
         type="text"
-        value={dest}
+        value={displayValue}
         onChange={(e) => setDest(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder="Paste wallet or exchange address (0x...)"
         className="input-glass !text-sm !py-2.5 w-full"
         aria-label="Destination address"
@@ -168,8 +179,8 @@ function SendPanel({
                    disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {sending
-          ? <><Loader2 size={14} className="animate-spin" /> Sending…</>
-          : <><Send size={14} /> Send now</>
+          ? <><Loader2 size={ICON_SIZE.sm} className="animate-spin" /> Sending…</>
+          : <><Send size={ICON_SIZE.sm} /> Send now</>
         }
       </button>
       <p className="text-[11px] text-white/35 text-center">
@@ -180,11 +191,12 @@ function SendPanel({
 }
 
 /* ── Main success component ──────────────────────────────────────────────── */
-export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, tokenAddress = null, txHash }: ClaimSuccessProps) {
+export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, tokenAddress = null, txHash, tokenLogoUrl }: ClaimSuccessProps) {
   const { exportWallet } = usePrivy();
 
   const [activePanel, setActivePanel] = useState<'send' | 'export' | null>(null);
   const [copiedAddr, setCopiedAddr] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
 
   // Reconstruct raw bigint amount from formatted string for sending
   const rawAmount = (() => {
@@ -212,12 +224,32 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
           <motion.div
-            className="w-14 h-14 rounded-full glass flex items-center justify-center"
+            className="relative"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.15, type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <CheckCircle2 size={28} className="text-emerald-300" aria-hidden="true" />
+            {/* Token logo */}
+            {tokenLogoUrl && !imgErr ? (
+              <Image
+                src={tokenLogoUrl}
+                alt={symbol}
+                width={56}
+                height={56}
+                className="rounded-2xl object-contain bg-white/10"
+                style={{ width: 56, height: 56 }}
+                onError={() => setImgErr(true)}
+                unoptimized
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center text-lg font-semibold text-white/80">
+                {symbol.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            {/* Green check badge */}
+            <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center ring-2 ring-white/10">
+              <Check size={11} className="text-white" strokeWidth={3} />
+            </div>
           </motion.div>
           <div>
             <h2 className="text-lg font-medium text-white">You received a Beam</h2>
@@ -231,7 +263,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
 
         {/* Wallet address */}
         <div className="flex flex-col gap-1.5">
-          <p className="text-[11px] text-white/40 tracking-wider">Your wallet</p>
+          <p className="text-xs text-white/50 tracking-wider">Your wallet</p>
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm text-white/80 flex-1 truncate">{recipientAddress}</span>
             <button
@@ -240,7 +272,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
               className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="Copy address"
             >
-              {copiedAddr ? <Check size={12} className="text-emerald-300" /> : <Copy size={12} className="text-white/60" />}
+              {copiedAddr ? <Check size={ICON_SIZE.xs} className="text-emerald-300" /> : <Copy size={ICON_SIZE.xs} className="text-white/70" />}
             </button>
             <a
               href={`${EXPLORER_BASE}/address/${recipientAddress}`}
@@ -248,7 +280,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
               className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="View on Blockscout"
             >
-              <ExternalLink size={12} className="text-white/60" />
+              <ExternalLink size={ICON_SIZE.xs} className="text-white/70" />
             </a>
           </div>
           {txHash && (
@@ -257,7 +289,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
               target="_blank" rel="noopener noreferrer"
               className="text-[11px] text-white/35 hover:text-white/60 transition-colors flex items-center gap-1 mt-0.5"
             >
-              View claim transaction <ExternalLink size={10} />
+              View claim transaction <ExternalLink size={ICON_SIZE.xs} />
             </a>
           )}
         </div>
@@ -274,13 +306,13 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
             className="glass-sm flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/12 transition-colors text-left w-full"
           >
             <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
-              <Send size={14} className="text-white/70" />
+              <Send size={ICON_SIZE.sm} className="text-white/70" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-white">Send to a wallet</p>
-              <p className="text-[11px] text-white/45">Coinbase, MetaMask, any address</p>
+              <p className="text-xs text-white/50">Coinbase, MetaMask, any address</p>
             </div>
-            <ChevronRight size={14} className={`text-white/30 transition-transform ${activePanel === 'send' ? 'rotate-90' : ''}`} />
+            <ChevronRight size={ICON_SIZE.sm} className={`text-white/50 transition-transform ${activePanel === 'send' ? 'rotate-90' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -306,13 +338,13 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
             className="glass-sm flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/12 transition-colors text-left w-full"
           >
             <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
-              <Key size={14} className="text-white/70" />
+              <Key size={ICON_SIZE.sm} className="text-white/70" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-white">Use in another wallet</p>
-              <p className="text-[11px] text-white/45">Export private key to MetaMask or any wallet</p>
+              <p className="text-xs text-white/50">Export private key to MetaMask or any wallet</p>
             </div>
-            <ChevronRight size={14} className={`text-white/30 transition-transform ${activePanel === 'export' ? 'rotate-90' : ''}`} />
+            <ChevronRight size={ICON_SIZE.sm} className={`text-white/50 transition-transform ${activePanel === 'export' ? 'rotate-90' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -336,7 +368,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
                     onClick={() => exportWallet()}
                     className="btn-glass-primary !py-2.5 !text-sm w-full !justify-center flex items-center gap-2"
                   >
-                    <Key size={14} />
+                    <Key size={ICON_SIZE.sm} />
                     Show private key
                   </button>
                   <p className="text-[13px] text-amber-200/70 text-center">

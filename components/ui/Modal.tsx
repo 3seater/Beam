@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -196,7 +197,7 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
                 aria-label="Close"
                 className="btn-glass-icon !w-8 !h-8"
               >
-                <X size={16} aria-hidden="true" />
+                <X size={ICON_SIZE.md} aria-hidden="true" />
               </button>
             </div>
 

@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, RefreshCw, Zap } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import { parseUnits } from 'viem';
 import { fetchUniswapQuote, type UniswapQuote } from '@/lib/uniswap-swap';
 import { fetchTokenPriceUsd, formatUsd } from '@/lib/robinhood-prices';
+import { formatTokenValue } from '@/lib/format';
 import type { SelectedAsset } from './TokenPicker';
 
 export interface DollarAmountInputProps {
@@ -40,6 +42,9 @@ export function DollarAmountInput({
   const [showCustom, setShowCustom] = useState(false);
 
   const fetchId = useRef(0);
+  // Track the last asset we fired a quote for, so we can fire immediately
+  // when the token changes (rather than re-debouncing the existing amount)
+  const lastQuotedAsset = useRef<string>('');
 
   // Fetch ETH price once on mount; fetch token price when asset changes
   useEffect(() => {
@@ -85,7 +90,9 @@ export function DollarAmountInput({
     setQuoteErr(false);
   }, [selectedAsset]);
 
-  // Debounced quote fetch on dollar value change
+  // Debounced quote fetch on dollar value change.
+  // If the token just changed (asset key differs from last quoted), fire
+  // immediately — the user already committed to an amount.
   useEffect(() => {
     const usd = parseFloat(dollarValue);
     if (!dollarValue || isNaN(usd) || usd <= 0) {
@@ -93,9 +100,17 @@ export function DollarAmountInput({
       setQuoteErr(false);
       return;
     }
-    const t = setTimeout(() => void fetchQuote(usd), 500);
+
+    const assetKey = isNative ? 'eth' : (selectedAsset.type === 'erc20' ? selectedAsset.address : '');
+    const tokenJustChanged = assetKey !== lastQuotedAsset.current;
+    const delay = tokenJustChanged ? 0 : 300;
+
+    const t = setTimeout(() => {
+      lastQuotedAsset.current = assetKey;
+      void fetchQuote(usd);
+    }, delay);
     return () => clearTimeout(t);
-  }, [dollarValue, fetchQuote]);
+  }, [dollarValue, fetchQuote, isNative, selectedAsset]);
 
   // Pass token amount up to parent
   useEffect(() => {
@@ -141,7 +156,7 @@ export function DollarAmountInput({
   const usdNum = parseFloat(dollarValue) || 0;
 
   const displayTokenAmt = isNative
-    ? (ethPriceUsd && usdNum > 0 ? (usdNum / ethPriceUsd).toPrecision(4).replace(/\.?0+$/, '') : null)
+    ? (ethPriceUsd && usdNum > 0 ? formatTokenValue(usdNum / ethPriceUsd) : null)
     : (quote?.amountOutFormatted ?? null);
 
   return (
@@ -154,15 +169,15 @@ export function DollarAmountInput({
           {dollarValue || '0'}
         </span>
         <div className="flex items-center gap-1.5 ml-auto text-right shrink-0">
-          {quoteLoading && <Loader2 size={12} className="animate-spin text-white/40" aria-hidden="true" />}
+          {quoteLoading && <Loader2 size={ICON_SIZE.xs} className="animate-spin text-white/50" aria-hidden="true" />}
           {!quoteLoading && quoteErr && !isNative && (
             <button
               type="button"
               onClick={() => void fetchQuote(usdNum)}
-              className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs text-white/50 hover:text-white transition-colors"
               aria-label="Retry quote"
             >
-              <RefreshCw size={10} />
+              <RefreshCw size={ICON_SIZE.xs} />
               Retry
             </button>
           )}
@@ -250,8 +265,8 @@ export function DollarAmountInput({
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <Zap size={10} className="text-white/40" aria-hidden="true" />
-                  <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
+                  <Zap size={ICON_SIZE.xs} className="text-white/50" aria-hidden="true" />
+                  <p className="text-xs text-white/50">
                     Live quote · {quote.isV4 ? 'Uniswap V4' : 'Uniswap V3'}
                   </p>
                 </div>

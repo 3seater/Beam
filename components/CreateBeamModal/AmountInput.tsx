@@ -2,6 +2,7 @@
 
 import { useEffect, useId } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 const MIN_AMOUNT = 1e-6;
 const MAX_AMOUNT = 999_999_999;
@@ -71,7 +72,7 @@ export function AmountInput({
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
-      <label htmlFor={inputId} className="text-xs font-normal text-white/45">
+      <label htmlFor={inputId} className="text-xs font-normal text-white/50">
         Amount
       </label>
 
@@ -101,7 +102,7 @@ export function AmountInput({
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-white/40">
+      <div className="flex items-center justify-between text-xs text-white/50">
         <span>
           Balance:{' '}
           <span className={isInsufficient ? 'text-red-300' : 'text-white/60'}>
@@ -129,7 +130,7 @@ export function AmountInput({
 
       {hasError && (
         <p id={errorId} role="alert" className="flex items-center gap-1.5 text-xs text-red-300">
-          <AlertCircle size={12} aria-hidden="true" className="shrink-0" />
+          <AlertCircle size={ICON_SIZE.xs} aria-hidden="true" className="shrink-0" />
           {errorMsg}
         </p>
       )}

@@ -3,6 +3,7 @@
 import { useState, useId, type KeyboardEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 
 export interface AccordionItem {
   question: string;
@@ -67,7 +68,7 @@ export function Accordion({ items, mode = 'single', className = '' }: AccordionP
                 transition={transition}
                 className="shrink-0 text-white/50"
               >
-                <ChevronDown size={18} />
+                <ChevronDown size={ICON_SIZE.md} />
               </motion.span>
             </button>
 

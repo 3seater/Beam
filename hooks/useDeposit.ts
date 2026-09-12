@@ -114,6 +114,65 @@ async function waitForTxReceipt(hash: `0x${string}`) {
   });
 }
 
+// ─── Friendly error messages ──────────────────────────────────────────────────
+
+/**
+ * Converts raw viem / RPC error messages into concise, user-facing strings.
+ * Called in the catch block of startDeposit so both UI surfaces (SendPageClient
+ * and CreateBeamModal) automatically get clean messages.
+ */
+function toFriendlyError(raw: string): string {
+  const msg = raw.toLowerCase();
+
+  // Wallet / signing timeouts (the "unknown RPC error … wallet timeout" case)
+  if (msg.includes('wallet timeout') || msg.includes('timed out'))
+    return 'Your wallet took too long to respond. Please try again.';
+
+  // Insufficient funds for gas + value
+  if (msg.includes('insufficient funds'))
+    return 'Insufficient ETH balance to cover this transaction and gas fees.';
+
+  // Gas estimation failures / execution reverts with no useful info
+  if (msg.includes('gas required exceeds allowance') || msg.includes('out of gas'))
+    return 'Transaction ran out of gas. Try a slightly smaller amount.';
+
+  // Contract execution reverted with a reason string
+  const revertMatch = raw.match(/reverted(?:\s+with reason string)?[:\s]+"?([^"]+)"?/i);
+  if (revertMatch) return `Transaction failed: ${revertMatch[1].trim()}`;
+  if (msg.includes('execution reverted'))
+    return 'Transaction was rejected by the contract. Please try again.';
+
+  // Network / RPC issues
+  if (msg.includes('network') || msg.includes('could not fetch') || msg.includes('failed to fetch')
+    || msg.includes('upstream fetch failed') || msg.includes('unknown rpc error'))
+    return 'Network error. Check your connection and try again.';
+
+  // Nonce conflicts (can happen when a prior tx is pending)
+  if (msg.includes('nonce too low') || msg.includes('nonce too high') || msg.includes('replacement transaction'))
+    return 'Transaction conflict detected. Please wait a moment and try again.';
+
+  // Slippage / price impact
+  if (msg.includes('slippage') || msg.includes('price impact') || msg.includes('too much'))
+    return 'Price moved too much during the swap. Please try again.';
+
+  // No liquidity (already friendly, but normalise capitalisation)
+  if (msg.includes('no liquidity'))
+    return 'No liquidity found for this token. Try a larger amount or use ETH instead.';
+
+  // Chain / account not connected
+  if (msg.includes('no public client') || msg.includes('connector not connected'))
+    return 'Wallet disconnected. Please reconnect and try again.';
+
+  // Deposited event not in receipt (shouldn't happen, but surface cleanly)
+  if (msg.includes('deposited event not found'))
+    return 'Transaction confirmed but deposit ID was not found. Contact support if funds are missing.';
+
+  // Fallback — strip the verbose viem wrapper prefix if present, otherwise generic
+  const shortMsg = raw.replace(/^(TransactionExecutionError|ContractFunctionExecutionError|SendTransactionError|BaseError):\s*/i, '').trim();
+  if (shortMsg.length > 0 && shortMsg.length <= 120) return shortMsg;
+  return 'Something went wrong. Please try again.';
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useDeposit(): UseDepositReturn {
@@ -127,7 +186,7 @@ export function useDeposit(): UseDepositReturn {
   const { writeContractAsync: writeDeposit } = useWriteContract();
   const { sendTransactionAsync: sendSwapTx } = useSendTransaction();
 
-  const discardAndFail = useCallback((msg: string) => {
+  const discardAndFail = useCallback((msg: string | null) => {
     ephemeralPrivKeyRef.current = null;
     setError(msg);
     setStep('idle');
@@ -289,9 +348,10 @@ export function useDeposit(): UseDepositReturn {
       setStep('link-generated');
 
     } catch (err) {
-      discardAndFail(
-        err instanceof Error ? err.message : 'An unexpected error occurred',
-      );
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      // User rejected the wallet prompt — reset silently so they can retry
+      const isUserRejection = /user rejected|user denied|rejected the request/i.test(msg);
+      discardAndFail(isUserRejection ? null : toFriendlyError(msg));
     }
   }, [step, sendSwapTx, writeApprove, writeDeposit, discardAndFail]);
 

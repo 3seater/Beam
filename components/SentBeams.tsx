@@ -3,12 +3,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePublicClient, useWriteContract } from 'wagmi';
 import { decodeEventLog, formatUnits } from 'viem';
-import { Copy, Check, ExternalLink, Clock, Loader2, XCircle } from 'lucide-react';
+import { formatTokenValue } from '@/lib/format';
+import { Copy, Check, ExternalLink, Loader2, X, RefreshCw } from 'lucide-react';
+import { ICON_SIZE } from '@/lib/icons';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 import { loadBeamHistory, saveBeamEntry } from '@/lib/beam-history';
-import { fetchRobinhoodTokens } from '@/lib/robinhood-tokens';
+import { fetchRobinhoodTokens, stockLogoUrl } from '@/lib/robinhood-tokens';
 import type { StoredBeamLink } from '@/lib/beam-store';
+import Image from 'next/image';
 
 interface SentBeamsProps {
   walletAddress: string;
@@ -122,7 +125,7 @@ function timeAgo(ms: number): string {
 }
 
 function formatAmount(amount: bigint, decimals: number): string {
-  return Number(formatUnits(amount, decimals)).toPrecision(4).replace(/\.?0+$/, '');
+  return formatTokenValue(Number(formatUnits(amount, decimals)));
 }
 
 // ─── Row ──────────────────────────────────────────────────────────────────
@@ -136,6 +139,7 @@ interface RowData {
   usdAmount: number | null;
   createdAt: number | null;
   claimSigner: string;
+  logoUrl: string | null;
 }
 
 function BeamRow({
@@ -191,89 +195,124 @@ function BeamRow({
     }
   }, [client, writeContractAsync, row.depositId, onCancelled]);
 
-  const formattedAmt = formatAmount(row.amount, row.tokenDecimals);
+  const formattedAmt = row.amount > 0n ? formatAmount(row.amount, row.tokenDecimals) : null;
 
   // Status badge
   const badge = (() => {
-    if (status === 'loading') return null;
-    if (status === 'claimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200">Claimed</span>;
-    if (status === 'cancelled') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white/50">Cancelled</span>;
-    if (status === 'unclaimed') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200">Pending</span>;
+    if (status === 'loading') return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/40">
+        <Loader2 size={9} className="animate-spin" />
+        Loading
+      </span>
+    );
+    if (status === 'claimed') return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white font-medium">
+        <Check size={9} strokeWidth={2.5} />
+        Claimed
+      </span>
+    );
+    if (status === 'cancelled') return (
+      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 border border-white/15 text-white/35">
+        Cancelled
+      </span>
+    );
+    if (status === 'unclaimed') return (
+      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-white/60">
+        Pending
+      </span>
+    );
     return null;
   })();
 
   return (
-    <div className="flex flex-col gap-1.5 py-3 border-b border-white/8 last:border-0">
-      <div className="flex items-center gap-3">
-        {/* Amount + badge */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-sm font-semibold ${status === 'cancelled' ? 'text-white/35 line-through' : 'text-white'}`}>
-              {formattedAmt} {row.tokenSymbol}
-            </span>
-            {row.usdAmount != null && status !== 'cancelled' && (
-              <span className="text-xs text-white/45">${row.usdAmount}</span>
-            )}
-            {badge}
-          </div>
-          {row.createdAt != null && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <Clock size={9} className="text-white/30 shrink-0" aria-hidden="true" />
-              <span className="text-[11px] text-white/35">{timeAgo(row.createdAt)}</span>
-            </div>
-          )}
-        </div>
+    <div className="flex items-center gap-3 py-3.5 px-0">
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Copy + open — only when unclaimed and link exists */}
-          {row.beamLink && status === 'unclaimed' && (
-            <>
-              <button
-                type="button"
-                onClick={copy}
-                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
-                aria-label={copied ? 'Copied!' : 'Copy Beam link'}
-              >
-                {copied
-                  ? <Check size={12} className="text-emerald-300" />
-                  : <Copy size={12} className="text-white/50" />}
-              </button>
-              <a
-                href={row.beamLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
-                aria-label="Open claim page"
-              >
-                <ExternalLink size={12} className="text-white/50" />
-              </a>
-            </>
-          )}
+      {/* LEFT: token logo + amount + USD value + copy/open actions */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {/* Token logo */}
+        {row.logoUrl ? (
+          <Image
+            src={row.logoUrl}
+            alt={row.tokenSymbol}
+            width={24}
+            height={24}
+            className="rounded-lg object-contain bg-white/10 shrink-0"
+            style={{ width: 24, height: 24 }}
+            unoptimized
+          />
+        ) : (
+          <span className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-[9px] font-semibold text-white/70 shrink-0">
+            {row.tokenSymbol.slice(0, 2).toUpperCase()}
+          </span>
+        )}
 
-          {/* Cancel — only when unclaimed */}
-          {status === 'unclaimed' && (
+        {/* Amount */}
+        <span className={`text-sm font-semibold leading-none shrink-0 ${status === 'cancelled' ? 'text-white/30 line-through' : 'text-white'}`}>
+          {formattedAmt ? `${formattedAmt} ${row.tokenSymbol}` : row.tokenSymbol}
+        </span>
+
+        {/* USD — visually distinct: smaller, dimmer, slightly different weight */}
+        {row.usdAmount != null && status !== 'cancelled' && (
+          <span className="text-[11px] font-normal text-white/35 shrink-0 tabular-nums">${row.usdAmount}</span>
+        )}
+
+        {/* Copy + open — only when unclaimed and link exists */}
+        {status === 'unclaimed' && row.beamLink && (
+          <div className="flex items-center gap-1 ml-1">
             <button
               type="button"
-              onClick={handleCancel}
-              disabled={cancelling}
-              className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg
-                         bg-white/8 hover:bg-red-400/15 text-white/55 hover:text-red-300
-                         transition-colors disabled:opacity-40"
-              aria-label="Cancel and recover funds"
+              onClick={copy}
+              className="w-6 h-6 rounded-md flex items-center justify-center bg-white/8 hover:bg-white/15 transition-colors"
+              aria-label={copied ? 'Copied!' : 'Copy Beam link'}
             >
-              {cancelling
-                ? <Loader2 size={10} className="animate-spin" />
-                : <XCircle size={11} />}
-              {cancelling ? 'Cancelling…' : 'Cancel'}
+              {copied
+                ? <Check size={10} className="text-emerald-300" />
+                : <Copy size={10} className="text-white/50" />}
             </button>
-          )}
-        </div>
+            <a
+              href={row.beamLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-6 h-6 rounded-md flex items-center justify-center bg-white/8 hover:bg-white/15 transition-colors"
+              aria-label="Open claim page"
+            >
+              <ExternalLink size={10} className="text-white/50" />
+            </a>
+          </div>
+        )}
       </div>
 
-      {/* Cancel error */}
+      {/* RIGHT: badge | cancel icon | timestamp — fixed column order */}
+      <div className="flex items-center gap-2 shrink-0">
+
+        {/* Status badge — always present (loading/claimed/cancelled/pending) */}
+        {badge}
+
+        {/* Cancel — icon only, unclaimed rows only, sits after badge */}
+        {status === 'unclaimed' && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="w-5 h-5 rounded flex items-center justify-center
+                       text-white/25 hover:text-red-300 hover:bg-red-500/15
+                       transition-all disabled:opacity-40"
+            aria-label="Cancel and recover funds"
+          >
+            {cancelling
+              ? <Loader2 size={10} className="animate-spin" />
+              : <X size={10} strokeWidth={2} />}
+          </button>
+        )}
+
+        {/* Timestamp — fixed width so all rows align */}
+        <span className="text-[11px] text-white/30 tabular-nums w-14 text-right">
+          {row.createdAt != null ? timeAgo(row.createdAt) : ''}
+        </span>
+      </div>
+
       {cancelErr && (
-        <p className="text-[11px] text-red-300 px-1">{cancelErr}</p>
+        <p className="text-[11px] text-red-300 absolute">{cancelErr}</p>
       )}
     </div>
   );
@@ -288,13 +327,13 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   // 'idle' = not started yet, 'loading' = onchain fetch in flight, 'done' = finished
   const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'done'>('idle');
 
-  const tokenMapRef = useRef<Map<string, { symbol: string; decimals: number }>>(new Map());
+  const tokenMapRef = useRef<Map<string, { symbol: string; decimals: number; logoUrl: string }>>(new Map());
 
   // Load token map once
   useEffect(() => {
     fetchRobinhoodTokens().then((tokens) => {
-      const map = new Map<string, { symbol: string; decimals: number }>();
-      for (const t of tokens) map.set(t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals });
+      const map = new Map<string, { symbol: string; decimals: number; logoUrl: string }>();
+      for (const t of tokens) map.set(t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals, logoUrl: t.logoUrl });
       tokenMapRef.current = map;
     });
   }, []);
@@ -307,11 +346,12 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         depositId: e.depositId,
         tokenSymbol: e.tokenSymbol,
         tokenDecimals: 18,
-        amount: 0n, // placeholder — overwritten by onchain fetch
+        amount: 0n,
         beamLink: e.beamLink,
         usdAmount: e.usdAmount,
         createdAt: e.createdAt,
         claimSigner: '',
+        logoUrl: null,
       })));
     }
   }, [walletAddress]);
@@ -348,8 +388,8 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       const stored = serverMap.get(dep.depositId) ?? localMap.get(dep.depositId);
       const isNative = dep.token.toLowerCase() === ZERO_ADDRESS;
       const tokenInfo = isNative
-        ? { symbol: 'ETH', decimals: 18 }
-        : (tokenMapRef.current.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18 });
+        ? { symbol: 'ETH', decimals: 18, logoUrl: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' }
+        : (tokenMapRef.current.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18, logoUrl: stockLogoUrl(dep.token.slice(0, 6)) });
 
       return {
         depositId: dep.depositId,
@@ -360,6 +400,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         usdAmount: stored?.usdAmount ?? null,
         createdAt: stored?.createdAt ?? null,
         claimSigner: dep.claimSigner,
+        logoUrl: tokenInfo.logoUrl,
       };
     });
 
@@ -384,22 +425,24 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
   return (
     <div className="glass-sm rounded-2xl px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">Your sent beams</p>
+      <div className="flex items-center justify-end mb-1">
         <button
           type="button"
           onClick={refresh}
-          className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
+          aria-label="Refresh beams"
         >
           {fetchState === 'loading'
-            ? <><Loader2 size={10} className="animate-spin" /> Refreshing…</>
-            : 'Refresh'
+            ? <Loader2 size={ICON_SIZE.xs} className="animate-spin text-white/50" />
+            : <RefreshCw size={ICON_SIZE.xs} className="text-white/50" />
           }
         </button>
       </div>
-      {rows.map((row) => (
-        <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} />
-      ))}
+      <div className="flex flex-col divide-y divide-white/[0.06]">
+        {rows.map((row) => (
+          <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} />
+        ))}
+      </div>
     </div>
   );
 }
