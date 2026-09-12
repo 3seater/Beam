@@ -42,10 +42,10 @@ export function FAQSection() {
           <motion.h2
             id="faq-heading"
             className="text-5xl sm:text-6xl font-medium text-white tracking-tight"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5 }}
           >
             FAQs
           </motion.h2>
@@ -62,10 +62,10 @@ export function FAQSection() {
 
         <motion.div
           className="glass p-3"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
         >
           <Accordion items={FAQ_ITEMS} mode="single" className="px-3" />
         </motion.div>
