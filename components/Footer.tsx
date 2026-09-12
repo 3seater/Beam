@@ -13,7 +13,7 @@ const FOOTER_COLS = [
   {
     heading: 'Product',
     links: [
-      { label: 'Send a Beam', href: '#' },
+      { label: 'Send a Beam', href: '/send' },
       { label: 'Claim', href: '/claim' },
       { label: 'Robinhood Chain', href: 'https://docs.robinhood.com/chain/', external: true },
     ],

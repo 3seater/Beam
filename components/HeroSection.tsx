@@ -11,17 +11,17 @@ export interface HeroSectionProps {
 }
 
 const FEATURED_ASSETS = [
-  { symbol: 'NVDA', name: 'NVIDIA', change: '+4.2%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/NVDA?format=png' },
-  { symbol: 'AAPL', name: 'Apple', change: '+0.9%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/AAPL?format=png' },
-  { symbol: 'TSLA', name: 'Tesla', change: '+1.8%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/TSLA?format=png' },
-  { symbol: 'MSFT', name: 'Microsoft', change: '+1.1%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/MSFT?format=png' },
-  { symbol: 'META', name: 'Meta Platforms', change: '+2.3%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/META?format=png' },
-  { symbol: 'GOOGL', name: 'Alphabet', change: '-0.4%', positive: false, logoUrl: 'https://assets.parqet.com/logos/symbol/GOOGL?format=png' },
-  { symbol: 'AMZN', name: 'Amazon', change: '+0.7%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/AMZN?format=png' },
-  { symbol: 'SPCX', name: 'SpaceX', change: '+3.5%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/SPCX?format=png' },
-  { symbol: 'ETH', name: 'Ethereum', change: '+2.7%', positive: true, logoUrl: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' },
-  { symbol: 'USDG', name: 'Global Dollar', change: '+0.0%', positive: true, logoUrl: 'https://coin-images.coingecko.com/coins/images/51281/small/GDN_USDG_Token_200x200.png?1730484111' },
-  { symbol: 'MU', name: 'Micron Technology', change: '+1.4%', positive: true, logoUrl: 'https://assets.parqet.com/logos/symbol/MU?format=png' },
+  { symbol: 'NVDA', name: 'NVIDIA', logoUrl: 'https://assets.parqet.com/logos/symbol/NVDA?format=png' },
+  { symbol: 'AAPL', name: 'Apple', logoUrl: 'https://assets.parqet.com/logos/symbol/AAPL?format=png' },
+  { symbol: 'TSLA', name: 'Tesla', logoUrl: 'https://assets.parqet.com/logos/symbol/TSLA?format=png' },
+  { symbol: 'MSFT', name: 'Microsoft', logoUrl: 'https://assets.parqet.com/logos/symbol/MSFT?format=png' },
+  { symbol: 'META', name: 'Meta Platforms', logoUrl: 'https://assets.parqet.com/logos/symbol/META?format=png' },
+  { symbol: 'GOOGL', name: 'Alphabet', logoUrl: 'https://assets.parqet.com/logos/symbol/GOOGL?format=png' },
+  { symbol: 'AMZN', name: 'Amazon', logoUrl: 'https://assets.parqet.com/logos/symbol/AMZN?format=png' },
+  { symbol: 'SPCX', name: 'SpaceX', logoUrl: 'https://assets.parqet.com/logos/symbol/SPCX?format=png' },
+  { symbol: 'ETH', name: 'Ethereum', logoUrl: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' },
+  { symbol: 'USDG', name: 'Global Dollar', logoUrl: 'https://coin-images.coingecko.com/coins/images/51281/small/GDN_USDG_Token_200x200.png?1730484111' },
+  { symbol: 'MU', name: 'Micron Technology', logoUrl: 'https://assets.parqet.com/logos/symbol/MU?format=png' },
 ];
 
 // 4 rows, each starting at a different offset so they don't all rotate together
@@ -104,22 +104,14 @@ function AssetRow({
 
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
-          key={`${asset.symbol}-change`}
-          className="flex flex-col items-end shrink-0 ml-4"
+          key={`${asset.symbol}-arrow`}
+          className="flex items-center shrink-0 ml-4"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="text-[12px] text-white/40 leading-tight">Today</span>
-          <span
-            className={[
-              'text-[16px] font-semibold leading-tight',
-              asset.positive ? 'text-emerald-300' : 'text-red-300',
-            ].join(' ')}
-          >
-            {asset.positive ? '▲ ' : '▼ '}{asset.change.replace(/^[+-]/, '')}
-          </span>
+          <span className="text-[13px] text-white/30">Send →</span>
         </motion.div>
       </AnimatePresence>
     </button>
@@ -188,8 +180,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
             >
-              Pick any stock or token, deposit it once, and share a link.
-              The recipient claims it gaslessly — no wallet required.
+              Share a link. They claim with a tap. No wallet needed.
             </motion.p>
 
             <motion.div
@@ -211,23 +202,7 @@ export function HeroSection({ onSendClick }: HeroSectionProps) {
               </a>
             </motion.div>
 
-            <motion.div
-              className="flex flex-wrap gap-x-6 gap-y-2 pt-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.38 }}
-            >
-              {[
-                { value: '10k+', label: 'Beams sent' },
-                { value: '$500k+', label: 'Value transferred' },
-                { value: '0 gas', label: 'For recipients' },
-              ].map(({ value, label }) => (
-                <div key={label} className="flex items-baseline gap-1.5">
-                  <span className="text-base font-semibold text-white">{value}</span>
-                  <span className="text-xs text-white/45">{label}</span>
-                </div>
-              ))}
-            </motion.div>
+
           </div>
 
           {/* ── Right: 4 independent rotating asset rows ─────────────── */}

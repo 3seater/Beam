@@ -20,10 +20,10 @@ import type { BeamStep } from '@/lib/types';
 type WizardStep = 1 | 2 | 3; // 1=asset, 2=amount, 3=confirm/tx
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function txStepLabel(step: BeamStep): string {
+function txStepLabel(step: BeamStep, symbol?: string): string {
   switch (step) {
     case 'swap-pending': return 'Waiting for swap…';
-    case 'swap-confirming': return 'Swapping to token…';
+    case 'swap-confirming': return symbol ? `Swapping ETH → ${symbol}…` : 'Swapping…';
     case 'approval-pending': return 'Waiting for approval…';
     case 'approval-confirming': return 'Confirming approval…';
     case 'deposit-pending': return 'Depositing…';
@@ -106,14 +106,13 @@ function ConfirmSummary({ asset, usdAmount }: { asset: SelectedAsset; usdAmount:
       {/* Gasless note */}
       <div className="flex items-center gap-2 text-sm text-white/45">
         <GaslessBadge />
-        <span>Recipient claims gaslessly</span>
       </div>
     </div>
   );
 }
 
 // ── In-progress spinner ───────────────────────────────────────────────────────
-function TxProgress({ step, isERC20 }: { step: BeamStep; isERC20: boolean }) {
+function TxProgress({ step, isERC20, symbol }: { step: BeamStep; isERC20: boolean; symbol?: string }) {
   const stages = isERC20
     ? ['Swap', 'Approve', 'Deposit']
     : ['Deposit'];
@@ -150,7 +149,7 @@ function TxProgress({ step, isERC20 }: { step: BeamStep; isERC20: boolean }) {
         ))}
       </div>
 
-      <p className="text-sm text-white/50 text-center">{txStepLabel(step)}</p>
+      <p className="text-sm text-white/50 text-center">{txStepLabel(step, symbol)}</p>
     </div>
   );
 }
@@ -227,7 +226,7 @@ export default function SendPage() {
 
   // Title per wizard step / tx state
   const cardTitle = isLinkReady
-    ? 'Your Beam is ready 🎉'
+    ? 'Your Beam is ready'
     : isInProgress
       ? 'Sending…'
       : wizardStep === 1 ? 'Choose a token'
@@ -369,7 +368,7 @@ export default function SendPage() {
                         }
                       </button>
                       <p className="text-center text-xs text-white/35">
-                        Recipient claims gaslessly — no wallet needed
+                        Recipients claim gaslessly — no gas, no wallet.
                       </p>
                     </div>
                   </motion.div>
@@ -383,7 +382,7 @@ export default function SendPage() {
                     transition={{ duration: 0.25 }}
                     className="flex-1 flex items-center justify-center"
                   >
-                    <TxProgress step={txStep} isERC20={isERC20} />
+                    <TxProgress step={txStep} isERC20={isERC20} symbol={selectedAsset.type === 'native' ? 'ETH' : selectedAsset.symbol} />
                   </motion.div>
                 )}
 
@@ -400,7 +399,7 @@ export default function SendPage() {
                         <Check size={24} className="text-emerald-300" />
                       </div>
                       <p className="text-sm text-white/60 max-w-[28ch]">
-                        Share this link — the recipient claims with just a social login.
+                        Send this link. They claim in seconds.
                       </p>
                     </div>
 

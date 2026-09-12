@@ -4,18 +4,18 @@ import { motion, type Variants } from 'framer-motion';
 
 const STEPS = [
   {
-    title: 'Choose a stock or token',
-    description: 'Pick from real Robinhood Chain stock tokens or any crypto — enter a dollar amount and deposit into the Beam escrow instantly.',
+    title: 'Pick a token',
+    description: 'Choose ETH, a stock token, or any crypto. Enter a dollar amount and deposit.',
     step: '01',
   },
   {
-    title: 'Share a Link',
-    description: 'Get a unique Beam link. Send it over iMessage, WhatsApp, X — or any channel you already use.',
+    title: 'Share the link',
+    description: 'You get a unique link. Send it anywhere — iMessage, WhatsApp, email.',
     step: '02',
   },
   {
-    title: 'They Claim',
-    description: 'The recipient signs in with Apple or Google — a wallet is created automatically and funds land instantly. Zero gas.',
+    title: 'They claim it',
+    description: 'They sign in with Apple or Google. A wallet is created automatically — funds land instantly, no gas.',
     step: '03',
   },
 ] as const;
@@ -59,7 +59,7 @@ export function HowItWorksSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            Three steps, zero friction.
+            Three steps.
           </motion.p>
         </div>
 

@@ -147,7 +147,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
     );
   }, [isConnected, walletAddress, canConfirm, connectWallet, isERC20, tokenAddress, selectedAsset, dollarValue, startDeposit]);
 
-  const title = isLinkReady ? 'Your BeamLink is ready' : 'Send a Beam';
+  const title = isLinkReady ? 'Your Beam link is ready' : 'Send a Beam';
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={title} className="!max-w-lg">
@@ -181,7 +181,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
             <span className="text-sm text-white/80">Beam sent successfully</span>
           </div>
           <p className="text-sm text-white/55">
-            Share this link — the recipient claims gaslessly with just a social login.
+            Send this link. They claim in seconds.
           </p>
           <BeamLinkDisplay beamLink={beamLink} />
           <div className="pt-2"><StepIndicator step={step} isERC20={isERC20} /></div>
@@ -229,7 +229,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
             size="lg"
             disabled={hydrated && isConnected ? !canConfirm : !ready}
             onClick={handleConfirm}
-            aria-label={!hydrated || !isConnected ? 'Connect wallet to send' : 'Confirm and generate BeamLink'}
+            aria-label={!hydrated || !isConnected ? 'Connect wallet to send' : 'Confirm and generate Beam link'}
             className="w-full !justify-center"
             leftIcon={!hydrated || !isConnected ? <Wallet size={16} /> : undefined}
           >
@@ -238,7 +238,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
 
           <div className="flex items-center justify-center gap-2 -mt-2">
             <GaslessBadge />
-            <span className="text-xs text-white/40">Recipient pays zero gas</span>
+            <span className="text-xs text-white/40">Recipients claim gaslessly — no gas, no wallet.</span>
           </div>
         </div>
       )}

@@ -252,7 +252,7 @@ export function DollarAmountInput({
                 <div className="flex items-center gap-1.5">
                   <Zap size={10} className="text-white/40" aria-hidden="true" />
                   <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
-                    Live quote · Uniswap V3
+                    Live quote · {quote.isV4 ? 'Uniswap V4' : 'Uniswap V3'}
                   </p>
                 </div>
                 {impact !== null && (
@@ -272,7 +272,7 @@ export function DollarAmountInput({
               )}
               {!highImpact && (
                 <p className="text-[11px] text-white/40">
-                  ETH → WETH → USDG → {symbol}
+                  {quote.isV4 ? `ETH → ${symbol} (V4 direct)` : `ETH → WETH → ${symbol}`}
                 </p>
               )}
             </motion.div>

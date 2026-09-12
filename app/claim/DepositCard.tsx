@@ -15,7 +15,7 @@ interface DepositCardProps {
   tokenDecimals?: number;
 }
 
-export function DepositCard({ deposit, depositId, tokenSymbol, tokenDecimals }: DepositCardProps) {
+export function DepositCard({ deposit, tokenSymbol, tokenDecimals }: DepositCardProps) {
   const isNativeEth = deposit.token.toLowerCase() === ZERO_ADDRESS;
   const symbol = isNativeEth ? 'ETH' : (tokenSymbol ?? 'TOKEN');
   const decimals = isNativeEth ? 18 : (tokenDecimals ?? DEFAULT_DECIMALS);
@@ -28,10 +28,7 @@ export function DepositCard({ deposit, depositId, tokenSymbol, tokenDecimals }: 
       aria-label="Deposit details"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-normal text-white/60 tracking-normal">
-          Beam #{depositId.toString()}
-        </h2>
+      <div className="flex items-center justify-end">
         <ChainBadge />
       </div>
 
@@ -79,11 +76,6 @@ export function DepositCard({ deposit, depositId, tokenSymbol, tokenDecimals }: 
             </span>
           </div>
         )}
-
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-white/50">Network</span>
-          <span className="text-white/80">Robinhood Chain</span>
-        </div>
       </div>
     </div>
   );

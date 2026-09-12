@@ -7,6 +7,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Offset anchor scroll for fixed navbar */
+[id] {
+  scroll-margin-top: 80px;
+}
+
 /* ------------------------------------------------------------
    Layout token — every section uses this exact container
    ------------------------------------------------------------ */

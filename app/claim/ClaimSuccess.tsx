@@ -173,7 +173,7 @@ function SendPanel({
         }
       </button>
       <p className="text-[11px] text-white/35 text-center">
-        Works with any EVM address — Coinbase, MetaMask, exchange deposit addresses, etc.
+        Works with any EVM-compatible address.
       </p>
     </div>
   );
@@ -231,7 +231,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
 
         {/* Wallet address */}
         <div className="flex flex-col gap-1.5">
-          <p className="text-[11px] text-white/40 uppercase tracking-wider">Your wallet</p>
+          <p className="text-[11px] text-white/40 tracking-wider">Your wallet</p>
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm text-white/80 flex-1 truncate">{recipientAddress}</span>
             <button
@@ -264,9 +264,8 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
 
         <div className="h-px bg-white/12" />
 
-        {/* What do you want to do */}
+        {/* Next steps */}
         <div className="flex flex-col gap-2">
-          <p className="text-[11px] text-white/40 uppercase tracking-wider">What do you want to do?</p>
 
           {/* Option 1: Send to another wallet */}
           <button
@@ -310,8 +309,8 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
               <Key size={14} className="text-white/70" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-white">Import into MetaMask</p>
-              <p className="text-[11px] text-white/45">Export your private key</p>
+              <p className="text-sm font-medium text-white">Use in another wallet</p>
+              <p className="text-[11px] text-white/45">Export private key to MetaMask or any wallet</p>
             </div>
             <ChevronRight size={14} className={`text-white/30 transition-transform ${activePanel === 'export' ? 'rotate-90' : ''}`} />
           </button>
@@ -340,7 +339,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
                     <Key size={14} />
                     Show private key
                   </button>
-                  <p className="text-[11px] text-white/30 text-center">
+                  <p className="text-[13px] text-amber-200/70 text-center">
                     Never share your private key with anyone.
                   </p>
                 </div>

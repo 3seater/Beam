@@ -233,7 +233,7 @@ function BeamRow({
                 type="button"
                 onClick={copy}
                 className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
-                aria-label={copied ? 'Copied!' : 'Copy BeamLink'}
+                aria-label={copied ? 'Copied!' : 'Copy Beam link'}
               >
                 {copied
                   ? <Check size={12} className="text-emerald-300" />
@@ -258,7 +258,7 @@ function BeamRow({
               onClick={handleCancel}
               disabled={cancelling}
               className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg
-                         bg-white/8 hover:bg-red-400/15 text-white/40 hover:text-red-300
+                         bg-white/8 hover:bg-red-400/15 text-white/55 hover:text-red-300
                          transition-colors disabled:opacity-40"
               aria-label="Cancel and recover funds"
             >
@@ -391,8 +391,10 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
           onClick={refresh}
           className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
         >
-          {fetchState === 'loading' && <Loader2 size={10} className="animate-spin" />}
-          {fetchState !== 'loading' && 'Refresh'}
+          {fetchState === 'loading'
+            ? <><Loader2 size={10} className="animate-spin" /> Refreshing…</>
+            : 'Refresh'
+          }
         </button>
       </div>
       {rows.map((row) => (

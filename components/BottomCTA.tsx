@@ -52,8 +52,7 @@ export function BottomCTA({ onSendClick }: BottomCTAProps) {
           </h2>
 
           <p className="text-white/55 text-xl max-w-xl text-balance">
-            No wallet needed to receive. Just a phone and two seconds to sign in.
-            Beam handles everything else.
+            No wallet needed. They sign in with Apple or Google and the funds are theirs.
           </p>
 
           <button

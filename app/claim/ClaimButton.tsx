@@ -61,7 +61,7 @@ export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim }: Claim
       {!alreadyClaimed && (
         <div className="flex items-center gap-2 text-xs text-white/45">
           <GaslessBadge />
-          <span>No gas required — the Relayer pays for you</span>
+          <span>Recipients claim gaslessly — no gas, no wallet.</span>
         </div>
       )}
 

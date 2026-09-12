@@ -28,7 +28,7 @@ export function BeamPreviewCard() {
       {/* Success state */}
       <div className="glass-sm flex items-center gap-2 px-3 py-2">
         <CheckCircle2 size={14} className="text-emerald-300 shrink-0" aria-hidden="true" />
-        <span className="text-xs text-white/75">Successfully bought Anthropic</span>
+        <span className="text-xs text-white/75">Claimed 0.05 ETH</span>
       </div>
 
       {/* Address row */}

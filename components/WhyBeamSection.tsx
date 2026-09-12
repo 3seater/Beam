@@ -1,15 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { KeyRound, Zap, MessageSquare, TrendingUp, ShieldCheck, RotateCcw } from 'lucide-react';
+import { MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
 
 const FEATURES = [
-  { icon: KeyRound, label: 'No wallet required', description: 'Recipients claim with Apple or Google login. A smart wallet is provisioned automatically — no seed phrases, no setup.' },
-  { icon: Zap, label: 'Gasless for recipients', description: 'The Beam relayer covers all on-chain gas costs. Recipients never need to hold ETH to receive funds.' },
-  { icon: MessageSquare, label: 'Any messaging app', description: 'A Beam is just a URL. Share it over iMessage, WhatsApp, Telegram, X, email — anywhere.' },
-  { icon: TrendingUp, label: 'Stocks & crypto', description: 'Send native ETH, any ERC-20, or Robinhood Chain stock tokens representing real company shares.' },
-  { icon: ShieldCheck, label: 'Cryptographically secure', description: 'Each link holds an ephemeral key that never touches a server. Only the link holder can claim, ever.' },
-  { icon: RotateCcw, label: 'Fully cancellable', description: 'Changed your mind? Cancel any unclaimed Beam at any time and recover 100% of your funds.' },
+  { icon: ShieldCheck, label: 'Cryptographically secure', description: 'Each link holds an ephemeral key that never touches a server. Only the link holder can claim.' },
+  { icon: RotateCcw, label: 'Fully cancellable', description: 'Cancel any unclaimed Beam at any time and recover 100% of your funds.' },
+  { icon: MessageSquare, label: 'Any messaging app', description: 'A Beam is just a URL. Send it over iMessage, WhatsApp, Telegram, email — anywhere.' },
 ] as const;
 
 export function WhyBeamSection() {
@@ -27,28 +24,16 @@ export function WhyBeamSection() {
           >
             Why Beam
           </motion.h2>
-          <motion.p
-            className="mt-4 text-white/55 text-xl max-w-lg mx-auto"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-          >
-            Built for people, not infrastructure engineers.
-          </motion.p>
         </div>
 
         <ul
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-5"
           aria-label="Beam features"
         >
           {FEATURES.map(({ icon: Icon, label, description }, i) => (
             <motion.li
               key={label}
-              className={[
-                'flex items-start gap-5 p-7 rounded-[24px]',
-                i % 3 === 1 ? 'glass' : 'bg-white/6 border border-white/12',
-              ].join(' ')}
+              className="flex items-start gap-5 p-7 rounded-[24px] glass"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: '-50px' }}

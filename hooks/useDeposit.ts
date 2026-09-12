@@ -7,8 +7,7 @@ import { decodeEventLog, parseUnits } from 'viem';
 import { generateEphemeralKey, constructBeamLink } from '@/lib/beam-link';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS, DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
-import { fetchUniswapQuote, buildSwapCalldata } from '@/lib/uniswap-swap';
-import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
+import { fetchUniswapQuote, fetchFirmQuote, buildSwapCalldata } from '@/lib/uniswap-swap'; import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { saveBeamEntry } from '@/lib/beam-history';
 import type { BeamStep } from '@/lib/types';
 
@@ -148,59 +147,11 @@ export function useDeposit(): UseDepositReturn {
     const { ephemeralPrivKey, claimSignerAddress } = generateEphemeralKey();
     ephemeralPrivKeyRef.current = ephemeralPrivKey;
 
-    // Get the most accurate ETH price possible right now:
-    // 1. Read WETH/USDG pool slot0 for the real on-chain price
-    // 2. Fall back to Robinhood price API if that fails
-    let ethAmtWei: bigint;
-    try {
-      const { getPublicClient } = await import('wagmi/actions');
-      const { wagmiConfig } = await import('@/lib/wagmi-config');
-      const client = getPublicClient(wagmiConfig);
-
-      // Get the WETH/USDG pool address and read its current sqrtPriceX96
-      const WETH = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73' as `0x${string}`;
-      const USDG = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168' as `0x${string}`;
-      const FACTORY = '0x1f7d7550b1b028f7571e69a784071f0205fd2efa' as `0x${string}`;
-
-      const poolAddr = await client!.readContract({
-        address: FACTORY,
-        abi: [{ name: 'getPool', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenA', type: 'address' }, { name: 'tokenB', type: 'address' }, { name: 'fee', type: 'uint24' }], outputs: [{ name: '', type: 'address' }] }] as const,
-        functionName: 'getPool',
-        args: [WETH, USDG, 500],
-      }) as `0x${string}`;
-
-      const slot0 = await client!.readContract({
-        address: poolAddr,
-        abi: [{ name: 'slot0', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: 'sqrtPriceX96', type: 'uint160' }, { name: 'tick', type: 'int24' }, { name: 'observationIndex', type: 'uint16' }, { name: 'observationCardinality', type: 'uint16' }, { name: 'observationCardinalityNext', type: 'uint16' }, { name: 'feeProtocol', type: 'uint8' }, { name: 'unlocked', type: 'bool' }] }] as const,
-        functionName: 'slot0',
-      }) as readonly [bigint, number, number, number, number, number, boolean];
-
-      const sqrtPriceX96 = slot0[0];
-      // WETH is token0 or token1? Sort addresses to determine
-      const wethIsToken0 = WETH.toLowerCase() < USDG.toLowerCase();
-
-      // price = (sqrtPriceX96 / 2^96)^2
-      // If WETH=token0: price = USDG per WETH = ETH price in USDG
-      // If WETH=token1: price = WETH per USDG, so ETH price = 1/price
-      const Q96 = 2n ** 96n;
-      const priceRaw = Number((sqrtPriceX96 * sqrtPriceX96 * 10n ** 18n) / (Q96 * Q96)) / 1e18;
-      const ethPriceFromPool = wethIsToken0 ? priceRaw : 1 / priceRaw;
-
-      console.log('[useDeposit] pool ETH price:', ethPriceFromPool, 'wethIsToken0:', wethIsToken0);
-
-      if (ethPriceFromPool > 100 && ethPriceFromPool < 100_000) {
-        ethAmtWei = parseUnits((usdAmount / ethPriceFromPool).toFixed(18), 18);
-        console.log('[useDeposit] using pool price:', ethPriceFromPool, '→ ethAmtWei:', ethAmtWei.toString());
-      } else {
-        throw new Error(`pool price out of range: ${ethPriceFromPool}`);
-      }
-    } catch (priceErr) {
-      console.warn('[useDeposit] pool price read failed, using API:', priceErr);
-      const ethPrice = await fetchTokenPriceUsd('ETH') ?? 3400;
-      ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
-    }
-
-    console.log('[useDeposit] tokenAddress:', tokenAddress, 'usd:', usdAmount, 'ethAmtWei:', ethAmtWei.toString());
+    // Compute ETH amount from USD using live ETH price (used for native ETH deposits
+    // and as a fallback estimate for ERC-20 swaps when EXACT_OUTPUT isn't available)
+    const ethPrice = await fetchTokenPriceUsd('ETH') ?? 2500;
+    const ethAmtWei = parseUnits((usdAmount / ethPrice).toFixed(18), 18);
+    console.log('[useDeposit] ETH price:', ethPrice, '| ethAmtWei:', ethAmtWei.toString());
 
     try {
       // ── Native ETH path: deposit directly ─────────────────────────────
@@ -225,18 +176,33 @@ export function useDeposit(): UseDepositReturn {
         return;
       }
 
-      // ── ERC-20 path: swap ETH → token via Uniswap V3, then deposit ────
+      // ── ERC-20 path: swap ETH → token via Uniswap Trading API (V4/V3/UniswapX), then deposit ────
 
-      // 1. Fetch a fresh firm quote from QuoterV2 onchain
-      const quote = await fetchUniswapQuote(tokenAddress, ethAmtWei);
+      // 1. Use EXACT_OUTPUT: compute how many tokens $usdAmount buys, then ask
+      //    the API for exactly that many tokens. This way the user gets exactly
+      //    $usdAmount of tokens regardless of ETH price fluctuations.
+      let exactOutputWei: bigint | undefined;
+      try {
+        const tokenPrice = await fetchTokenPriceUsd(tokenSymbol);
+        if (tokenPrice && tokenPrice > 0) {
+          const tokenAmount = usdAmount / tokenPrice;
+          exactOutputWei = parseUnits(tokenAmount.toFixed(18), 18);
+          console.log('[useDeposit] EXACT_OUTPUT | tokenPrice=', tokenPrice, '| tokenAmount=', tokenAmount, '| wei=', exactOutputWei.toString());
+        }
+      } catch {
+        // fall through to EXACT_INPUT
+      }
+
+      // 1. Fetch a firm quote with swap calldata
+      const quote = await fetchFirmQuote(tokenAddress, ethAmtWei, ownerAddress, exactOutputWei);
       if (!quote) {
         throw new Error(
-          'No liquidity found for this token on Uniswap V3. ' +
+          'No liquidity found for this token. ' +
           'Try a larger amount or use ETH instead.',
         );
       }
 
-      // 2. Execute the Uniswap swap (ETH → WETH → USDG → token)
+      // 2. Execute the swap (V4 via UniversalRouter, or V3 fallback)
       setStep('swap-pending');
       const swapTx = buildSwapCalldata(quote, ownerAddress);
       const swapHash = await sendSwapTx({

@@ -10,23 +10,23 @@ const FAQ_ITEMS: AccordionItem[] = [
   },
   {
     question: 'Do recipients need a crypto wallet?',
-    answer: 'No. Recipients sign in with Apple, Google, or Twitter. Privy automatically provisions a secure embedded smart wallet behind the scenes — no seed phrases, no browser extensions, no setup required.',
+    answer: 'No. Recipients sign in with Apple or Google. Privy automatically provisions a secure embedded smart wallet — no seed phrases, no browser extensions, no setup required.',
   },
   {
     question: 'Which tokens can I send?',
-    answer: 'Native ETH, any ERC-20, and Robinhood Chain stock-paired tokens representing real company shares (NVDA, AAPL, TSLA, and more). The asset picker shows the most popular options, or you can paste any contract address.',
+    answer: 'Native ETH, any ERC-20, and Robinhood Chain stock tokens representing real company shares (NVDA, AAPL, TSLA, and more). The asset picker shows the most popular options, or you can paste any contract address.',
   },
   {
     question: 'Can I cancel and recover my funds?',
-    answer: 'Yes — at any time before the link is claimed. Call cancel from the app and the full amount returns to your wallet. Once a link is claimed, the deposit is permanently closed.',
+    answer: 'Yes — at any time before the link is claimed. Cancel from the app and the full amount returns to your wallet. Once claimed, the deposit is permanently closed.',
   },
   {
     question: 'Who pays gas when a recipient claims?',
-    answer: 'The recipient pays zero gas. Beam\'s Relayer service submits the claim transaction on their behalf, paying all fees. The only gas cost is the sender\'s initial deposit.',
+    answer: 'Recipients claim gaslessly — no gas, no wallet. Beam\'s relayer submits the claim transaction on their behalf. The only gas cost is the sender\'s initial deposit.',
   },
   {
     question: 'Do Beam links expire?',
-    answer: 'No expiry. The funds sit in the escrow contract until the recipient claims or the sender cancels. There\'s no time pressure on either side.',
+    answer: 'No expiry. Funds stay in escrow until claimed or cancelled.',
   },
 ];
 
@@ -47,17 +47,8 @@ export function FAQSection() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.5 }}
           >
-            FAQs
+            FAQ
           </motion.h2>
-          <motion.p
-            className="mt-4 text-white/55 text-xl"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-          >
-            Everything you need to know.
-          </motion.p>
         </div>
 
         <motion.div
