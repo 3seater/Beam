@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw } from 'lucide-react';
 import { BeamMark } from './BeamMark';
 import { LandingTokenLogo } from './LandingTokenLogo';
@@ -16,15 +16,46 @@ type Asset = typeof ASSETS[number];
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
+// Isolated so parent re-renders (from asset selection) never restart the animation
+const AssetTicker = memo(function AssetTicker({
+  selected,
+  onSelect,
+}: {
+  selected: Asset;
+  onSelect: (sym: Asset) => void;
+}) {
+  return (
+    <div className="hero-demo-assets-wrap" role="group" aria-label="Preview a token">
+      <div className="hero-demo-assets-track">
+        {[0, 1].map(copy => (
+          <div key={copy} className="hero-demo-assets-row" aria-hidden={copy === 1}>
+            {ASSETS.map(sym => (
+              <button
+                key={sym}
+                type="button"
+                aria-pressed={selected === sym}
+                onClick={() => onSelect(sym)}
+                tabIndex={copy === 0 ? 0 : -1}
+              >
+                <LandingTokenLogo symbol={sym} size={20} />{sym}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
 export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string) => void }) {
   const [asset, setAsset] = useState<Asset>('ETH');
   const [amount, setAmount] = useState<number>(100);
   const [step, setStep] = useState(0);
 
-  const selectAsset = (sym: Asset) => {
+  const selectAsset = useCallback((sym: Asset) => {
     setAsset(sym);
     onAssetChange?.(sym);
-  };
+  }, [onAssetChange]);
 
   return (
     <div className="hero-demo" aria-label="Interactive Beam preview">
@@ -41,27 +72,7 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
         ))}
       </div>
 
-      {/* CSS ticker — two copies animate continuously, pause on hover/focus */}
-      <div className="hero-demo-assets-wrap" role="group" aria-label="Preview a token">
-        <div className="hero-demo-assets-track">
-          {[0, 1].map(copy => (
-            <div key={copy} className="hero-demo-assets-row" aria-hidden={copy === 1}>
-              {ASSETS.map(sym => (
-                <button
-                  key={sym}
-                  type="button"
-                  data-symbol={sym}
-                  aria-pressed={asset === sym}
-                  onClick={() => selectAsset(sym)}
-                  tabIndex={copy === 0 ? 0 : -1}
-                >
-                  <LandingTokenLogo symbol={sym} size={20} />{sym}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+      <AssetTicker selected={asset} onSelect={selectAsset} />
 
       <div className="hero-demo-stage" data-step={step}>
         <div className="hero-demo-beam" style={tokenCardStyle(asset)}>

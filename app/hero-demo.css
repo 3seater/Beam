@@ -93,18 +93,22 @@
 .hero-demo-assets-wrap {
   margin: 24px 0 18px;
   overflow: hidden;
+  /* Fade masks on both edges */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%);
 }
 
 /* Track holds two identical rows — CSS animation slides it left for seamless loop */
 .hero-demo-assets-track {
   display: flex;
   width: max-content;
-  animation: hero-ticker 18s linear infinite;
+  animation: hero-ticker 22s linear infinite;
 }
 
+/* Slow down on hover instead of stopping */
 .hero-demo-assets-wrap:hover .hero-demo-assets-track,
 .hero-demo-assets-wrap:focus-within .hero-demo-assets-track {
-  animation-play-state: paused;
+  animation-duration: 60s;
 }
 
 @keyframes hero-ticker {
