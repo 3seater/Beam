@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
   }
   const kind = req.nextUrl.searchParams.get('kind');
-  const entries = (await getBeamLinksForWallet(wallet)).filter(entry => kind === 'spectrum' ? entry.kind === 'spectrum' : entry.kind !== 'spectrum');
+  let entries;
+  try {
+    entries = (await getBeamLinksForWallet(wallet)).filter(entry => kind === 'spectrum' ? entry.kind === 'spectrum' : entry.kind !== 'spectrum');
+  } catch {
+    return NextResponse.json({ error: 'Link backup storage is unavailable. Please try again later.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
   const signature = req.headers.get('x-beam-signature');
   if (!signature) return NextResponse.json({ entries: entries.map(entry => ({ depositId: entry.depositId, walletAddress: entry.walletAddress, tokenSymbol: entry.tokenSymbol, usdAmount: entry.usdAmount, createdAt: entry.createdAt, ...(entry.kind ? { kind: entry.kind } : {}) })) }, { headers: { 'Cache-Control': 'no-store' } });
   const timestamp = Number(req.headers.get('x-beam-timestamp'));
@@ -36,7 +41,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/beams
- * Saves a BeamLink server-side so it's never lost.
+ * Saves a verified BeamLink in the configured backup store.
  *
  * Body: { depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt }
  */
@@ -80,6 +85,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid beamLink format' }, { status: 400 });
   }
 
-  await saveBeamLink({ depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt, ...(kind === 'spectrum' ? { kind } : {}) });
+  try {
+    await saveBeamLink({ depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt, ...(kind === 'spectrum' ? { kind } : {}) });
+  } catch {
+    return NextResponse.json({ error: 'Link backup could not be saved. Keep the original link and retry.' }, { status: 503 });
+  }
   return NextResponse.json({ ok: true });
 }

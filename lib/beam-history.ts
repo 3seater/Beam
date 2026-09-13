@@ -35,7 +35,7 @@ export function loadBeamHistory(walletAddress: string): BeamHistoryEntry[] {
   }
 }
 
-/** Saves a new beam entry, keeping at most 50 per wallet. */
+/** Saves a beam entry. Never evict claim keys to impose a history limit. */
 export function saveBeamEntry(
   walletAddress: string,
   entry: BeamHistoryEntry,
@@ -45,7 +45,7 @@ export function saveBeamEntry(
     const existing = loadBeamHistory(walletAddress);
     // Avoid duplicates by depositId
     const filtered = existing.filter((e) => e.depositId !== entry.depositId || e.kind !== entry.kind);
-    const updated  = [entry, ...filtered].slice(0, 50);
+    const updated  = [entry, ...filtered];
     localStorage.setItem(storageKey(walletAddress), JSON.stringify(updated));
   } catch {
     // localStorage might be full or disabled — fail silently

@@ -11,7 +11,7 @@ export default function TermsPage() {
     <LegalPage
       title="Terms of Service"
       subtitle="Please read these terms carefully before using Beam."
-      effectiveDate="September 1, 2026"
+      effectiveDate="September 13, 2026"
       sections={[
         {
           heading: '1. Acceptance of Terms',
@@ -30,8 +30,10 @@ export default function TermsPage() {
             <>
               <p>
                 Beam is a non-custodial token transfer protocol that allows users to send
-                cryptocurrency tokens via a shareable link. The sender deposits tokens into the
-                BeamEscrow smart contract deployed on Robinhood Chain. A recipient can claim those
+                crypto and stock tokens via a shareable link, individually or as a Spectrum
+                preset bundle. Single assets are deposited into BeamEscrow; Spectrum
+                routes an ETH budget into several assets and deposits them into SpectrumEscrow
+                on Robinhood Chain. A recipient can claim those
                 tokens using a one-time cryptographic key embedded in the link, without needing a
                 pre-existing wallet.
               </p>
@@ -66,7 +68,7 @@ export default function TermsPage() {
             <>
               <p>
                 Beam is a non-custodial protocol. We do not at any point hold, control, or have
-                access to your tokens. All funds are held in the BeamEscrow smart contract, which is
+                access to your tokens. Funds are held in the BeamEscrow or SpectrumEscrow smart contract, each
                 governed solely by its on-chain code. We cannot freeze, recover, or reverse any
                 transaction once it has been submitted to the blockchain.
               </p>
@@ -87,7 +89,7 @@ export default function TermsPage() {
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>
                   <span className="text-white/80 font-medium">Smart contract risk.</span> The
-                  BeamEscrow contract has been developed with security best practices and tested, but
+                  Beam escrow contracts have been developed with security best practices and tested, but
                   no smart contract is free from the possibility of bugs or exploits.
                 </li>
                 <li>
@@ -108,7 +110,7 @@ export default function TermsPage() {
                 <li>
                   <span className="text-white/80 font-medium">Relayer availability.</span> The
                   gasless relayer may be temporarily unavailable. In such cases, recipients with a
-                  funded wallet can still claim directly by interacting with the BeamEscrow contract.
+                  funded wallet can still claim directly by interacting with the appropriate escrow contract.
                 </li>
               </ul>
             </>

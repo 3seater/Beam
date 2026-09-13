@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       subtitle="How we handle your information when you use Beam."
-      effectiveDate="September 1, 2026"
+      effectiveDate="September 13, 2026"
       sections={[
         {
           heading: '1. Overview',
@@ -92,6 +92,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-5 space-y-1.5">
                 <li><span className="text-white/80 font-medium">Privy</span> — authentication and embedded wallet infrastructure (privy.io)</li>
                 <li><span className="text-white/80 font-medium">Robinhood Chain RPC</span> — blockchain node access for reading and submitting transactions</li>
+                <li><span className="text-white/80 font-medium">Enso</span> — swap routing and Spectrum bundle quotes. Quote requests include wallet addresses, asset addresses, and spending amounts; they do not include the private claim key.</li>
                 <li><span className="text-white/80 font-medium">CoinGecko</span> — ETH/WETH price data</li>
                 <li><span className="text-white/80 font-medium">DexScreener</span> — DEX token price data</li>
                 <li><span className="text-white/80 font-medium">Robinhood Markets, Inc.</span> — stock token price quotes and asset metadata</li>
@@ -138,7 +139,7 @@ export default function PrivacyPage() {
             <p>
               Beam is designed to minimize the amount of sensitive data we handle. Private keys for
               gasless claim relaying are ephemeral and never stored on our servers. Funds flow
-              directly through the BeamEscrow smart contract — we are never in custody of your
+              through swaps and the BeamEscrow or SpectrumEscrow smart contract — we are never in custody of your
               tokens. While we take reasonable measures to protect the data we do handle, no system
               is completely secure. Do not share your Beam link with untrusted parties, as it
               contains the claim key required to withdraw the deposited tokens.

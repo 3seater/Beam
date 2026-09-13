@@ -247,7 +247,7 @@ export function SectionOverview() {
         <a href="https://robinhood.com/robinhood-chain" target="_blank" rel="noopener noreferrer">
           Robinhood Chain
         </a>{' '}
-        — an Arbitrum Orbit L2. Deposit ETH or any ERC-20 token, get a shareable
+        — an Arbitrum Orbit L2. Send a supported asset or a Spectrum bundle, get a shareable
         link, and send it to anyone. The recipient signs in and claims — no
         prior wallet or gas required.
       </Lead>
@@ -256,7 +256,7 @@ export function SectionOverview() {
         <Card
           icon={<Link2 size={18} />}
           title="Send as a link"
-          desc="Funds live on-chain in the BeamEscrow contract. The claim key lives only in the URL fragment — never sent to a server."
+          desc="Funds live on-chain in BeamEscrow or SpectrumEscrow. The link contains the claim key; keep complete links private."
         />
         <Card
           icon={<Wallet size={18} />}
@@ -277,7 +277,7 @@ export function SectionOverview() {
 
       <H3>Supported assets</H3>
       <P>
-        Beam supports native ETH and any ERC-20 token deployed on Robinhood Chain —
+        Beam supports native ETH and supported ERC-20 tokens deployed on Robinhood Chain —
         including stock-paired tokens like <IC>NVDA</IC>, <IC>MSFT</IC>, and{' '}
         <IC>AAPL</IC>.
       </P>
@@ -316,12 +316,12 @@ function SectionQuickStart() {
           Click <strong>Connect wallet</strong> in the top-right nav. Beam uses Privy
           for authentication — choose an available sign-in method or connect an existing wallet.
         </Step>
-        <Step n={2} title="Pick a token and amount">
-          Hit <strong>Send a Beam</strong>. Select an asset (ETH, NVDA, MSFT, …) and
-          enter the amount you want to send.
+        <Step n={2} title="Pick an asset or bundle">
+          Hit <strong>Send a Beam</strong>. Choose Single asset or Spectrum, select an asset or preset bundle, and
+          enter the amount you want to send. Spectrum uses ETH to fund the bundle.
         </Step>
         <Step n={3} title="Approve the token (ERC-20 only)">
-          For ERC-20s, your wallet will prompt you to approve the{' '}
+          For direct single-asset ERC-20 deposits, your wallet will prompt you to approve the{' '}
           <IC>BeamEscrow</IC> contract to spend tokens on your behalf. ETH deposits
           skip this step.
         </Step>
@@ -345,7 +345,7 @@ function SectionQuickStart() {
         When a recipient opens a Beam link they&apos;ll see the amount and asset. They tap{' '}
         <strong>Claim my Beam</strong>, sign in, and the Relayer
         submits the claim on their behalf. Funds land in their Privy embedded wallet
-        within seconds.
+        after the claim transaction confirms. Spectrum recipients claim all bundle assets together.
       </P>
 
       <Pre lang="text" label="Beam link anatomy">
@@ -355,8 +355,7 @@ function SectionQuickStart() {
       </Pre>
 
       <Callout kind="security">
-        The ephemeral key lives exclusively in the URL hash fragment. It is never
-        sent to any server, never logged, and is discarded after the claim completes.
+        The claim key is carried in the URL hash fragment, which normal page requests do not include. Keep complete links private, including saved or restored link backups.
       </Callout>
     </section>
   );
@@ -365,6 +364,28 @@ function SectionQuickStart() {
 /* ─────────────────────────────────────────────────────────────
    Section: How It Works
    ───────────────────────────────────────────────────────────── */
+function SectionSpectrum() {
+  return <section id="spectrum" className="docs-section">
+    <Eyebrow>Getting Started</Eyebrow>
+    <H2>Spectrum bundles</H2>
+    <Lead>Send several assets together through one link.</Lead>
+    <P>Spectrum sits beside Single asset in the send flow. Choose a preset bundle, enter a dollar amount, and pay in ETH. Each preset lists its assets and the weights used to split your sending budget.</P>
+    <Steps>
+      <Step n={1} title="Choose a bundle">Select a preset such as Blue Chips, AI &amp; Infra, or Mag 4. Review its assets and allocation.</Step>
+      <Step n={2} title="Set your amount">Enter $5 to $100,000. Your connected wallet needs enough ETH for the bundle and network fee.</Step>
+      <Step n={3} title="Review and send">Beam routes the ETH into the selected assets through Enso and deposits them into SpectrumEscrow in one transaction. If a route is unavailable for any asset, the bundle cannot be sent.</Step>
+      <Step n={4} title="Share one link">The recipient opens the link, signs in, and claims every asset together. A wallet is created when needed, and Beam’s relayer covers the claim’s network fee.</Step>
+    </Steps>
+    <H3>Allocations and amounts</H3>
+    <P>Preset weights allocate the ETH input budget. Prices, slippage, and rounding affect the token amounts received and their final relative values. These are fixed bundles of tokens, not managed or automatically rebalanced funds.</P>
+    <H3>History and cancellation</H3>
+    <P>Sent bundles appear under Your Spectrums in Your Beams. Before a bundle is claimed, the sender can cancel it to recover every deposited asset. Cancellation returns those tokens, rather than swapping them back to ETH.</P>
+    <H3>Contract and link format</H3>
+    <P>Single-asset links use BeamEscrow. Bundles use SpectrumEscrow: <IC>depositBundle</IC> stores the received token balances, <IC>getBundle</IC> reads them, and one <IC>claim</IC> or <IC>cancel</IC> transfers all assets. Spectrum claim signatures bind the chain, escrow address, deposit ID, and recipient.</P>
+    <P>Spectrum links include <IC>kind=spectrum</IC> in the URL fragment alongside the claim key and deposit ID. The complete link allows its holder to claim the whole bundle. Share it privately.</P>
+  </section>;
+}
+
 function SectionHowItWorks() {
   return (
     <section id="how-it-works" className="docs-section">
@@ -375,7 +396,7 @@ function SectionHowItWorks() {
         authentication, and a gasless relayer into a single seamless UX.
       </Lead>
 
-      <H3>Send flow</H3>
+      <H3>Single-asset send flow</H3>
       <Pre lang="text" label="Send data flow">
         {`1. Sender connects wallet
 2. generatePrivateKey()            → ephemeralPrivKey  (in memory only)
@@ -390,7 +411,7 @@ function SectionHowItWorks() {
    ephemeralPrivKey stays in JS memory until page unload`}
       </Pre>
 
-      <H3>Claim flow</H3>
+      <H3>Single-asset claim flow</H3>
       <Pre lang="text" label="Claim data flow">
         {`1. Recipient opens BeamLink
 2. parseHashFragment(location.hash)
@@ -417,6 +438,8 @@ function SectionHowItWorks() {
 function SystemComponentsTable() {
   const rows: React.ReactNode[][] = [
     [<IC key="r1">BeamEscrow.sol</IC>, 'Holds funds on-chain; enforces claim / cancel rules'],
+    [<IC key="spectrum">SpectrumEscrow.sol</IC>, 'Stores bundle balances and releases all assets on claim or cancellation'],
+    ['Enso', 'Routes Spectrum ETH budgets into preset assets before deposit'],
     ['Next.js Frontend', 'CreateBeamModal (sender) and ClaimPage (recipient)'],
     ['Relayer API', 'POST /relay/claim — submits claim tx, covers gas'],
     ['Privy', 'Authentication with supported sign-in methods + embedded wallet provisioning'],
@@ -436,7 +459,7 @@ function SectionSmartContract() {
       <Eyebrow>Protocol</Eyebrow>
       <H2>Smart Contract</H2>
       <Lead>
-        <IC>BeamEscrow.sol</IC> is the single on-chain component of the protocol.
+        <IC>BeamEscrow.sol</IC> handles single-asset deposits. Spectrum bundles use <IC>SpectrumEscrow.sol</IC>. The single-asset contract reference follows.
         It is deployed on Robinhood Chain (chainId <IC>4663</IC>) and built on
         OpenZeppelin v5.
       </Lead>
@@ -617,7 +640,8 @@ function SectionRelayer() {
         then calls <IC>BeamEscrow.claim</IC> from its own funded wallet, covering gas.
       </P>
 
-      <H3>Payload</H3>
+      <P>Spectrum uses <IC>/api/relay/spectrum</IC> with the same payload fields. Its signature binds the chain, escrow address, deposit ID, and recipient. The relayer calls <IC>SpectrumEscrow.claim</IC> to release all bundle assets.</P>
+      <H3>Single-asset payload</H3>
       <Pre lang="json" label="POST /api/relay/claim">
         {`{
   "depositId":       "42",
@@ -676,6 +700,9 @@ function SectionApiReference() {
           [<Method key="m5" m="POST" />, <IC key="r5">/api/beams</IC>, 'Persist Beam metadata for the sender history view'],
           [<Method key="m6" m="GET" />, <IC key="r6">/api/beams</IC>, 'Retrieve Beam history for a sender address'],
           [<Method key="m7" m="POST" />, <IC key="r7">/api/rpc</IC>, 'Proxied JSON-RPC calls to Robinhood Chain'],
+          [<Method key="m9" m="POST" />, <IC key="r9">/api/spectrum/estimate</IC>, 'Estimate token amounts for a preset ETH budget'],
+          [<Method key="m10" m="POST" />, <IC key="r10">/api/spectrum/quote</IC>, 'Build the swap and bundle deposit transaction'],
+          [<Method key="m11" m="POST" />, <IC key="r11">/api/relay/spectrum</IC>, 'Relay a claim for all Spectrum assets'],
           [<Method key="m8" m="POST" />, <IC key="r8">/api/swap</IC>, 'Initiate a token swap before sending'],
         ]}
       />
@@ -725,7 +752,11 @@ function SectionFaq() {
     },
     {
       q: 'What tokens can I send?',
-      a: 'Native ETH, any ERC-20 token on Robinhood Chain, and stock-paired tokens like NVDA, MSFT, and AAPL. Use the asset picker in the Send flow to see everything available.',
+      a: 'Native ETH, supported ERC-20 tokens, and stock tokens on Robinhood Chain. Choose Single asset for one token or Spectrum for a preset bundle sent through one link.',
+    },
+    {
+      q: 'Can I cancel a Spectrum bundle?',
+      a: 'Yes, before it is claimed. Open Your Beams and cancel the bundle under Your Spectrums. Every deposited asset returns to your wallet; they are not converted back to ETH.',
     },
     {
       q: 'Who pays the gas fee?',
@@ -741,11 +772,11 @@ function SectionFaq() {
     },
     {
       q: 'What is Robinhood Chain?',
-      a: 'Robinhood Chain is an Arbitrum Orbit L2 (chainId 4663) built by Robinhood. It supports the EVM and is where BeamEscrow is deployed. It enables the stock-paired token transfers that make Beam unique.',
+      a: 'Robinhood Chain is an Arbitrum Orbit L2 (chainId 4663) built by Robinhood. It supports the EVM and is where BeamEscrow and SpectrumEscrow are deployed. It enables the stock-paired token transfers that make Beam unique.',
     },
     {
       q: 'Can I integrate Beam into my own app?',
-      a: 'The BeamEscrow contract ABI and address are public. You can interact with it directly using viem or ethers.js to build depositNative / depositToken flows. The Relayer is not currently exposed as a public API.',
+      a: 'BeamEscrow and SpectrumEscrow can be called directly using their ABIs. Single-asset deposits use depositNative / depositToken; bundles use depositBundle, getBundle, claim, and cancel. The Relayer is not currently exposed as a public API.',
     },
     {
       q: 'Does a Beam link expire?',
@@ -817,6 +848,8 @@ export function DocsContent() {
       <Divider />
       <SectionQuickStart />
       <Divider />
+      <SectionSpectrum />
+      <Divider />
       <SectionHowItWorks />
       <Divider />
       <SectionSmartContract />
@@ -838,6 +871,7 @@ export function DocsContent() {
 export const DOC_TOC_ENTRIES = [
   { id: 'overview', label: 'Overview' },
   { id: 'quick-start', label: 'Quick Start' },
+  { id: 'spectrum', label: 'Spectrum bundles' },
   { id: 'how-it-works', label: 'How It Works' },
   { id: 'smart-contract', label: 'Smart Contract' },
   { id: 'security', label: 'Security' },

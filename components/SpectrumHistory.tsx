@@ -57,7 +57,7 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
       setClosed(prev => ({ ...prev, [e.depositId]: true }));
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not cancel Spectrum.'); } finally { setBusy(null); }
   }
-  if (!entries.length) return loading ? <div className="glass rounded-[24px] p-5 mt-5 flex flex-col gap-4" aria-busy="true"><DataSkeleton className="w-40 h-5" label="Loading bundle history" /><DataSkeleton className="w-full h-16" /></div> : null;
+  if (!entries.length) return null;
   return <section className="glass rounded-[24px] p-5 mt-5 flex flex-col gap-4" aria-label="Sent Spectrums">
     <div className="flex justify-between gap-3"><h2 className="font-semibold">Your Spectrums</h2><button disabled={busy !== null} className="text-xs opacity-65" onClick={() => void restore()}>Restore links</button></div>
     {entries.map(e => <div key={e.depositId} className="glass-sm rounded-xl p-4 flex flex-col gap-2">

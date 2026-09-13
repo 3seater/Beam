@@ -11,6 +11,7 @@ import { robinhoodChain } from '@/lib/chains';
 import { wagmiConfig } from '@/lib/wagmi-config';
 import { DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
 import { saveBeamEntry } from '@/lib/beam-history';
+import { requireBeamBackup } from '@/lib/beam-backup-ready';
 
 interface PendingSpectrum { hash: `0x${string}`; key: `0x${string}`; presetId: string; usdAmount: number; sender: `0x${string}`; escrow: `0x${string}` }
 const pendingStorageKey = (sender: string) => `beam:spectrum:pending:${sender.toLowerCase()}`;
@@ -85,6 +86,7 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
     busy.current = true; setError(null); setLink(null);
     try {
       if (!Number.isFinite(usdAmount) || usdAmount < 5 || usdAmount > 100_000) throw new Error('Enter an amount from $5 to $100,000.');
+      await requireBeamBackup();
       setStatus('quoting');
       await switchChainAsync({ chainId: robinhoodChain.id });
       const price = await fetchTokenPriceUsd('ETH');

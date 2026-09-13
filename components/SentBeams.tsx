@@ -14,6 +14,7 @@ import { Skeleton } from './ui/Skeleton';
 import { BeamsSkeleton } from './BeamsSkeleton';
 import { HistoryTokenImage } from './HistoryTokenImage';
 import { recoveryMessage } from '@/lib/beam-recovery';
+import { tokenLogoUrl } from './LandingTokenLogo';
 
 type ServerEntry = Omit<StoredBeamLink, 'beamLink'> & { beamLink?: string };
 
@@ -31,6 +32,7 @@ interface OnchainDeposit {
   amount: bigint;
   claimSigner: string;
   blockNumber: bigint;
+  createdAt: number | null;
 }
 
 async function fetchOnchainDeposits(
@@ -57,7 +59,7 @@ async function fetchOnchainDeposits(
       toBlock: 'latest',
     });
 
-    return logs.map((log) => {
+    return (await Promise.all(logs.map(async (log) => {
       const decoded = decodeEventLog({
         abi: BEAM_ESCROW_ABI,
         eventName: 'Deposited',
@@ -68,24 +70,53 @@ async function fetchOnchainDeposits(
         depositId: bigint; sender: string; token: string;
         amount: bigint; claimSignerAddress: string;
       };
+      let createdAt: number | null = null;
+      try { createdAt = Number((await client.getBlock({ blockNumber: log.blockNumber! })).timestamp) * 1000; } catch { /* Keep history visible if block lookup fails. */ }
       return {
         depositId: args.depositId.toString(),
         token: args.token,
         amount: args.amount,
         claimSigner: args.claimSignerAddress,
         blockNumber: log.blockNumber ?? 0n,
+        createdAt,
       };
-    }).sort((a, b) => Number(b.blockNumber - a.blockNumber));
+    }))).sort((a, b) => Number(b.blockNumber - a.blockNumber));
   } catch (e) {
     console.warn('[SentBeams] onchain fetch failed:', e);
     return [];
   }
 }
 
+type DepositStatus = 'unclaimed' | 'claimed' | 'cancelled' | 'closed' | 'unknown';
+const cancellationQueries = new WeakMap<object, Map<string, { expires: number; result: Promise<Set<string>> }>>();
+let activeStatusReads = 0;
+const statusReadQueue: Array<() => void> = [];
+async function queuedDepositStatus(depositId: string, client: NonNullable<ReturnType<typeof usePublicClient>>): Promise<DepositStatus> {
+  await new Promise<void>(resolve => {
+    const start = () => { activeStatusReads++; resolve(); };
+    if (activeStatusReads < 3) start(); else statusReadQueue.push(start);
+  });
+  try { return await fetchDepositStatus(depositId, client); }
+  finally { activeStatusReads--; statusReadQueue.shift()?.(); }
+}
+function cancelledDeposits(client: NonNullable<ReturnType<typeof usePublicClient>>, sender: string): Promise<Set<string>> {
+  let cache = cancellationQueries.get(client);
+  if (!cache) { cache = new Map(); cancellationQueries.set(client, cache); }
+  const existing = cache.get(sender);
+  if (existing && existing.expires > Date.now()) return existing.result;
+  const result = client.getLogs({ address: BEAM_ESCROW_ADDRESS,
+    event: BEAM_ESCROW_ABI.find(event => event.type === 'event' && event.name === 'Cancelled') as Extract<typeof BEAM_ESCROW_ABI[number], { name: 'Cancelled' }>,
+    args: { sender: sender as `0x${string}` }, fromBlock: 0n, toBlock: 'latest',
+  }).then(logs => new Set(logs.map(log => String(log.args.depositId))));
+  cache.set(sender, { expires: Date.now() + 15_000, result });
+  void result.catch(() => { if (cache.get(sender)?.result === result) cache.delete(sender); });
+  return result;
+}
+
 async function fetchDepositStatus(
   depositId: string,
   client: ReturnType<typeof usePublicClient>,
-): Promise<'unclaimed' | 'claimed' | 'cancelled' | 'unknown'> {
+): Promise<DepositStatus> {
   if (!client) return 'unknown';
   try {
     const result = await client.readContract({
@@ -93,9 +124,15 @@ async function fetchDepositStatus(
       abi: BEAM_ESCROW_ABI,
       functionName: 'getDeposit',
       args: [BigInt(depositId)],
-    }) as { claimed: boolean; amount: bigint };
+    }) as { sender: string; claimed: boolean; amount: bigint };
 
-    if (result.amount === 0n) return 'cancelled'; // cancelled deposits have amount=0 after refund
+    if (result.claimed) {
+      // Cancellation closes the deposit without clearing its original amount.
+      try {
+        return (await cancelledDeposits(client, result.sender)).has(depositId) ? 'cancelled' : 'claimed';
+      } catch { return 'closed'; }
+    }
+    if (result.amount === 0n) return 'unknown';
     return result.claimed ? 'claimed' : 'unclaimed';
   } catch {
     return 'unknown';
@@ -146,29 +183,47 @@ interface RowData {
   logoUrl: string | null;
 }
 
+const historyCache = new Map<string, RowData[]>();
+
 function BeamRow({
   row,
   onCancelled,
   hydrating,
+  refreshVersion,
 }: {
   row: RowData;
   onCancelled: (depositId: string) => void;
   hydrating: boolean;
+  refreshVersion: number;
 }) {
-  const client = usePublicClient();
+  const client = usePublicClient({ chainId: 4663 });
   const { writeContractAsync } = useWriteContract();
 
   const [copied, setCopied] = useState(false);
-  const [status, setStatus] = useState<'unclaimed' | 'claimed' | 'cancelled' | 'unknown' | 'loading'>('loading');
+  const [status, setStatus] = useState<DepositStatus | 'loading'>('loading');
   const [cancelling, setCancelling] = useState(false);
   const [cancelErr, setCancelErr] = useState<string | null>(null);
 
   // Fetch claim status on mount
   useEffect(() => {
+    if (!client) return;
     let active = true;
-    fetchDepositStatus(row.depositId, client).then(value => { if (active) setStatus(value); });
-    return () => { active = false; };
-  }, [row.depositId, client]);
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const check = async (attempt: number) => {
+      const value = await queuedDepositStatus(row.depositId, client);
+      if (!active) return;
+      if ((value === 'unknown' || value === 'closed') && attempt < 3) {
+        // Keep the loading indicator or last known status while recovering.
+        retryTimer = setTimeout(() => { void check(attempt + 1); }, 750 * 2 ** attempt);
+        return;
+      }
+      setStatus(previous =>
+        value === 'unknown' && previous !== 'loading' ? previous :
+        value === 'closed' && (previous === 'claimed' || previous === 'cancelled') ? previous : value);
+    };
+    void check(0);
+    return () => { active = false; clearTimeout(retryTimer); };
+  }, [row.depositId, client, refreshVersion]);
 
   const copy = useCallback(async () => {
     if (!row.beamLink) return;
@@ -193,7 +248,9 @@ function BeamRow({
         functionName: 'cancel',
         args: [BigInt(row.depositId)],
       });
-      await client.waitForTransactionReceipt({ hash });
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') throw new Error('Cancellation reverted.');
+      cancellationQueries.delete(client);
       setStatus('cancelled');
       onCancelled(row.depositId);
     } catch (e) {
@@ -210,6 +267,7 @@ function BeamRow({
     if (status === 'loading') return (
       <span role="status" aria-label="Loading Beam status"><Skeleton className="history-status-skeleton" /></span>
     );
+    if (status === 'closed') return <span className="text-[10px] text-white/50">Claimed or cancelled</span>;
     if (status === 'claimed') return (
       <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white font-medium">
         <Check size={9} strokeWidth={2.5} />
@@ -226,7 +284,7 @@ function BeamRow({
         Pending
       </span>
     );
-    return null;
+    return <span className="text-[10px] text-white/50">Status unavailable</span>;
   })();
 
   return (
@@ -243,14 +301,14 @@ function BeamRow({
         </span>
 
         {/* USD — visually distinct: smaller, dimmer, slightly different weight */}
-        {row.usdAmount != null && status !== 'cancelled' && (
+        {row.usdAmount != null && (
           <span className="text-[11px] font-normal text-white/35 shrink-0 tabular-nums">${row.usdAmount}</span>
         )}
         {row.usdAmount == null && hydrating && <Skeleton className="history-usd-skeleton" />}
 
         {/* Copy + open — only when unclaimed and link exists */}
         <span className="beam-history-actions">
-        {status === 'loading' ? <><Skeleton className="history-action-skeleton" /><Skeleton className="history-action-skeleton" /></> : status === 'unclaimed' && row.beamLink && (
+        {row.beamLink && (
           <span className="flex items-center gap-1">
             <button
               type="button"
@@ -273,6 +331,7 @@ function BeamRow({
             </a>
           </span>
         )}
+        {!row.beamLink && <span className="text-[11px] text-white/50" title="This deposit exists onchain, but no original claim link is saved on this device. Restore checks the server backup.">Link unavailable</span>}
         </span>
       </div>
 
@@ -317,9 +376,10 @@ function BeamRow({
 // ─── Main ─────────────────────────────────────────────────────────────────
 
 export function SentBeams({ walletAddress }: SentBeamsProps) {
-  const client = usePublicClient();
+  const client = usePublicClient({ chainId: 4663 });
 
-  const [rows, setRows] = useState<RowData[]>([]);
+  const cacheKey = `${BEAM_ESCROW_ADDRESS}:${walletAddress.toLowerCase()}`;
+  const [rows, setRows] = useState<RowData[]>(() => historyCache.get(cacheKey) ?? []);
   const { signMessageAsync } = useSignMessage();
   const [restoring, setRestoring] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
@@ -332,12 +392,25 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       const timestamp = Date.now();
       const signature = await signMessageAsync({ account: walletAddress as `0x${string}`, message: recoveryMessage(walletAddress, window.location.origin, timestamp) });
       const response = await fetch('/api/beams?wallet=' + walletAddress, { headers: { 'x-beam-signature': signature, 'x-beam-timestamp': String(timestamp) } });
-      if (!response.ok) throw new Error('Could not restore links. Please try again.');
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(body?.error ?? 'Could not restore links. Please try again.');
+      }
       const { entries } = await response.json() as { entries: StoredBeamLink[] };
       if (walletRef.current !== walletAddress) return;
       for (const entry of entries) saveBeamEntry(walletAddress, entry);
-      setRows(previous => previous.map(row => ({ ...row, beamLink: entries.find(entry => entry.depositId === row.depositId)?.beamLink ?? row.beamLink })));
-    } catch { if (walletRef.current === walletAddress) setRecoveryError('Sign with this wallet to restore your links. No transaction is needed.'); }
+      setRows(previous => {
+        const restored = previous.map(row => ({ ...row, beamLink: entries.find(entry => entry.depositId === row.depositId)?.beamLink ?? row.beamLink }));
+        for (const entry of entries) {
+          if (restored.some(row => row.depositId === entry.depositId)) continue;
+          restored.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: 18, amount: 0n, beamLink: entry.beamLink, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: null });
+        }
+        historyCache.set(cacheKey, restored);
+        return restored;
+      });
+      if (!entries.length) setRecoveryError('Wallet verified, but no link backups were found. An original link is needed to restore its claim key. You can still cancel an unclaimed Beam from its sending wallet.');
+      else setRecoveryError(`${entries.length} saved links restored. A pending Beam still showing “Link unavailable” needs its original link or a backup from another device.`);
+    } catch (error) { if (walletRef.current === walletAddress) setRecoveryError(error instanceof Error ? error.message : 'Could not restore links. Please try again.'); }
     finally { setRestoring(false); }
   };
   // 'idle' = not started yet, 'loading' = onchain fetch in flight, 'done' = finished
@@ -361,19 +434,21 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     setRecoveryError(null);
     setFetchState('idle');
     {
-      setRows(local.map((e) => ({
+      const cached = historyCache.get(cacheKey) ?? [];
+      setRows([...local.map((e) => ({
+        ...cached.find(row => row.depositId === e.depositId),
         depositId: e.depositId,
         tokenSymbol: e.tokenSymbol,
-        tokenDecimals: 18,
-        amount: 0n,
+        tokenDecimals: cached.find(row => row.depositId === e.depositId)?.tokenDecimals ?? 18,
+        amount: cached.find(row => row.depositId === e.depositId)?.amount ?? 0n,
         beamLink: e.beamLink,
         usdAmount: e.usdAmount,
         createdAt: e.createdAt,
         claimSigner: '',
-        logoUrl: null,
-      })));
+        logoUrl: tokenLogoUrl(e.tokenSymbol),
+      })), ...cached.filter(row => !local.some(entry => entry.depositId === row.depositId))]);
     }
-  }, [walletAddress]);
+  }, [walletAddress, cacheKey]);
 
   const refresh = useCallback(async () => {
     // Don't fire until wagmi client is ready
@@ -382,14 +457,15 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     const request = ++requestRef.current;
     setFetchState('loading');
 
-    const [onchain, serverLinks, localEntries] = await Promise.all([
+    const [onchain, serverLinks] = await Promise.all([
       fetchOnchainDeposits(walletAddress, client),
       fetchServerLinks(walletAddress),
-      Promise.resolve(loadBeamHistory(walletAddress).filter(e => e.kind !== 'spectrum')),
       tokenReadyRef.current,
     ]);
 
     if (walletRef.current !== walletAddress || request !== requestRef.current) return;
+    // Recovery may finish while this request is in flight. Read its saved keys now.
+    const localEntries = loadBeamHistory(walletAddress).filter(e => e.kind !== 'spectrum');
     const serverMap = new Map(serverLinks.map((e) => [e.depositId, e]));
     const localMap = new Map(localEntries.map((e) => [e.depositId, e]));
 
@@ -420,7 +496,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         amount: dep.amount,
         beamLink: stored?.beamLink ?? localMap.get(dep.depositId)?.beamLink ?? null,
         usdAmount: stored?.usdAmount ?? null,
-        createdAt: stored?.createdAt ?? null,
+        createdAt: stored?.createdAt ?? dep.createdAt,
         claimSigner: dep.claimSigner,
         logoUrl: tokenInfo.logoUrl,
       };
@@ -432,7 +508,17 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       const info = [...tokenMapRef.current.values()].find(token => token.symbol.toUpperCase() === entry.tokenSymbol.toUpperCase());
       merged.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: info?.decimals ?? 18, amount: 0n, beamLink: entry.beamLink ?? localMap.get(entry.depositId)?.beamLink ?? null, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: info?.logoUrl ?? (entry.tokenSymbol === 'ETH' ? 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' : null) });
     }
-    setRows(merged);
+    setRows(previous => {
+      const updated = merged.map(row => {
+        const saved = previous.find(saved => saved.depositId === row.depositId);
+        return { ...row, amount: row.amount || saved?.amount || 0n, createdAt: row.createdAt ?? saved?.createdAt ?? null, beamLink: row.beamLink ?? saved?.beamLink ?? null };
+      });
+      // Chain history is append-only. A transient empty scan must not erase
+      // rows already discovered for this wallet.
+      for (const row of previous) if (!updated.some(entry => entry.depositId === row.depositId)) updated.push(row);
+      historyCache.set(`${BEAM_ESCROW_ADDRESS}:${walletAddress.toLowerCase()}`, updated);
+      return updated;
+    });
     setFetchState('done');
   }, [walletAddress, client]);
 
@@ -443,7 +529,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
   const handleCancelled = useCallback((depositId: string) => {
     setRows((prev) => prev.map((r) =>
-      r.depositId === depositId ? { ...r, amount: 0n } : r,
+      r.depositId === depositId ? { ...r } : r,
     ));
   }, []);
 
@@ -478,7 +564,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       {rows.length === 0 && (fetchState !== 'done' ? <BeamsSkeleton panel={false} /> : <p className="text-sm py-3">No saved Beams found. Refresh to check again.</p>)}
       <div className="flex flex-col divide-y divide-white/[0.06]">
         {rows.map((row) => (
-          <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} hydrating={fetchState !== 'done'} />
+          <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} hydrating={fetchState !== 'done'} refreshVersion={fetchState === 'done' ? requestRef.current : 0} />
         ))}
       </div>
     </div>

@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'overview',    label: 'Overview',      icon: <BookOpen  size={14} /> },
       { id: 'quick-start', label: 'Quick Start',   icon: <Zap       size={14} />, badge: '5 min' },
+      { id: 'spectrum', label: 'Spectrum bundles', icon: <GitBranch size={14} /> },
       { id: 'how-it-works',label: 'How It Works',  icon: <GitBranch size={14} /> },
     ],
   },

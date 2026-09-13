@@ -7,7 +7,7 @@ import { Providers } from '@/components/providers/PrivyProviderWrapper';
 
 const siteTitle = 'Beam — An easier way to send stocks and crypto.';
 const siteDescription =
-  'An easier way to send stocks and crypto. Pick an asset, choose an amount, and share a link. Recipients sign in and claim. No existing wallet needed.';
+  'An easier way to send stocks and crypto. Send a single asset or a Spectrum bundle through one link. Recipients sign in and claim. No existing wallet needed.';
 const shareImage = {
   url: '/social/beam-opengraph.png',
   width: 1200,

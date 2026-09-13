@@ -5,7 +5,7 @@ import { DocsPageClient } from './DocsPageClient';
 export const metadata: Metadata = {
   title: 'Docs — Beam',
   description:
-    'Beam protocol documentation. Learn how to send ETH and tokens as shareable links, understand the BeamEscrow smart contract, and integrate with the Relayer.',
+    'Learn how to send stocks and crypto by link, create Spectrum bundles, and understand Beam’s escrow contracts and gasless claims.',
 };
 
 export default function DocsPage() {

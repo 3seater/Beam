@@ -10,3 +10,8 @@ it('keeps matching numeric IDs from different escrows separate', () => {
   removeBeamEntry(wallet, '1');
   expect(loadBeamHistory(wallet)).toEqual([{ ...entry, kind: 'spectrum', tokenSymbol: 'Compute' }]);
 });
+it('never evicts an older claim key when more than 50 Beams are saved', () => {
+  for (let i = 0; i < 75; i++) saveBeamEntry(wallet, { ...entry, depositId: String(i), createdAt: i });
+  expect(loadBeamHistory(wallet)).toHaveLength(75);
+  expect(loadBeamHistory(wallet).find(saved => saved.depositId === '0')?.beamLink).toBe(entry.beamLink);
+});

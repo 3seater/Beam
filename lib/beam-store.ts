@@ -1,17 +1,13 @@
 /**
  * lib/beam-store.ts  — server-side beam link storage
  *
- * Stores BeamLinks persistently so they survive browser data clears.
- * Currently backed by a JSON file in .data/ (gitignored).
- *
- * To upgrade to Redis/Upstash in production:
- *   1. npm install @upstash/redis
- *   2. Replace readStore/writeStore with Redis get/set calls
- *   3. The API surface (saveBeamLink / getBeamLinksForWallet) stays identical
+ * Production uses encrypted Supabase backups. The JSON file is for development
+ * only and is never a fallback after a database failure.
  */
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { supabaseBackupsConfigured, saveSupabaseBeamLink, getSupabaseBeamLinks, getSupabaseBeamLink } from './beam-supabase';
 
 const DATA_DIR  = path.join(process.cwd(), '.data');
 const DATA_FILE = path.join(DATA_DIR, 'beams.json');
@@ -47,6 +43,7 @@ async function writeStore(store: Store): Promise<void> {
 
 let writes: Promise<void> = Promise.resolve();
 export function saveBeamLink(entry: StoredBeamLink): Promise<void> {
+  if (supabaseBackupsConfigured()) return saveSupabaseBeamLink(entry);
   const write = writes.then(() => writeEntry(entry));
   writes = write.catch(() => {});
   return write;
@@ -67,6 +64,7 @@ async function writeEntry(entry: StoredBeamLink): Promise<void> {
 export async function getBeamLinksForWallet(
   walletAddress: string,
 ): Promise<StoredBeamLink[]> {
+  if (supabaseBackupsConfigured()) return getSupabaseBeamLinks(walletAddress);
   const store  = await readStore();
   const addr   = walletAddress.toLowerCase();
   return Object.values(store)
@@ -75,6 +73,7 @@ export async function getBeamLinksForWallet(
 }
 
 export async function getBeamLink(depositId: string): Promise<StoredBeamLink | null> {
+  if (supabaseBackupsConfigured()) return getSupabaseBeamLink(depositId);
   const store = await readStore();
   return store[depositId] ?? null;
 }

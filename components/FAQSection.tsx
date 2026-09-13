@@ -6,13 +6,16 @@ const ITEMS: AccordionItem[] = [{
   answer: 'No. They open the link, sign in, and claim. A wallet is created for them automatically.'
 }, {
   question: 'What can I send?',
-  answer: 'ETH, supported ERC-20 tokens, and stock tokens on Robinhood Chain. Explore the asset picker to see what’s available.'
+  answer: 'ETH, supported ERC-20 tokens, and stock tokens on Robinhood Chain. Send one asset or choose a Spectrum bundle to send several together through one link.'
+}, {
+  question: 'What is Spectrum?',
+  answer: 'Spectrum lets you send a preset bundle of assets through one link. Choose a bundle and amount, pay in ETH, and the recipient claims all assets together. Preset weights split your sending budget; bundles are not automatically rebalanced.'
 }, {
   question: 'How is my link protected?',
   answer: 'Anyone with the complete link can claim, so share it privately. Saved links can be restored after verifying your sending wallet.'
 }, {
   question: 'Can I take a Beam back?',
-  answer: 'Yes. Open Your Beams and cancel any unclaimed link to recover the tokens. Links stay available until claimed or cancelled.'
+  answer: 'Yes. Open Your Beams and cancel any unclaimed link to recover the tokens. Cancelling a Spectrum returns every asset in the bundle, rather than converting them back to ETH. Links stay available until claimed or cancelled.'
 }, {
   question: 'Who pays the network fee?',
   answer: 'The sender pays for the deposit transaction. Beam’s relayer handles the recipient’s claim, so they don’t need tokens for gas.'

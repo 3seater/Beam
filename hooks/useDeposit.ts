@@ -10,6 +10,7 @@ import { BEAM_ESCROW_ADDRESS, DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
 import { fetchFirmQuote, buildSwapCalldata } from '@/lib/uniswap-swap'; import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { saveBeamEntry } from '@/lib/beam-history';
 import { robinhoodChain } from '@/lib/chains';
+import { requireBeamBackup } from '@/lib/beam-backup-ready';
 import type { BeamStep } from '@/lib/types';
 
 // ─── Save beam link both locally and server-side ──────────────────────────
@@ -216,6 +217,7 @@ export function useDeposit(): UseDepositReturn {
 
     try {
       if (!Number.isFinite(usdAmount) || usdAmount <= 0) throw new Error('Enter a valid amount.');
+      await requireBeamBackup();
       await switchChainAsync({ chainId: robinhoodChain.id });
       const ethPrice = await fetchTokenPriceUsd('ETH');
       if (!ethPrice) throw new Error('Live ETH price unavailable. Please try again shortly.');

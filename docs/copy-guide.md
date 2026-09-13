@@ -2,7 +2,7 @@
 
 Primary headline: **An easier way to send stocks and crypto.**
 
-Hero support: Pick an asset, choose an amount, and share a link. No existing wallet needed to receive.
+Hero support: Pick an asset or a Spectrum bundle, choose an amount, and share a link. No existing wallet needed to receive.
 
 Closing CTA: Stocks and crypto. Simply sent.
 
@@ -15,3 +15,5 @@ Claiming is easy: open the link, sign in, and claim. No existing wallet needed. 
 Do not enumerate authentication providers in explanatory copy. Use “sign in,” “an available sign-in method,” or “a social account” where applicable. Actual sign-in buttons can name their provider. Do not suggest no authentication/account is required to complete a claim.
 
 Keep copy short, plain, and factual. Avoid cute gift-card language, filler microcopy, and unsupported promises about instant settlement. New explicit user direction takes precedence.
+
+Spectrum is Beam’s preset bundle feature. Describe it as several assets sent through one link. The sender pays in ETH; preset weights allocate the input budget. The recipient claims all assets together. Cancellation returns the bundle assets, not the original ETH input. Avoid calling bundles managed or automatically rebalanced funds, or promising fixed final portfolio percentages.
