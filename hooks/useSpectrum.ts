@@ -19,6 +19,7 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
   const [status, setStatus] = useState<'idle' | 'quoting' | 'signing' | 'confirming' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  const [received, setReceived] = useState<Record<string, string> | undefined>();
   const [pending, setPending] = useState<PendingSpectrum | null>(null);
   const pendingRef = useRef<PendingSpectrum | null>(null);
   const busy = useRef(false);
@@ -26,7 +27,7 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
   const { switchChainAsync } = useSwitchChain();
   useEffect(() => {
     if (busy.current) return;
-    pendingRef.current = null; setPending(null); setStatus('idle'); setLink(null); setError(null);
+    pendingRef.current = null; setPending(null); setStatus('idle'); setLink(null); setError(null); setReceived(undefined);
     if (!walletAddress) return;
     try {
       const raw = localStorage.getItem(pendingStorageKey(walletAddress));
@@ -59,6 +60,10 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
     }
     if (id === undefined) throw new Error(`Bundle ID was not found. Keep transaction ${p.hash} for support.`);
     const beamLink = spectrumLink(window.location.origin, p.key, id);
+    try {
+      const bundle = await client.readContract({ address: p.escrow, abi: SPECTRUM_ABI, functionName: 'getBundle', args: [id] });
+      setReceived(Object.fromEntries(bundle[5].map((token, i) => [token.toLowerCase(), bundle[6][i].toString()])));
+    } catch { setReceived(undefined); }
     const entry = { depositId: id.toString(), beamLink, tokenSymbol: preset.name, usdAmount: p.usdAmount, createdAt: Date.now(), kind: 'spectrum' as const };
     saveBeamEntry(p.sender, entry);
     setLink(beamLink); setStatus('done'); clearPending(p);
@@ -105,5 +110,5 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
       setError(pendingRef.current ? 'Transaction submitted. Retry confirmation before sending again; your claim key is saved.' : err instanceof Error ? err.message : 'Spectrum could not be sent.'); setStatus('idle');
     } finally { busy.current = false; }
   }
-  return { status, error, link, pending, send, resume, reset() { if (!busy.current && !pendingRef.current) { setStatus('idle'); setError(null); setLink(null); } } };
+  return { status, error, link, pending, received, send, resume, reset() { if (!busy.current && !pendingRef.current) { setStatus('idle'); setError(null); setLink(null); setReceived(undefined); } } };
 }

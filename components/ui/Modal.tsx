@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 
@@ -28,16 +28,14 @@ const backdropV = {
 };
 
 const panelV = {
-  hidden: { opacity: 0, scale: 0.88, y: 28 },
+  hidden: { opacity: 0, scale: 0.98, y: 8 },
   visible: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.92, y: 16 },
+  exit: { opacity: 0, scale: 0.98, y: 6 },
 };
 
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 340,
-  damping: 28,
-  mass: 0.9,
+const panelTransition = {
+  duration: 0.18,
+  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
 };
 
 const FOCUSABLE =
@@ -50,6 +48,7 @@ function getFocusable(el: HTMLElement) {
 
 /* ── Component ─────────────────────────────────────────────────────────────── */
 export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
+  const reducedMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`).current;
   const triggerRef = useRef<Element | null>(null);
@@ -136,10 +135,10 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
         <motion.div
           key="modal-backdrop"
           variants={backdropV}
-          initial="hidden"
+          initial={false}
           animate="visible"
           exit="exit"
-          transition={{ duration: 0.25 }}
+          transition={{ duration: reducedMotion ? 0 : 0.14 }}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={onClose}
         >
@@ -148,9 +147,9 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
           <div
             className="absolute inset-0 -z-10"
             style={{
-              backdropFilter: 'blur(20px) saturate(1.4)',
-              WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-              backgroundColor: 'rgba(10, 40, 70, 0.45)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(10, 40, 70, 0.22)',
             }}
             aria-hidden="true"
           />
@@ -159,10 +158,10 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
             ref={panelRef}
             key="modal-panel"
             variants={panelV}
-            initial="hidden"
+            initial={reducedMotion ? false : 'hidden'}
             animate="visible"
             exit="exit"
-            transition={springTransition}
+            transition={reducedMotion ? { duration: 0 } : panelTransition}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}

@@ -33,6 +33,12 @@ deposit namespaces so identical numeric IDs cannot overwrite each other.
 
 ## Enable sending
 
+Deployed and runtime-verified on Robinhood Chain:
+`0x191618ac8bb752039ee4586cf7aed9a4ff18b234`.
+Deployment transaction: `0x2b8272e2fa62542e3298774cd534026a53c943a02b841b4a7236129fbc43d8af`.
+Deployment gas cost: 0.00008132914944 ETH. The local environment is configured.
+Use this address in the hosting environment and rebuild to enable the deployed app.
+
 1. Keep `ENSO_API_KEY` server-side in the hosting environment. The supplied key is
    configured in the ignored local `.env.local`; it is not in source control.
 2. Test and review `contracts/src/SpectrumEscrow.sol` before deploying real funds.

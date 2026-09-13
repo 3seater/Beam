@@ -12,6 +12,7 @@ import { ClaimSuccess } from '@/app/claim/ClaimSuccess';
 import { BeamGiftCard } from './BeamGiftCard';
 import { BundleTokenStack, BundleTokenImage } from './SpectrumAssets';
 import { truncateAddress } from '@/lib/format';
+import { DataSkeleton } from './ui/DataSkeleton';
 
 export function SpectrumClaim() {
   const client = usePublicClient({ chainId: 4663 });
@@ -24,6 +25,7 @@ export function SpectrumClaim() {
   useEffect(() => {
     let active = true;
     async function load() {
+      setError(null);
       try {
         if (!spectrumConfigured) throw new Error('Spectrum claims are not configured yet.');
         const parsed = parseBeamLink(window.location.hash);
@@ -45,7 +47,7 @@ export function SpectrumClaim() {
   return <main className="app-page beam-flow-page min-h-screen flex flex-col items-center justify-center px-4 py-28">
     {flow.claimStep === 'success' && flow.recipientAddress ? <ClaimSuccess amount={`${assets.length} assets`} symbol={preset?.name ?? 'Spectrum'} recipientAddress={flow.recipientAddress} txHash={flow.txHash} tokenVisual={<BundleTokenStack tokens={assets} />} bundleAssets={assets} /> : <section className="claim-receive-shell w-full flex flex-col gap-5">
       <h1 className="receipt-heading">Claim your Beam.</h1>
-      {error ? <><p role="alert">{error}</p><button className="btn-glass-primary" onClick={() => setRetry(n => n + 1)}>Try again</button></> : !bundle ? <p role="status">Loading your bundle…</p> : <>
+      {error ? <><p role="alert">{error}</p><button className="btn-glass-primary" onClick={() => setRetry(n => n + 1)}>Try again</button></> : !bundle ? <div className="glass-strong rounded-[28px] p-7 flex flex-col gap-6" aria-busy="true"><DataSkeleton className="w-28 h-4" label="Loading your bundle" /><DataSkeleton className="w-48 h-14" /><DataSkeleton className="w-36 h-10" /><DataSkeleton className="w-full h-12" /></div> : <>
         <div className="claim-deposit"><BeamGiftCard amount={`${assets.length} assets`} symbol={preset?.name ?? 'Spectrum'} tokenVisual={<BundleTokenStack tokens={assets} />} label="A little something for you" status={bundle[2] ? 'Closed' : 'Ready to claim'} />
           <div className="claim-sender"><span>From</span><span title={bundle[0]}>{truncateAddress(bundle[0])}</span></div>
         </div>

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { useAmountQuote } from '@/hooks/useAmountQuote';
 import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
 import { AmountQuotePanel } from './AmountQuotePanel';
+import { DataSkeleton } from '../ui/DataSkeleton';
 import { formatTokenValue } from '@/lib/format';
 import type { SelectedAsset } from './TokenPicker';
 
@@ -110,7 +111,7 @@ export function DollarAmountInput({
           {dollarValue || '0'}
         </span>
         <div className="flex items-center gap-1.5 ml-auto text-right shrink-0">
-          {quoteLoading && <Loader2 size={ICON_SIZE.xs} className="animate-spin text-white/50" aria-hidden="true" />}
+          {quoteLoading && <DataSkeleton className="w-24 h-4" label="Loading token quote" />}
           {!quoteLoading && quoteErr && (
             <button
               type="button"

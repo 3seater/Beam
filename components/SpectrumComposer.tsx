@@ -54,7 +54,7 @@ export function SpectrumComposer({ embedded = false }: { embedded?: boolean }) {
       <motion.div key={finished ? 'receipt' : busy ? 'transaction' : step} custom={direction}
         variants={{ enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 40 : -40 }), center: { opacity: 1, x: 0 }, exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -40 : 40 }) }}
         initial="enter" animate="center" exit="exit" transition={{ duration: .28, ease: [.22, 1, .36, 1] }} className="flex flex-col gap-5 flex-1">
-        {finished && flow.link && preset ? <BeamSentReceipt beamLink={flow.link} warning={flow.error} amount={formatAmount(amount)} symbol={preset.name} tokenVisual={visual} details={<BundleDetails preset={preset} amount={amount} />} onSendAnother={reset} />
+        {finished && flow.link && preset ? <BeamSentReceipt beamLink={flow.link} warning={flow.error} amount={formatAmount(amount)} symbol={preset.name} tokenVisual={visual} details={<BundleDetails preset={preset} amount={amount} received={flow.received} />} onSendAnother={reset} />
         : busy && preset ? <div className="flex-1 flex items-center justify-center"><TxProgress step={flow.status === 'confirming' ? 'deposit-confirming' : 'deposit-pending'} isERC20={false} symbol={preset.name} tokenVisual={<BundleTokenStack tokens={preset.constituents} size={44} />} bundleStatus={flow.status as 'quoting' | 'signing' | 'confirming'} /></div>
         : step === 1 ? <BundlePicker onChange={select} />
         : preset && step === 2 ? <>

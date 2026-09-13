@@ -1,4 +1,7 @@
 /* Bundle-specific content inside Beam's shared send frame and components. */
+.data-skeleton { display: inline-block; flex-shrink: 0; border-radius: 7px; background: linear-gradient(100deg, rgba(98,165,192,.12) 20%, rgba(255,255,255,.65) 45%, rgba(98,165,192,.12) 70%); background-size: 240% 100%; animation: data-skeleton-shimmer 1.5s ease-in-out infinite; }
+@keyframes data-skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media(prefers-reduced-motion:reduce) { .data-skeleton { animation: none; background: rgba(98,165,192,.16); } }
 .beam-send-mode { position: absolute; top: 106px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 4px; padding: 5px; border: 1px solid rgba(255,255,255,.35); border-radius: 99px; background: rgba(255,255,255,.16); backdrop-filter: blur(20px); white-space: nowrap; }
 .beam-send-mode button { padding: 9px 17px; border-radius: 99px; color: #24466b; font-size: 13px; }
 .beam-send-mode button[aria-selected=true] { background: rgba(255,255,255,.7); box-shadow: 0 2px 10px rgba(36,70,107,.1); }
@@ -24,6 +27,16 @@
 .bundle-allocation-value { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .bundle-details-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: center; color: #56758d; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
 .bundle-details-link:hover { color: #24466b; }
+.glass-strong.bundle-details-modal { background: linear-gradient(145deg, rgba(248,253,255,.97), rgba(222,244,253,.95)); color: #24466b; border: 1px solid rgba(255,255,255,.9); box-shadow: 0 24px 64px rgba(20,65,95,.2), inset 0 1px 0 #fff; }
+.bundle-details-modal::after { opacity: .15; }
+.bundle-details-modal h2 { color: #24466b; font-weight: 600; }
+.bundle-details-modal .btn-glass-icon { color: #24466b; background: rgba(255,255,255,.65); border-color: rgba(110,169,196,.35); }
+.bundle-details-description { color: #526c7d; font-size: 13px; line-height: 1.6; margin-bottom: 22px; }
+.bundle-quantity-heading { display: flex; justify-content: space-between; color: #526c7d; font-size: 11px; padding-bottom: 8px; border-bottom: 1px solid rgba(77,140,164,.18); }
+.bundle-details-modal .bundle-allocation-row { padding: 16px 0; }
+.bundle-details-modal .bundle-allocation-token > span,.bundle-details-modal .bundle-allocation-value > span { color: #526c7d; opacity: 1; font-size: 11px; }
+.bundle-details-modal .bundle-allocation-value strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+.bundle-details-note { color: #526c7d; font-size: 11px; line-height: 1.6; margin-top: 16px; }
 .bundle-picker-row:focus-visible,.bundle-details-link:focus-visible { outline: 2px solid #39a5d2; outline-offset: 3px; }
 .gift-token-pill:has(.bundle-token-stack) { max-width: 100%; font-size: 14px; white-space: normal; }
 .tx-token-mark .bundle-token-stack .bundle-token-image { width: 44px; height: 44px; border-radius: 12px; }
