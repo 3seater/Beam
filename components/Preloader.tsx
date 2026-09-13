@@ -7,6 +7,13 @@ export function Preloader() {
   const [phase, setPhase] = useState<'loading' | 'leaving' | 'done'>('loading');
 
   useEffect(() => {
+    // Only show on first visit within this browser session.
+    if (sessionStorage.getItem('beam-loaded')) {
+      setPhase('done');
+      return;
+    }
+    sessionStorage.setItem('beam-loaded', '1');
+
     // Root layout persists across navigation, so this runs on fresh loads only.
     // No storage or wallet/network dependency can leave the overlay stuck.
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
