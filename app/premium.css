@@ -287,63 +287,6 @@
   }
 }
 
-.beam-preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  background: #fff;
-  opacity: 1;
-  transition: opacity 280ms ease-out;
-  /* Dismiss the server-rendered overlay even if hydration fails. */
-  animation: beam-loader-failsafe 0s 4s forwards;
-}
-
-.beam-preloader[data-phase="leaving"] {
-  opacity: 0;
-}
-
-.beam-preloader-mark {
-  width: 88px;
-  height: 88px;
-  overflow: visible;
-}
-
-.beam-loader-trace {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 0;
-  filter: drop-shadow(0 0 3px #79d6fc) drop-shadow(0 0 8px #38a0e155);
-  animation: beam-loader-draw 850ms cubic-bezier(.4, 0, .2, 1) both;
-}
-
-@keyframes beam-loader-draw {
-  from {
-    stroke-dashoffset: 100;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes beam-loader-failsafe {
-  to {
-    visibility: hidden;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .beam-preloader {
-    transition: none;
-  }
-
-  .beam-loader-trace {
-    animation: none;
-  }
-}
-
 html {
   font-size: 100%;
   color-scheme: light;

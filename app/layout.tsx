@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './premium.css';
 import { Navbar } from '@/components/Navbar';
-import { Preloader } from '@/components/Preloader';
 import { Providers } from '@/components/providers/PrivyProviderWrapper';
 
 const siteTitle = 'Beam — Send crypto. Share a link.';
@@ -42,7 +41,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <Preloader />
         <Providers>
           {/* Navbar lives here — renders once, never unmounts on navigation */}
           <Navbar />
