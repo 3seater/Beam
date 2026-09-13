@@ -2,6 +2,7 @@
 .hero-demo {
   position: relative;
   width: min(100%, 490px);
+  min-width: 0;
   justify-self: end;
   margin: 10px 0 55px;
   padding: 25px;
@@ -95,6 +96,8 @@
   align-items: center;
   margin: 24px 0 18px;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .hero-demo-assets {
