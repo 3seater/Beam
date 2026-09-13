@@ -16,7 +16,9 @@ const shareImage = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://usebe.am'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://usebeam.netlify.app'
+  ),
   title: siteTitle,
   description: siteDescription,
   openGraph: {
