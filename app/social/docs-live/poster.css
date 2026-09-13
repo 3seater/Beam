@@ -1,0 +1,38 @@
+/* A real HTML/SVG artboard, suitable for screenshots and HTML-to-Figma import. */
+body:has(.docs-launch-page) { margin: 0; background: #dff6ff; }
+body:has(.docs-launch-page) > .premium-header,
+body:has(.docs-launch-page) .premium-header,
+body:has(.docs-launch-page) .beam-preloader { display: none; }
+.docs-launch-page { width: 100%; min-height: 100vh; overflow: hidden; }
+.docs-launch-canvas {
+  position: relative;
+  isolation: isolate;
+  width: 1600px;
+  height: 900px;
+  overflow: hidden;
+  color: #fff;
+  background: radial-gradient(ellipse at 95% 0%, #eafcff 0%, transparent 55%), linear-gradient(120deg, #38a0e1, #79d6fc 68%, #9be7fd);
+}
+.docs-launch-curves { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.docs-launch-curves i { position: absolute; width: 1650px; height: 1700px; border-radius: 50%; border: 95px solid #ffffff12; top: -1020px; left: -770px; }
+.docs-launch-curves i:nth-child(2) { width: 2000px; height: 2050px; top: -1150px; left: -860px; }
+.docs-launch-curves i:nth-child(3) { width: 2350px; height: 2400px; top: -1280px; left: -950px; }
+.docs-launch-brand { position: absolute; left: 80px; top: 67px; display: flex; align-items: center; gap: 10px; font-size: 49px; font-weight: 450; letter-spacing: -2.8px; }
+.docs-launch-brand svg { width: 56px; height: 56px; }
+.docs-launch-heading { position: absolute; top: 260px; left: 80px; }
+.docs-launch-heading h1 { margin: 0; font-size: 138px; font-weight: 300; line-height: 1.02; letter-spacing: -8px; }
+.docs-launch-addresses { position: absolute; left: 80px; bottom: 78px; display: flex; align-items: center; gap: 16px; }
+.docs-launch-addresses a { display: flex; align-items: center; gap: 12px; border: 1px solid #ffffff85; border-radius: 16px; padding: 16px 20px; font-size: 22px; letter-spacing: -.5px; color: #fff; background: #ffffff16; text-decoration: none; }
+.docs-launch-window { position: absolute; width: 1000px; height: 930px; left: 656px; top: 116px; transform: rotate(-7deg); transform-origin: center; border: 1px solid #fff; border-radius: 24px; overflow: hidden; background: #f4f9fd; color: #294766; box-shadow: -18px 30px 75px -24px #17639055, 0 0 0 7px #ffffff23; }
+.docs-launch-window-bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 24px; background: #f9fdff; border-bottom: 1px solid #e3edf6; color: #64849b; font-size: 14px; }
+.docs-launch-window-bar > svg:first-child { width: 21px; height: 21px; color: #38a0e1; }
+.docs-launch-window-bar > svg:last-child { margin-left: auto; }
+.docs-launch-document { display: flex; height: 100%; }
+.docs-launch-document .docs-sidebar { position: relative; display: flex; width: 225px; height: 100%; padding-top: 28px; overflow: hidden; }
+.docs-launch-document .docs-content { width: 775px; min-width: 0; padding: 44px 42px; margin: 0; }
+.docs-launch-document .docs-nav { display: block; }
+.docs-launch-document .docs-sidebar-logo { display: flex; }
+.docs-launch-document .docs-card-grid { grid-template-columns: repeat(2, 1fr); }
+.docs-launch-document .docs-h1 { font-size: 36px; }
+@media (max-width: 1599px) { .docs-launch-canvas { zoom: calc(100vw / 1600px); } }
+@media print { @page { size: 1600px 900px; margin: 0; } .docs-launch-canvas { zoom: 1; print-color-adjust: exact; } }

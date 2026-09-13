@@ -237,7 +237,7 @@ function Tag({
 /* ─────────────────────────────────────────────────────────────
    Section: Overview
    ───────────────────────────────────────────────────────────── */
-function SectionOverview() {
+export function SectionOverview() {
   return (
     <section id="overview" className="docs-section">
       <Eyebrow>Getting Started</Eyebrow>

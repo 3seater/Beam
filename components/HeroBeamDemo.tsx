@@ -10,7 +10,7 @@ const ASSETS = ['ETH', 'NVDA', 'MSFT'] as const;
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
-export function HeroBeamDemo() {
+export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string) => void }) {
   const [asset, setAsset] = useState<(typeof ASSETS)[number]>('ETH');
   const [amount, setAmount] = useState<number>(100);
   const [step, setStep] = useState(0);
@@ -32,7 +32,7 @@ export function HeroBeamDemo() {
 
       <div className="hero-demo-assets" role="group" aria-label="Preview a token">
         {ASSETS.map(symbol => (
-          <button key={symbol} type="button" aria-pressed={asset === symbol} onClick={() => setAsset(symbol)}>
+          <button key={symbol} type="button" aria-pressed={asset === symbol} onClick={() => { setAsset(symbol); onAssetChange?.(symbol); }}>
             <LandingTokenLogo symbol={symbol} size={24} />{symbol}
           </button>
         ))}

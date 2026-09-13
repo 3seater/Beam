@@ -1,0 +1,27 @@
+.dex-paid-halo {
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  left: 725px;
+  top: 45px;
+  border: 1px solid #ffffff55;
+  border-radius: 50%;
+  box-shadow: 0 0 0 48px #ffffff09;
+  background: radial-gradient(ellipse, #f4fdff60, transparent 68%);
+}
+.dex-paid-glass {
+  position: absolute;
+  left: 824px;
+  top: 148px;
+  width: 610px;
+  height: 620px;
+  display: grid;
+  place-items: center;
+  border-radius: 62px;
+  border: 1px solid #fff;
+  background: linear-gradient(140deg, #ffffffc9, #f0fbff80 48%, #ffffff40);
+  box-shadow: inset 0 2px 0 #fff, inset 0 -2px 0 #ffffff66, 0 0 0 7px #ffffff23, -18px 30px 75px -24px #17639055;
+  transform: rotate(-7deg);
+}
+.dex-paid-glass-rim { position: absolute; inset: 15px; border-radius: 48px; border: 1px solid #ffffff55; pointer-events: none; }
+.dex-paid-logo { width: 420px; height: 420px; filter: drop-shadow(0 2px 0 #effcff) drop-shadow(0 12px 12px #1e7eb12e); }

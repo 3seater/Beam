@@ -1,0 +1,145 @@
+/* Landing-only decoration: the payment and claim flows keep their own surfaces. */
+.landing-page {
+  --landing-content-max: 1200px;
+  --landing-gutter: 24px;
+}
+
+/* All section content shares the final CTA's outer edges. */
+.landing-page .layout {
+  width: min(var(--landing-content-max), calc(100% - 2 * var(--landing-gutter)));
+  max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+.landing-page [data-reveal] {
+  transition: opacity 750ms ease, translate 750ms cubic-bezier(.22, 1, .36, 1);
+}
+.landing-page [data-reveal="pending"] { opacity: 0; translate: 0 20px; }
+.landing-page [data-reveal="visible"] { opacity: 1; translate: 0 0; }
+.landing-page .step-card:nth-child(2) { transition-delay: 80ms; }
+.landing-page .step-card:nth-child(3) { transition-delay: 160ms; }
+
+.landing-page .step-card {
+  border: 1px solid #a9d3e8;
+  background: linear-gradient(155deg, #f8fcff, #edf9ff);
+  box-shadow: inset 0 0 0 1px #ffffffd9, 0 4px 10px -5px #236d9d20, 0 18px 35px -24px #236d9d40;
+}
+.landing-page .step-copy { border-top: 1px solid #bddfed; }
+.landing-page .step-art::before {
+  content: '';
+  position: absolute;
+  inset: 12% 8% 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #9be7fd45, transparent 70%);
+  pointer-events: none;
+}
+.landing-page .token-disc,
+.landing-page .share-bubble,
+.landing-page .share-link,
+.landing-page .receive-mark,
+.landing-page .receive-notice,
+.landing-page .fingerprint-tile {
+  animation: beam-gentle-drift 7s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.landing-page .token-nvda { animation-delay: -2.4s; animation-duration: 8s; }
+.landing-page .token-aapl { animation-delay: -4.5s; animation-duration: 9s; }
+.landing-page .share-link { animation-delay: -3.5s; }
+.landing-page .receive-notice { animation-delay: -4s; animation-duration: 8s; }
+.landing-page .fingerprint-tile { animation-duration: 9s; }
+.landing-page .animated-fingerprint { position: relative; display: block; width: 100px; height: 100px; }
+.landing-page .animated-fingerprint svg { position: absolute; inset: 0; }
+.landing-page .fingerprint-guide { opacity: .2; }
+.landing-page .fingerprint-trace path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  animation: beam-fingerprint-trace 6s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.landing-page .fingerprint-trace path:nth-child(2n) { animation-delay: .18s; }
+.landing-page .fingerprint-trace path:nth-child(3n) { animation-delay: .36s; }
+.landing-page .fingerprint-trace path:nth-child(4n) { animation-delay: .54s; }
+.landing-page [data-motion-visible="true"] .fingerprint-trace path { animation-play-state: running; }
+@keyframes beam-fingerprint-trace {
+  0%, 8% { stroke-dashoffset: 100; opacity: 0; }
+  14% { opacity: 1; }
+  46%, 76% { stroke-dashoffset: 0; opacity: 1; }
+  94%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.landing-page [data-motion-visible="true"] :is(.token-disc, .share-bubble, .share-link, .receive-mark, .receive-notice, .fingerprint-tile) { animation-play-state: running; }
+.landing-page .security-orbit::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 1%, #38a0e1 0 3px, #9be7fd80 4px, transparent 9px);
+  animation: beam-orbit 32s linear infinite;
+  animation-play-state: paused;
+}
+.landing-page [data-motion-visible="true"] .security-orbit::before { animation-play-state: running; }
+
+.landing-page .bottom-cta {
+  position: relative;
+  padding: 96px 0;
+  isolation: isolate;
+  overflow: hidden;
+  margin: 0 auto 64px;
+  width: min(var(--landing-content-max), calc(100% - 2 * var(--landing-gutter)));
+  border-radius: 36px;
+  border: 1px solid #ffffffd9;
+  background: radial-gradient(ellipse at 12% 10%, #ffffffeb, transparent 65%), linear-gradient(120deg, #dff7ff, #9be7fd 60%, #79d6fc);
+  box-shadow: inset 0 1px 0 white, 0 18px 65px -45px #38a0e199;
+}
+.landing-page .bottom-cta > .layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding-inline: var(--landing-gutter);
+}
+.landing-page .bottom-cta h2 { margin: 0 0 32px; text-wrap: balance; }
+.landing-page .cta-pattern { position: absolute; inset: 0; pointer-events: none; }
+.landing-page .cta-pattern svg { width: 100%; height: 100%; }
+.landing-page .cta-ribbons { animation: beam-ribbon-drift 18s ease-in-out infinite; animation-play-state: paused; }
+.landing-page .cta-pattern[data-motion-visible="true"] .cta-ribbons { animation-play-state: running; }
+.landing-page .premium-footer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #f8fdff;
+}
+.landing-page .premium-footer::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 92% 130%, #38a0e170, transparent 65%), radial-gradient(ellipse at 28% 115%, #9be7fdcc, transparent 64%), linear-gradient(180deg, #ffffff, #effbff00);
+}
+.landing-page .premium-footer::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 85%;
+  height: 160%;
+  right: -35%;
+  bottom: -110%;
+  border: 1px solid #ffffff80;
+  border-radius: 50%;
+  box-shadow: 0 0 0 55px #ffffff16, 0 0 0 110px #ffffff12;
+  pointer-events: none;
+}
+@keyframes beam-gentle-drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes beam-orbit { to { rotate: 360deg; } }
+@keyframes beam-ribbon-drift { 0%, 100% { translate: 0 0; } 50% { translate: 22px -10px; } }
+@media (max-width: 600px) {
+  .landing-page { --landing-gutter: 16px; }
+  .landing-page .bottom-cta { border-radius: 26px; margin-bottom: 32px; padding-block: 72px; }
+  .landing-page .step-card:nth-child(n) { transition-delay: 0ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .fingerprint-trace path { animation: none; stroke-dashoffset: 0; opacity: 1; }
+  .landing-page [data-reveal] { opacity: 1; translate: none; transition: none; }
+  .landing-page :is(.token-disc, .share-bubble, .share-link, .receive-mark, .receive-notice, .fingerprint-tile, .cta-ribbons),
+  .landing-page .security-orbit::before { animation: none; }
+}
