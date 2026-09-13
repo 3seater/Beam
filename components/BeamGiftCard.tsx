@@ -13,19 +13,20 @@ interface BeamGiftCardProps {
   label?: string;
   status?: string;
   detail?: React.ReactNode;
+  tokenVisual?: React.ReactNode;
 }
 
 /** The same gift-like glass card used in the homepage illustration. */
-export function BeamGiftCard({ amount, symbol, logoUrl, label = 'Your Beam', status = 'Ready to share', detail }: BeamGiftCardProps) {
+export function BeamGiftCard({ amount, symbol, logoUrl, label = 'Your Beam', status = 'Ready to share', detail, tokenVisual }: BeamGiftCardProps) {
   const imageUrl = logoUrl || (symbol === 'ETH' ? 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' : undefined);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   return <div className="beam-gift-card" style={tokenCardStyle(symbol)}>
     <div className="gift-card-top"><span><BeamMark /> {label}</span><ArrowUpRight size={17} strokeWidth={1.4} /></div>
     <div className="gift-card-value">{amount ?? <BeamMark sculptural />}</div>
     {symbol && <span className="gift-token-pill">
-      {imageUrl && failedUrl !== imageUrl
+      {tokenVisual ?? (imageUrl && failedUrl !== imageUrl
         ? <Image src={imageUrl} alt={symbol + ' logo'} width={32} height={32} className="gift-token-logo" unoptimized onError={() => setFailedUrl(imageUrl)} />
-        : <span className="gift-token-fallback" aria-hidden="true">{symbol.slice(0, 2)}</span>}
+        : <span className="gift-token-fallback" aria-hidden="true">{symbol.slice(0, 2)}</span>)}
       {symbol}
     </span>}
     <div className="gift-card-bottom"><span>{detail ?? 'On Robinhood Chain'}</span><span className="gift-status"><Check size={12} />{status}</span></div>

@@ -9,7 +9,7 @@ export interface BeamLinkDisplayProps {
   className?: string;
 }
 
-const SHARE_MESSAGE = 'You received a Beam — claim your tokens with just a social login. No wallet needed:';
+const SHARE_MESSAGE = 'You received a Beam. Open the link, sign in, and claim. No existing wallet needed:';
 
 /* ── Share channel config ────────────────────────────────────────────────── */
 interface ShareChannel {

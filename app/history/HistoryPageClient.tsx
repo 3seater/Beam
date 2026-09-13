@@ -8,6 +8,7 @@ import { Wallet, Clock } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { SentBeams } from '@/components/SentBeams';
 import { BeamsSkeleton } from '@/components/BeamsSkeleton';
+import { SpectrumHistory } from '@/components/SpectrumHistory';
 
 export function HistoryPageClient() {
   const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
@@ -67,7 +68,7 @@ export function HistoryPageClient() {
 
         {/* Connected — show history */}
         {hydrated && isConnected && walletAddress && (
-          <SentBeams key={walletAddress} walletAddress={walletAddress} />
+          <><SentBeams key={walletAddress} walletAddress={walletAddress} /><SpectrumHistory key={`spectrum:${walletAddress}`} walletAddress={walletAddress} /></>
         )}
       </motion.div>
     </main>

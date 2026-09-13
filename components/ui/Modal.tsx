@@ -142,7 +142,6 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={onClose}
-          aria-hidden="true"
         >
           {/* Blur layer — separate element so it doesn't create a stacking
               context that traps third-party portals (e.g. Privy wallet modal) */}

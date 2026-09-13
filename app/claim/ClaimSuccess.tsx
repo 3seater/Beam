@@ -71,6 +71,8 @@ interface ClaimSuccessProps {
   tokenAddress?: `0x${string}` | null; // null = native ETH
   txHash?: `0x${string}` | null;
   tokenLogoUrl?: string;
+  tokenVisual?: React.ReactNode;
+  bundleAssets?: readonly { address: `0x${string}`; symbol: string; decimals: number; amount: bigint; logoUrl: string }[];
 }
 
 const EXPLORER_BASE = 'https://robinhoodchain.blockscout.com';
@@ -191,11 +193,12 @@ function SendPanel({
 }
 
 /* ── Main success component ──────────────────────────────────────────────── */
-export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, tokenAddress = null, txHash, tokenLogoUrl }: ClaimSuccessProps) {
+export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, tokenAddress = null, txHash, tokenLogoUrl, tokenVisual, bundleAssets }: ClaimSuccessProps) {
   const { exportWallet } = usePrivy();
 
   const [activePanel, setActivePanel] = useState<'send' | 'export' | null>(null);
   const [copiedAddr, setCopiedAddr] = useState(false);
+  const [selectedBundleToken, setSelectedBundleToken] = useState(0);
 
 
   // Reconstruct raw bigint amount from formatted string for sending
@@ -222,7 +225,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
         aria-live="polite"
       >
         <BeamMoment title={txHash ? 'Just like that. All yours.' : 'Your Beam wallet.'} description={txHash ? 'A little possibility, now in your hands.' : 'Your next move, made simple.'} />
-        <BeamGiftCard amount={amount} symbol={symbol} logoUrl={tokenLogoUrl} label="A little something" status={txHash ? 'Claimed' : 'Connected'} detail="On Robinhood Chain" />
+        <BeamGiftCard amount={amount} symbol={symbol} logoUrl={tokenLogoUrl} tokenVisual={tokenVisual} label="A little something" status={txHash ? 'Claimed' : 'Connected'} detail="On Robinhood Chain" />
         <details className="receipt-wallet-details"><summary>Your wallet & next steps <ChevronRight size={16} /></summary><div className="receipt-wallet-content">
         {/* Wallet address */}
         <div className="flex flex-col gap-1.5">
@@ -288,7 +291,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
                 className="overflow-hidden px-1"
               >
                 <div className="pt-1 pb-2">
-                  <SendPanel tokenAddress={tokenAddress} decimals={decimals} rawAmount={rawAmount} />
+                  {bundleAssets ? <><label className="text-xs text-white/60" htmlFor="claimed-bundle-asset">Asset to send</label><select id="claimed-bundle-asset" className="input-glass w-full my-3" value={selectedBundleToken} onChange={e => setSelectedBundleToken(Number(e.target.value))}>{bundleAssets.map((asset, index) => <option key={asset.address} value={index}>{asset.symbol}</option>)}</select><SendPanel key={bundleAssets[selectedBundleToken].address} tokenAddress={bundleAssets[selectedBundleToken].address} decimals={bundleAssets[selectedBundleToken].decimals} rawAmount={bundleAssets[selectedBundleToken].amount} /></> : <SendPanel tokenAddress={tokenAddress} decimals={decimals} rawAmount={rawAmount} />}
                 </div>
               </motion.div>
             )}

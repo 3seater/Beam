@@ -248,7 +248,7 @@ export function SectionOverview() {
           Robinhood Chain
         </a>{' '}
         — an Arbitrum Orbit L2. Deposit ETH or any ERC-20 token, get a shareable
-        link, and send it to anyone. The recipient claims with a social login — no
+        link, and send it to anyone. The recipient signs in and claims — no
         prior wallet or gas required.
       </Lead>
 
@@ -261,7 +261,7 @@ export function SectionOverview() {
         <Card
           icon={<Wallet size={18} />}
           title="No wallet to receive"
-          desc="Recipients sign in with Apple or Google. Privy provisions an embedded smart wallet for them automatically."
+          desc="Recipients sign in and claim. Privy creates an embedded smart wallet for them automatically."
         />
         <Card
           icon={<Zap size={18} />}
@@ -314,7 +314,7 @@ function SectionQuickStart() {
       <Steps>
         <Step n={1} title="Connect your wallet">
           Click <strong>Connect wallet</strong> in the top-right nav. Beam uses Privy
-          for auth — sign in with Apple, Google, or an existing Ethereum wallet.
+          for authentication — choose an available sign-in method or connect an existing wallet.
         </Step>
         <Step n={2} title="Pick a token and amount">
           Hit <strong>Send a Beam</strong>. Select an asset (ETH, NVDA, MSFT, …) and
@@ -331,7 +331,7 @@ function SectionQuickStart() {
         </Step>
         <Step n={5} title="Share the link">
           Send the link via iMessage, WhatsApp, X, or anywhere. The recipient just
-          clicks it — no account needed.
+          opens it, signs in, and claims — no existing wallet needed.
         </Step>
       </Steps>
 
@@ -343,7 +343,7 @@ function SectionQuickStart() {
       <H3>Recipient flow</H3>
       <P>
         When a recipient opens a Beam link they&apos;ll see the amount and asset. They tap{' '}
-        <strong>Claim to Wallet</strong>, sign in with Apple or Google, and the Relayer
+        <strong>Claim my Beam</strong>, sign in, and the Relayer
         submits the claim on their behalf. Funds land in their Privy embedded wallet
         within seconds.
       </P>
@@ -398,7 +398,7 @@ function SectionHowItWorks() {
 3. getDeposit(depositId)
    → { sender, token, amount, claimed }
 4. Recipient clicks "Claim to Wallet"
-5. Privy.login() → Apple / Google / Twitter auth
+5. Privy.login() → recipient chooses an available sign-in method
 6. await embeddedWallet (provisioned by Privy, up to 30 s)
 7. recipientAddress = embeddedWallet.address
 8. msg = keccak256(abi.encodePacked(recipientAddress, depositId))
@@ -419,7 +419,7 @@ function SystemComponentsTable() {
     [<IC key="r1">BeamEscrow.sol</IC>, 'Holds funds on-chain; enforces claim / cancel rules'],
     ['Next.js Frontend', 'CreateBeamModal (sender) and ClaimPage (recipient)'],
     ['Relayer API', 'POST /relay/claim — submits claim tx, covers gas'],
-    ['Privy', 'Social auth (Apple, Google, Twitter) + embedded wallet provisioning'],
+    ['Privy', 'Authentication with supported sign-in methods + embedded wallet provisioning'],
     ['Alchemy RPC', 'JSON-RPC provider for Robinhood Chain (chainId 4663)'],
   ];
   return (
@@ -721,7 +721,7 @@ function SectionFaq() {
   const items = [
     {
       q: 'Does the recipient need a wallet or crypto account?',
-      a: 'No. They open the link, tap Claim to Wallet, and sign in with Apple or Google. Privy automatically provisions an embedded smart wallet for them. No seed phrases, no browser extensions.',
+      a: 'No. They open the link, tap Claim my Beam, and sign in. Privy automatically creates an embedded smart wallet for them. No seed phrases or browser extensions needed.',
     },
     {
       q: 'What tokens can I send?',

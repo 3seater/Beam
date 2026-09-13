@@ -2448,6 +2448,23 @@ body {
   animation: sculpture-float 7s ease-in-out infinite;
 }
 
+.tx-token-mark {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  top: 32px;
+  left: calc(50% - 66px);
+  border: 1px solid #fff;
+  border-radius: 32px;
+  background: linear-gradient(135deg, #fffffff2, #ffffff99);
+  box-shadow: inset 0 1px 0 #fff, 0 14px 28px -16px #236d9d66;
+  filter: none;
+}
+
+.tx-token-mark img { width: 84px; height: 84px; object-fit: contain; border-radius: 20px; }
+.tx-token-mark > span { color: #34526e; font-size: 26px; font-weight: 500; }
+
 .tx-orbit {
   position: absolute;
   inset: 35px 20px;

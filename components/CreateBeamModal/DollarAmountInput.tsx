@@ -17,6 +17,8 @@ export interface DollarAmountInputProps {
   selectedAsset: SelectedAsset;
   walletAddress?: string;
   disabled?: boolean;
+  /** Bundles use the same dollar control; their allocation panel replaces the single-token quote. */
+  bundle?: boolean;
 }
 
 const QUICK_AMOUNTS = [5, 10, 25, 50, 100] as const;
@@ -28,6 +30,7 @@ export function DollarAmountInput({
   onError,
   selectedAsset,
   disabled = false,
+  bundle = false,
 }: DollarAmountInputProps) {
   const isNative = selectedAsset.type === 'native';
   const symbol = isNative ? 'ETH' : selectedAsset.symbol;
@@ -176,7 +179,7 @@ export function DollarAmountInput({
         </div>
       )}
 
-      {usdNum > 0 && usdNum <= 1_000_000 && (
+      {!bundle && usdNum > 0 && usdNum <= 1_000_000 && (
         <AmountQuotePanel loading={quoteLoading} error={quoteErr} native={isNative}
           quote={quote} usd={usdNum} symbol={symbol} tokenPrice={tokenPriceUsd} nativeAmount={displayTokenAmt} />
       )}

@@ -357,7 +357,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
   // Seed rows immediately from localStorage so something shows before onchain fetch
   useEffect(() => {
-    const local = loadBeamHistory(walletAddress);
+    const local = loadBeamHistory(walletAddress).filter(e => e.kind !== 'spectrum');
     setRecoveryError(null);
     setFetchState('idle');
     {
@@ -385,7 +385,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     const [onchain, serverLinks, localEntries] = await Promise.all([
       fetchOnchainDeposits(walletAddress, client),
       fetchServerLinks(walletAddress),
-      Promise.resolve(loadBeamHistory(walletAddress)),
+      Promise.resolve(loadBeamHistory(walletAddress).filter(e => e.kind !== 'spectrum')),
       tokenReadyRef.current,
     ]);
 

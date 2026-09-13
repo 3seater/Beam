@@ -8,6 +8,7 @@
  */
 
 export interface BeamHistoryEntry {
+  kind?: 'spectrum';
   beamLink:     string;          // full /claim#key=...&id=... URL
   depositId:    string;          // base-10 decimal string
   tokenSymbol:  string;          // e.g. "NVDA", "ETH"
@@ -43,7 +44,7 @@ export function saveBeamEntry(
   try {
     const existing = loadBeamHistory(walletAddress);
     // Avoid duplicates by depositId
-    const filtered = existing.filter((e) => e.depositId !== entry.depositId);
+    const filtered = existing.filter((e) => e.depositId !== entry.depositId || e.kind !== entry.kind);
     const updated  = [entry, ...filtered].slice(0, 50);
     localStorage.setItem(storageKey(walletAddress), JSON.stringify(updated));
   } catch {
@@ -52,11 +53,11 @@ export function saveBeamEntry(
 }
 
 /** Removes a specific entry (e.g. after it's been claimed/cancelled). */
-export function removeBeamEntry(walletAddress: string, depositId: string): void {
+export function removeBeamEntry(walletAddress: string, depositId: string, kind?: 'spectrum'): void {
   if (typeof window === 'undefined') return;
   try {
     const existing = loadBeamHistory(walletAddress);
-    const updated  = existing.filter((e) => e.depositId !== depositId);
+    const updated  = existing.filter((e) => e.depositId !== depositId || e.kind !== kind);
     localStorage.setItem(storageKey(walletAddress), JSON.stringify(updated));
   } catch {}
 }

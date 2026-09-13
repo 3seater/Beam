@@ -44,7 +44,7 @@ export default function PrivacyPage() {
               </p>
               <p>
                 <span className="text-white/80 font-medium">Authentication data.</span> If you choose
-                to sign in via Privy (email, Google, or social login) to receive tokens into a
+                to sign in via Privy using an available authentication method to receive tokens into a
                 managed wallet, Privy processes your authentication credentials under their own
                 privacy policy. We receive only a wallet address and a session token to identify
                 your embedded wallet.

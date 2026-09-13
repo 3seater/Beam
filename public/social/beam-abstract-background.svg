@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2172" height="724" viewBox="0 0 2172 724" fill="none">
+  <title>Beam sky-blue curved background</title>
+  <desc>Editable sky-blue gradient with two broad, quiet curved ribbons and soft white light at the lower right.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="362" x2="2172" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#329DE8"/>
+      <stop offset=".44" stop-color="#46B9F4"/>
+      <stop offset=".76" stop-color="#61C9F8"/>
+      <stop offset="1" stop-color="#6AC9F6"/>
+    </linearGradient>
+    <radialGradient id="upper-light" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-60 -85) rotate(24) scale(780 430)">
+      <stop stop-color="#C5F2FF" stop-opacity=".64"/>
+      <stop offset="1" stop-color="#9BE7FD" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ice-light" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(2190 770) rotate(-162) scale(1570 820)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".24" stop-color="#ECFFFF" stop-opacity=".94"/>
+      <stop offset=".57" stop-color="#C6F7FF" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#9BE7FD" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="band-light" x1="650" y1="0" x2="1710" y2="724" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8F7FF" stop-opacity=".11"/>
+      <stop offset=".6" stop-color="#DFFAFF" stop-opacity=".17"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".26"/>
+    </linearGradient>
+    <clipPath id="canvas"><path d="M0 0H2172V724H0Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#canvas)">
+    <path id="base" d="M0 0H2172V724H0Z" fill="url(#sky)"/>
+    <path id="soft-upper-light" d="M0 0H2172V724H0Z" fill="url(#upper-light)"/>
+    <path id="broad-inner-ribbon" d="M-80-100C720-30 1220 295 1690 724H1890C1510 307 1110 83 700-20L-80-100Z" fill="url(#band-light)" opacity=".55"/>
+    <path id="broad-outer-ribbon" d="M700-20C1110 83 1510 307 1890 724H2110C1835 350 1590 142 1350 0L700-20Z" fill="url(#band-light)"/>
+    <path id="soft-ice-light" d="M0 0H2172V724H0Z" fill="url(#ice-light)"/>
+  </g>
+</svg>

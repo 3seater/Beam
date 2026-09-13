@@ -3,7 +3,7 @@
 import { Accordion, type AccordionItem } from './ui/Accordion';
 const ITEMS: AccordionItem[] = [{
   question: 'Do they need a wallet?',
-  answer: 'No. They sign in with Apple or Google, and a wallet is created for them automatically.'
+  answer: 'No. They open the link, sign in, and claim. A wallet is created for them automatically.'
 }, {
   question: 'What can I send?',
   answer: 'ETH, supported ERC-20 tokens, and stock tokens on Robinhood Chain. Explore the asset picker to see what’s available.'

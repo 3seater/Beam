@@ -12,6 +12,10 @@
 # next.js
 /.next/
 /.next-dev/
+/.next-spectrum/
+/.next-spectrum-build/
+/output/spectrum-check/
+/output/crate-reference/
 /out/
 
 # production

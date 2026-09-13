@@ -51,6 +51,8 @@ The docs reference uses the real `DocsNav` and `SectionOverview` components. It 
 
 ## Copy and identity
 
+For current messaging, follow `docs/copy-guide.md`: “An easier way to send stocks and crypto.” Keep claiming language provider-neutral.
+
 Use a short factual announcement such as “Docs are live.” Let the actual product view provide the detail. Keep any explanatory caption outside the artwork unless the user requests it inside.
 
 Default identity is exactly `@use_beam` and `usebe.am`. Use the relevant actual URL in a product window, for example `usebe.am/docs`. Do not change the underscore or substitute an older domain.

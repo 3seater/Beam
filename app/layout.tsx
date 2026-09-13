@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './premium.css';
+import './spectrum.css';
 import { Navbar } from '@/components/Navbar';
 import { Providers } from '@/components/providers/PrivyProviderWrapper';
 
-const siteTitle = 'Beam — Send crypto. Share a link.';
+const siteTitle = 'Beam — An easier way to send stocks and crypto.';
 const siteDescription =
-  'Send crypto and stock tokens to anyone with a simple link. They can claim with Apple or Google. No existing wallet needed.';
+  'An easier way to send stocks and crypto. Pick an asset, choose an amount, and share a link. Recipients sign in and claim. No existing wallet needed.';
 const shareImage = {
   url: '/social/beam-opengraph.png',
   width: 1200,
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
   ),
   title: siteTitle,
   description: siteDescription,
+  icons: {
+    icon: '/favicon.png',
+  },
   openGraph: {
     type: 'website',
     siteName: 'Beam',

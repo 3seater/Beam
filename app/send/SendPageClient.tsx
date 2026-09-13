@@ -17,6 +17,8 @@ import { BeamGiftCard } from '@/components/BeamGiftCard';
 import { Button } from '@/components/ui/Button';
 import { useDeposit } from '@/hooks/useDeposit';
 import type { BeamStep } from '@/lib/types';
+import { BeamFlowFrame } from '@/components/BeamFlowFrame';
+import { SpectrumComposer } from '@/components/SpectrumComposer';
 
 // ── Wizard steps ──────────────────────────────────────────────────────────────
 type WizardStep = 1 | 2 | 3; // 1=asset, 2=amount, 3=confirm/tx
@@ -62,6 +64,18 @@ function ConfirmSummary({ asset, usdAmount }: { asset: SelectedAsset; usdAmount:
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SendPageClient() {
+  const [mode, setMode] = useState<'single' | 'spectrum'>(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'spectrum' ? 'spectrum' : 'single');
+  return <>
+    <div className="beam-send-mode" role="tablist" aria-label="Beam type">
+      <button id="single-tab" role="tab" aria-controls="single-panel" aria-selected={mode === 'single'} onClick={() => setMode('single')}>Single asset</button>
+      <button id="spectrum-tab" role="tab" aria-controls="spectrum-panel" aria-selected={mode === 'spectrum'} onClick={() => setMode('spectrum')}>Spectrum <span>Bundle</span></button>
+    </div>
+    <div id="single-panel" role="tabpanel" aria-labelledby="single-tab" hidden={mode !== 'single'}><SingleSendPage /></div>
+    <div id="spectrum-panel" role="tabpanel" aria-labelledby="spectrum-tab" hidden={mode !== 'spectrum'}><SpectrumComposer /></div>
+  </>;
+}
+
+function SingleSendPage() {
   const router = useRouter();
   const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
   const { ready, connectWallet } = usePrivy();
@@ -161,39 +175,7 @@ export function SendPageClient() {
     prevStep.current = wizardStep;
   }, [wizardStep]);
 
-  return (
-    <>
-      <main className="app-page beam-flow-page min-h-screen flex flex-col items-center justify-center px-4 py-28">
-        <motion.div
-          className="w-full max-w-lg"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className={isLinkReady ? "flow-finished" : "glass-strong flow-wizard rounded-[32px] overflow-hidden"}>
-
-            {/* ── Card header ─────────────────────────────────────────── */}
-            <div className={isLinkReady ? "hidden" : "flow-wizard-header flex items-center justify-between px-7 pt-6 pb-5 border-b border-white/10"}>
-              {/* Back / close */}
-              {!isInProgress && !isLinkReady ? (
-                <button
-                  type="button" onClick={handleBack}
-                  className="btn-glass-icon !w-9 !h-9 shrink-0" aria-label="Back"
-                >
-                  <ArrowLeft size={ICON_SIZE.md} />
-                </button>
-              ) : <div className="w-9" />}
-
-              <h1 className="text-base font-semibold text-white tracking-tight text-center flex-1 px-4">
-                {cardTitle}
-              </h1>
-
-              {/* Right spacer to keep title centered */}
-              <div className="w-9 shrink-0" />
-            </div>
-
-            {/* ── Card body ───────────────────────────────────────────── */}
-            <div className={isLinkReady ? "" : "px-7 py-7 min-h-[400px] flex flex-col"}>
+  return <BeamFlowFrame title={cardTitle} finished={isLinkReady} busy={isInProgress || submitting} onBack={handleBack}>
               <AnimatePresence mode="wait" custom={dir}>
                 {/* ── STEP 1: Pick asset ──────────────────────────────── */}
                 {!isInProgress && !isLinkReady && wizardStep === 1 && (
@@ -291,7 +273,7 @@ export function SendPageClient() {
                     transition={{ duration: 0.25 }}
                     className="flex-1 flex items-center justify-center"
                   >
-                    <TxProgress step={txStep} isERC20={isERC20} symbol={selectedAsset?.type === 'native' ? 'ETH' : (selectedAsset?.symbol ?? 'ETH')} />
+                    <TxProgress logoUrl={selectedAsset?.type === 'erc20' ? selectedAsset.logoUrl : undefined} step={txStep} isERC20={isERC20} symbol={selectedAsset?.type === 'native' ? 'ETH' : (selectedAsset?.symbol ?? 'ETH')} />
                   </motion.div>
                 )}
 
@@ -307,12 +289,5 @@ export function SendPageClient() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Past beams */}
-        </motion.div>
-      </main>
-    </>
-  );
+  </BeamFlowFrame>;
 }

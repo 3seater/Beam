@@ -141,7 +141,7 @@ export function CreateBeamModal({ isOpen, onClose }: CreateBeamModalProps) {
     <Modal isOpen={isOpen} onClose={handleClose} title={title} className="!max-w-lg">
 
       {/* ── In-progress ──────────────────────────────────────────────────── */}
-      {isInProgress && <TxProgress step={step} isERC20={isERC20} symbol={selectedAsset?.symbol ?? 'ETH'} />}
+      {isInProgress && <TxProgress logoUrl={selectedAsset?.type === 'erc20' ? selectedAsset.logoUrl : undefined} step={step} isERC20={isERC20} symbol={selectedAsset?.symbol ?? 'ETH'} />}
 
       {/* ── Link ready ───────────────────────────────────────────────────── */}
       {isLinkReady && beamLink && (

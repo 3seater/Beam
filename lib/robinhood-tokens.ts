@@ -105,6 +105,9 @@ const STOCK_TOKEN_FALLBACKS: RHToken[] = [
   { symbol: 'MU', name: 'Micron Technology', address: '0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD', decimals: 18, logoUrl: stockLogoUrl('MU'), isStock: true },
 ];
 
+/** Canonical starter assets shared with the server-side bundle planner. */
+export const STARTER_ASSETS: RHToken[] = [...STOCK_TOKEN_FALLBACKS, ...CHAIN_TOKENS];
+
 /* ── Robinhood API shapes ─────────────────────────────────────────────────── */
 interface RHJDeployment {
   contractAddress: string;

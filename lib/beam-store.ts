@@ -17,6 +17,7 @@ const DATA_DIR  = path.join(process.cwd(), '.data');
 const DATA_FILE = path.join(DATA_DIR, 'beams.json');
 
 export interface StoredBeamLink {
+  kind?: 'spectrum';
   depositId:   string;   // base-10 string
   walletAddress: string; // sender, lowercase
   beamLink:    string;   // full URL with #key=...&id=...
@@ -53,9 +54,10 @@ export function saveBeamLink(entry: StoredBeamLink): Promise<void> {
 
 async function writeEntry(entry: StoredBeamLink): Promise<void> {
   const store = await readStore();
-  const existing = store[entry.depositId];
+  const storeKey = entry.kind === 'spectrum' ? `spectrum:${entry.depositId}` : entry.depositId;
+  const existing = store[storeKey];
   if (existing && (existing.walletAddress.toLowerCase() !== entry.walletAddress.toLowerCase() || new URL(existing.beamLink).hash !== new URL(entry.beamLink).hash)) throw new Error('A different backup already exists for this deposit');
-  store[entry.depositId] = {
+  store[storeKey] = {
     ...entry,
     walletAddress: entry.walletAddress.toLowerCase(),
   };

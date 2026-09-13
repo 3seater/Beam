@@ -6,6 +6,7 @@ import { parseBeamLink } from '@/lib/beam-link';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 import { robinhoodChain } from '@/lib/chains';
+import { SPECTRUM_ABI, SPECTRUM_ESCROW_ADDRESS, spectrumConfigured } from '@/lib/spectrum';
 import { saveBeamLink, getBeamLinksForWallet } from '@/lib/beam-store';
 
 export const dynamic = 'force-dynamic';
@@ -20,9 +21,10 @@ export async function GET(req: NextRequest) {
   if (!wallet || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) {
     return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
   }
-  const entries = await getBeamLinksForWallet(wallet);
+  const kind = req.nextUrl.searchParams.get('kind');
+  const entries = (await getBeamLinksForWallet(wallet)).filter(entry => kind === 'spectrum' ? entry.kind === 'spectrum' : entry.kind !== 'spectrum');
   const signature = req.headers.get('x-beam-signature');
-  if (!signature) return NextResponse.json({ entries: entries.map(entry => ({ depositId: entry.depositId, walletAddress: entry.walletAddress, tokenSymbol: entry.tokenSymbol, usdAmount: entry.usdAmount, createdAt: entry.createdAt })) }, { headers: { 'Cache-Control': 'no-store' } });
+  if (!signature) return NextResponse.json({ entries: entries.map(entry => ({ depositId: entry.depositId, walletAddress: entry.walletAddress, tokenSymbol: entry.tokenSymbol, usdAmount: entry.usdAmount, createdAt: entry.createdAt, ...(entry.kind ? { kind: entry.kind } : {}) })) }, { headers: { 'Cache-Control': 'no-store' } });
   const timestamp = Number(req.headers.get('x-beam-timestamp'));
   if (!validRecoveryTime(timestamp) || !/^0x[0-9a-fA-F]+$/.test(signature)) return NextResponse.json({ error: 'Recovery signature expired. Please sign again.' }, { status: 401 });
   try {
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-  const { depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt } =
+  const { depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt, kind } =
     body as Record<string, unknown>;
 
   if (
@@ -62,8 +64,14 @@ export async function POST(req: NextRequest) {
   if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress) || !/^(0|[1-9]\d*)$/.test(depositId) || !Number.isFinite(usdAmount) || usdAmount <= 0 || !Number.isSafeInteger(createdAt)) return NextResponse.json({ error: 'Invalid fields' }, { status: 400 });
   try {
     const parsed = parseBeamLink(new URL(beamLink).hash);
+    const isSpectrum = new URLSearchParams(new URL(beamLink).hash.slice(1)).get('kind') === 'spectrum';
+    if ((kind === 'spectrum') !== isSpectrum || (kind !== undefined && kind !== 'spectrum')) throw new Error('Invalid link kind');
     if (parsed.depositId.toString() !== depositId) throw new Error('Deposit mismatch');
-    const deposit = await client.readContract({ address: BEAM_ESCROW_ADDRESS, abi: BEAM_ESCROW_ABI, functionName: 'getDeposit', args: [parsed.depositId] });
+    const deposit = isSpectrum ? await (async () => {
+      if (!spectrumConfigured) throw new Error('Spectrum not configured');
+      const bundle = await client.readContract({ address: SPECTRUM_ESCROW_ADDRESS, abi: SPECTRUM_ABI, functionName: 'getBundle', args: [parsed.depositId] });
+      return { sender: bundle[0], claimSigner: bundle[1] };
+    })() : await client.readContract({ address: BEAM_ESCROW_ADDRESS, abi: BEAM_ESCROW_ABI, functionName: 'getDeposit', args: [parsed.depositId] });
     if (deposit.sender.toLowerCase() !== walletAddress.toLowerCase() || deposit.claimSigner.toLowerCase() !== privateKeyToAddress(parsed.ephemeralPrivKey).toLowerCase()) return NextResponse.json({ error: 'Link does not match this deposit' }, { status: 403 });
   } catch { return NextResponse.json({ error: 'Could not verify deposit backup' }, { status: 503 }); }
 
@@ -72,6 +80,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid beamLink format' }, { status: 400 });
   }
 
-  await saveBeamLink({ depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt });
+  await saveBeamLink({ depositId, walletAddress, beamLink, tokenSymbol, usdAmount, createdAt, ...(kind === 'spectrum' ? { kind } : {}) });
   return NextResponse.json({ ok: true });
 }

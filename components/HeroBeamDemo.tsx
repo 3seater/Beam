@@ -161,7 +161,7 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
             </div>
           ) : step === 1
             ? <p><span className="hero-demo-link">usebe.am/claim#••••••</span>Send the link in any conversation.</p>
-            : <p>They sign in with Apple or Google. No existing wallet needed.</p>}
+            : <p>They sign in and claim. No existing wallet needed.</p>}
         </div>
       </div>
 

@@ -19,6 +19,7 @@ import { ClaimSuccess } from './ClaimSuccess';
 
 import { AlertTriangle, RefreshCw, LogIn, ArrowRight, Link2 } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
+import { SpectrumClaim } from '@/components/SpectrumClaim';
 
 type PageState = 'parsing' | 'no-link' | 'invalid-link' | 'loading' | 'error' | 'ready';
 
@@ -69,11 +70,23 @@ function LinkEntryPanel() {
       </form>
       <div className="claim-entry-footer"><span className="status-dot" /> No wallet? No problem.</div>
     </motion.div>
-    <p className="receipt-private">Sign in with Apple or Google when you claim.</p>
+    <p className="receipt-private">Open your link, sign in, and claim. No existing wallet needed.</p>
   </div>;
 }
 
 export function ClaimPageClient() {
+  const [hash, setHash] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => setHash(window.location.hash);
+    read(); window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
+  if (hash === null) return null;
+  const kind = new URLSearchParams(hash.slice(1)).get('kind');
+  return kind === 'spectrum' ? <SpectrumClaim key={hash} /> : <SingleClaimPageClient key={hash} />;
+}
+
+function SingleClaimPageClient() {
   const publicClient = usePublicClient();
 
   const [ephemeralPrivKey, setEphemeralPrivKey] = useState<`0x${string}` | null>(null);
@@ -286,6 +299,7 @@ export function ClaimPageClient() {
             {/* Deposit card + claim button — share the same max-w-sm column */}
             {claimStep !== 'success' && (
               <div className="claim-receive-shell w-full flex flex-col gap-5">
+                {!deposit.claimed && <h1 className="receipt-heading">Claim your Beam.</h1>}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}

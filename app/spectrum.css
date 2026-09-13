@@ -1,0 +1,32 @@
+/* Bundle-specific content inside Beam's shared send frame and components. */
+.beam-send-mode { position: absolute; top: 106px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 4px; padding: 5px; border: 1px solid rgba(255,255,255,.35); border-radius: 99px; background: rgba(255,255,255,.16); backdrop-filter: blur(20px); white-space: nowrap; }
+.beam-send-mode button { padding: 9px 17px; border-radius: 99px; color: #24466b; font-size: 13px; }
+.beam-send-mode button[aria-selected=true] { background: rgba(255,255,255,.7); box-shadow: 0 2px 10px rgba(36,70,107,.1); }
+.beam-send-mode span { font-size: 10px; margin-left: 4px; opacity: .6; }
+.beam-send-mode ~ div > main { padding-top: 180px; }
+.bundle-picker-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 4px; }
+.token-tile.bundle-picker-row { display: flex; flex-direction: column; justify-content: flex-start; gap: 11px; text-align: left; padding: 14px 12px; min-width: 0; height: auto; min-height: 118px; }
+.bundle-picker-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
+.bundle-picker-heading strong { font-weight: 600; font-size: 13px; letter-spacing: -.015em; }
+.bundle-picker-heading svg { opacity: .4; flex-shrink: 0; }
+.bundle-picker-content { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; width: 100%; }
+.bundle-picker-symbols { font-size: 10px; line-height: 1.5; color: #58758a; overflow-wrap: anywhere; }
+.bundle-token-stack { display: inline-flex; align-items: center; flex-shrink: 0; isolation: isolate; vertical-align: middle; }
+.bundle-token-image { display: block; object-fit: contain; border-radius: 10px; background: #fff; box-shadow: 0 1px 4px rgba(36,70,107,.08); flex-shrink: 0; }
+.bundle-token-stack .bundle-token-image { border: 2px solid #eaf8fd; }
+.bundle-token-stack .bundle-token-image + .bundle-token-image { margin-left: -10px; }
+.bundle-allocation { width: 100%; }
+.bundle-allocation-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; }
+.bundle-allocation-row + .bundle-allocation-row { border-top: 1px solid rgba(77,140,164,.13); }
+.bundle-allocation-token { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.bundle-allocation-token strong,.bundle-allocation-value strong { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.bundle-allocation-token > span,.bundle-allocation-value > span { font-size: 10px; opacity: .6; }
+.bundle-allocation-value { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.bundle-details-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: center; color: #56758d; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.bundle-details-link:hover { color: #24466b; }
+.bundle-picker-row:focus-visible,.bundle-details-link:focus-visible { outline: 2px solid #39a5d2; outline-offset: 3px; }
+.gift-token-pill:has(.bundle-token-stack) { max-width: 100%; font-size: 14px; white-space: normal; }
+.tx-token-mark .bundle-token-stack .bundle-token-image { width: 44px; height: 44px; border-radius: 12px; }
+.tx-token-mark > .bundle-token-stack { width: auto; }
+@media(max-width:380px) { .bundle-picker-list { gap: 8px; }.bundle-picker-row { padding: 12px 9px; }.bundle-picker-heading strong { font-size: 12px; } }
+@media(prefers-reduced-motion:reduce) { .bundle-picker-row { transition: none; } }

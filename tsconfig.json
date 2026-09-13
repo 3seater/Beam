@@ -34,10 +34,12 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next-dev/types/**/*.ts"
+    ".next-dev/types/**/*.ts",
+    ".next-spectrum-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "contracts/lib"
+    "contracts/lib",
+    "output/crate-reference"
   ]
 }

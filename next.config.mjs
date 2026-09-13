@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // Keep development from overwriting a running production build.
-    distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
+    distDir: process.env.BEAM_BUILD_DIR ?? (process.env.NODE_ENV === 'development' ? '.next-dev' : '.next'),
     webpack(config) {
         // Stub broken optional peer deps that various wallet libraries pull in
         // but this project does not use.

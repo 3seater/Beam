@@ -1,5 +1,9 @@
 # Beam project instructions
 
+## Product copy
+
+Read `docs/copy-guide.md` before writing or changing site copy, metadata, captions, bios, or marketing text. It records the approved stocks-and-crypto positioning and provider-neutral claiming language.
+
 ## Social graphics and brand artwork
 
 Before creating a Beam social graphic, announcement, article cover, banner, or other marketing artwork, read `docs/graphics-style-guide.md`.
