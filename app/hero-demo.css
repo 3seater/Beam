@@ -108,7 +108,7 @@
 /* Slow down on hover instead of stopping */
 .hero-demo-assets-wrap:hover .hero-demo-assets-track,
 .hero-demo-assets-wrap:focus-within .hero-demo-assets-track {
-  animation-duration: 60s;
+  animation-play-state: paused;
 }
 
 @keyframes hero-ticker {
