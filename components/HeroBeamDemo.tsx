@@ -1,19 +1,61 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BeamMark } from './BeamMark';
 import { LandingTokenLogo } from './LandingTokenLogo';
 import { tokenCardStyle } from '@/lib/token-card-theme';
 
-const ASSETS = ['ETH', 'NVDA', 'MSFT'] as const;
+const ASSETS = [
+  'ETH', 'NVDA', 'AAPL', 'TSLA', 'MSFT', 'META', 'GOOGL', 'AMZN',
+  'SPCX', 'MU', 'USDG', 'AI', 'CASHCAT', 'PONS', 'MEME',
+] as const;
+
+type Asset = typeof ASSETS[number];
+
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
 export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string) => void }) {
-  const [asset, setAsset] = useState<(typeof ASSETS)[number]>('ETH');
+  const [asset, setAsset] = useState<Asset>('ETH');
   const [amount, setAmount] = useState<number>(100);
   const [step, setStep] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener('scroll', updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', updateArrows); ro.disconnect(); };
+  }, [updateArrows]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'left' ? -160 : 160, behavior: 'smooth' });
+  };
+
+  const selectAsset = (sym: Asset) => {
+    setAsset(sym);
+    onAssetChange?.(sym);
+    // Scroll selected button into view
+    const el = scrollRef.current;
+    if (!el) return;
+    const btn = el.querySelector<HTMLButtonElement>(`[data-symbol="${sym}"]`);
+    btn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  };
 
   return (
     <div className="hero-demo" aria-label="Interactive Beam preview">
@@ -30,12 +72,46 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
         ))}
       </div>
 
-      <div className="hero-demo-assets" role="group" aria-label="Preview a token">
-        {ASSETS.map(symbol => (
-          <button key={symbol} type="button" aria-pressed={asset === symbol} onClick={() => { setAsset(symbol); onAssetChange?.(symbol); }}>
-            <LandingTokenLogo symbol={symbol} size={24} />{symbol}
-          </button>
-        ))}
+      {/* Scrollable asset row with arrows */}
+      <div className="hero-demo-assets-wrap">
+        <button
+          type="button"
+          className="hero-demo-scroll-btn hero-demo-scroll-left"
+          aria-label="Scroll tokens left"
+          onClick={() => scroll('left')}
+          style={{ opacity: canScrollLeft ? 1 : 0, pointerEvents: canScrollLeft ? 'auto' : 'none' }}
+        >
+          <ChevronLeft size={14} />
+        </button>
+
+        <div
+          ref={scrollRef}
+          className="hero-demo-assets"
+          role="group"
+          aria-label="Preview a token"
+        >
+          {ASSETS.map(sym => (
+            <button
+              key={sym}
+              type="button"
+              data-symbol={sym}
+              aria-pressed={asset === sym}
+              onClick={() => selectAsset(sym)}
+            >
+              <LandingTokenLogo symbol={sym} size={20} />{sym}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="hero-demo-scroll-btn hero-demo-scroll-right"
+          aria-label="Scroll tokens right"
+          onClick={() => scroll('right')}
+          style={{ opacity: canScrollRight ? 1 : 0, pointerEvents: canScrollRight ? 'auto' : 'none' }}
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
 
       <div className="hero-demo-stage" data-step={step}>
