@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-vi.mock('next/image', () => ({ default: ({ unoptimized: _unoptimized, ...props }: Record<string, unknown>) => <img {...props} /> }));
+vi.mock('next/image', () => ({ default: ({ unoptimized: _u, ...props }: Record<string, unknown>) => <img {...props} /> }));
 import { HistoryTokenImage } from '../HistoryTokenImage';
 
 it('keeps a slow logo mounted past ten seconds and shows it when loading finishes', async () => {

@@ -10,7 +10,6 @@ import { DataSkeleton } from './ui/DataSkeleton';
 export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
   const [entries, setEntries] = useState<BeamHistoryEntry[]>([]);
   const [closed, setClosed] = useState<Record<string, boolean | null>>({});
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -19,7 +18,7 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
   const { signMessageAsync } = useSignMessage();
   useEffect(() => {
     let active = true;
-    setLoading(true); setClosed({});
+    setClosed({});
     const local = loadBeamHistory(walletAddress).filter(e => e.kind === 'spectrum');
     setEntries(local);
     fetch(`/api/beams?wallet=${walletAddress}&kind=spectrum`).then(r => r.json()).then(data => {
@@ -27,7 +26,7 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
       const map = new Map(local.map(e => [e.depositId, e]));
       for (const entry of data.entries) if (!map.has(entry.depositId)) map.set(entry.depositId, entry);
       setEntries([...map.values()].sort((a, b) => b.createdAt - a.createdAt));
-    }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    }).catch(() => { });
     return () => { active = false; };
   }, [walletAddress]);
   useEffect(() => {
