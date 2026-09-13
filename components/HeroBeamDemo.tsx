@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo, useCallback } from 'react';
+import { useState, memo, useCallback, useRef, useEffect } from 'react';
 import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw } from 'lucide-react';
 import { BeamMark } from './BeamMark';
 import { LandingTokenLogo } from './LandingTokenLogo';
@@ -16,7 +16,11 @@ type Asset = typeof ASSETS[number];
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
-// Isolated so parent re-renders (from asset selection) never restart the animation
+const SPEED_NORMAL = 40;  // px/s
+const SPEED_HOVER = 8;   // px/s
+const LERP = 0.06; // how fast speed transitions (per frame)
+
+// Memoized so parent re-renders (token selection) never interrupt the loop
 const AssetTicker = memo(function AssetTicker({
   selected,
   onSelect,
@@ -24,9 +28,59 @@ const AssetTicker = memo(function AssetTicker({
   selected: Asset;
   onSelect: (sym: Asset) => void;
 }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);          // current translateX in px (negative)
+  const speedRef = useRef(SPEED_NORMAL); // current speed, lerped
+  const targetRef = useRef(SPEED_NORMAL);
+  const rafRef = useRef<number | null>(null);
+  const lastRef = useRef<number | null>(null);
+  const reducedMotion = useRef(false);
+
+  useEffect(() => {
+    reducedMotion.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion.current) return;
+
+    const track = trackRef.current;
+    if (!track) return;
+
+    const tick = (ts: number) => {
+      const dt = lastRef.current !== null ? Math.min(ts - lastRef.current, 50) : 0;
+      lastRef.current = ts;
+
+      // Lerp speed toward target
+      speedRef.current += (targetRef.current - speedRef.current) * LERP;
+
+      posRef.current += speedRef.current * (dt / 1000);
+
+      // Seamless loop: jump back when we've scrolled one full copy
+      const half = track.scrollWidth / 2;
+      if (half > 0 && posRef.current >= half) {
+        posRef.current -= half;
+      }
+
+      track.style.transform = `translateX(${-posRef.current}px)`;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  // Mouse enter/leave on the wrapper — no state, just flip target speed
+  const handleEnter = useCallback(() => { targetRef.current = SPEED_HOVER; }, []);
+  const handleLeave = useCallback(() => { targetRef.current = SPEED_NORMAL; }, []);
+
   return (
-    <div className="hero-demo-assets-wrap" role="group" aria-label="Preview a token">
-      <div className="hero-demo-assets-track">
+    <div
+      ref={wrapRef}
+      className="hero-demo-assets-wrap"
+      role="group"
+      aria-label="Preview a token"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
+      <div ref={trackRef} className="hero-demo-assets-track">
         {[0, 1].map(copy => (
           <div key={copy} className="hero-demo-assets-row" aria-hidden={copy === 1}>
             {ASSETS.map(sym => (
@@ -82,7 +136,10 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
           </div>
           <div className="hero-demo-value" aria-live="polite" aria-atomic="true">
             <span>${amount}<span>.00</span></span>
-            <span className="hero-demo-asset"><LandingTokenLogo key={asset} symbol={asset} size={48} /><span>{asset}</span></span>
+            <span className="hero-demo-asset">
+              <LandingTokenLogo key={asset} symbol={asset} size={48} />
+              <span>{asset}</span>
+            </span>
           </div>
           <div className="hero-demo-card-bottom">
             {step === 0
