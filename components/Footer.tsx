@@ -17,6 +17,12 @@ export function Footer() {
           {column.links.map(([label, href]) => <Link key={label} href={href} {...(href.startsWith('https:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{label}</Link>)}
         </nav>)}
       </div>
+      <div className="footer-token-notice">
+        <span className="footer-token-badge">$BEAM token is not live yet</span>
+        <span className="footer-token-ca">
+          CA: <span className="footer-token-ca-blur" aria-label="Contract address not yet released">0x4a3b9c1f2e8d7a6c5b0e4f3a2d1c9b8e7a6f5d4c</span>
+        </span>
+      </div>
       <div className="footer-bottom"><span>© {new Date().getFullYear()} Beam</span><span>Built on Robinhood Chain</span></div>
     </div>
   </footer>;
