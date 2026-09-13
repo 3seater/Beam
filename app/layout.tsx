@@ -40,8 +40,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <Preloader />
         <Providers>
-          <Preloader />
           {/* Navbar lives here — renders once, never unmounts on navigation */}
           <Navbar />
           {children}
