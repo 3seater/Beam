@@ -44,7 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: 'light',
           accentColor: '#2589c4',
-          logo: 'https://beam.finance/svg star.svg',
+          logo: 'https://usebe.am/svg star.svg',
           landingHeader: 'Sign in to Beam',
           loginMessage: 'Send and receive any token as a shareable link.',
           walletChainType: 'ethereum-only',

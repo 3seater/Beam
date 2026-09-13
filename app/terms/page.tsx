@@ -17,7 +17,7 @@ export default function TermsPage() {
           heading: '1. Acceptance of Terms',
           body: (
             <p>
-              By accessing or using beam.finance (the &quot;Site&quot;) or the Beam smart contract protocol
+              By accessing or using usebe.am (the &quot;Site&quot;) or the Beam smart contract protocol
               (collectively, the &quot;Service&quot;), you agree to be bound by these Terms of Service
               (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. These Terms
               apply to all visitors, senders, and recipients who interact with the Beam protocol.
@@ -225,8 +225,8 @@ export default function TermsPage() {
           body: (
             <p>
               For questions about these Terms, please contact us at{' '}
-              <a href="mailto:hello@beam.finance" className="text-white/70 hover:text-white transition-colors underline underline-offset-2">
-                hello@beam.finance
+              <a href="mailto:hello@usebe.am" className="text-white/70 hover:text-white transition-colors underline underline-offset-2">
+                hello@usebe.am
               </a>
               .
             </p>

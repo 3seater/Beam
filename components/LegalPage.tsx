@@ -44,8 +44,8 @@ export function LegalPage({ title, subtitle, effectiveDate, sections }: LegalPag
           <div className="mt-16 h-px bg-white/10 mb-10" />
           <p className="text-sm text-white/35">
             Questions about this document? Reach us at{' '}
-            <a href="mailto:hello@beam.finance" className="text-white/60 hover:text-white transition-colors underline underline-offset-2">
-              hello@beam.finance
+            <a href="mailto:hello@usebe.am" className="text-white/60 hover:text-white transition-colors underline underline-offset-2">
+              hello@usebe.am
             </a>
           </p>
         </div>

@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                Beam (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates beam.finance, a non-custodial token transfer
+                Beam (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates usebe.am, a non-custodial token transfer
                 protocol built on Robinhood Chain. This Privacy Policy explains what information we
                 collect, how we use it, and your choices regarding that information.
               </p>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
                 <li>Relay gasless claim transactions on behalf of recipients</li>
                 <li>Monitor for abuse, fraud, and security incidents</li>
                 <li>Display token prices and market data through third-party APIs</li>
-                <li>Respond to support inquiries sent to hello@beam.finance</li>
+                <li>Respond to support inquiries sent to hello@usebe.am</li>
                 <li>Comply with applicable legal obligations</li>
               </ul>
               <p>
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
                 Because blockchain data is immutable, we cannot delete on-chain transaction records.
                 If you used Privy for authentication, you may request deletion of your Privy account
                 and associated data directly through Privy&apos;s platform or by contacting
-                hello@beam.finance.
+                hello@usebe.am.
               </p>
             </>
           ),
@@ -151,7 +151,7 @@ export default function PrivacyPage() {
             <p>
               Beam is not directed at children under the age of 18. We do not knowingly collect
               personal information from minors. If you believe a minor has provided us with personal
-              data, please contact us at hello@beam.finance and we will take steps to remove it.
+              data, please contact us at hello@usebe.am and we will take steps to remove it.
             </p>
           ),
         },
@@ -172,8 +172,8 @@ export default function PrivacyPage() {
             <p>
               If you have questions, concerns, or requests regarding this Privacy Policy or your
               personal data, please contact us at{' '}
-              <a href="mailto:hello@beam.finance" className="text-white/70 hover:text-white transition-colors underline underline-offset-2">
-                hello@beam.finance
+              <a href="mailto:hello@usebe.am" className="text-white/70 hover:text-white transition-colors underline underline-offset-2">
+                hello@usebe.am
               </a>
               .
             </p>

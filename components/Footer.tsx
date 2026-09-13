@@ -4,7 +4,7 @@ import { BeamMark } from './BeamMark';
 const COLUMNS = [
   { title: 'Explore', links: [['How it works', '/#how-it-works'], ['Why Beam', '/#why-beam'], ['FAQ', '/#faq'], ['Docs', '/docs']] },
   { title: 'Product', links: [['Send a Beam', '/send'], ['Claim', '/claim'], ['Your Beams', '/history']] },
-  { title: 'Contact', links: [['X (Twitter)', 'https://x.com/use_beam'], ['hello@beam.finance', 'mailto:hello@beam.finance']] },
+  { title: 'Contact', links: [['X (Twitter)', 'https://x.com/use_beam'], ['hello@usebe.am', 'mailto:hello@usebe.am']] },
   { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms']] },
 ];
 export function Footer() {

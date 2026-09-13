@@ -349,7 +349,7 @@ function SectionQuickStart() {
       </P>
 
       <Pre lang="text" label="Beam link anatomy">
-        {`beam.finance/claim
+        {`usebe.am/claim
   #key=<64-hex-char ephemeral private key>
   &id=<uint256 deposit id>`}
       </Pre>
@@ -779,17 +779,17 @@ function SectionSupport() {
         <Card
           icon={<Globe size={18} />}
           title="X (Twitter)"
-          desc="Follow @beamfinance for updates, announcements, and community support."
+          desc="Follow @use_beam for updates, announcements, and community support."
         />
         <Card
           icon={<LifeBuoy size={18} />}
           title="Email"
-          desc="Reach the team at hello@beam.finance for anything not covered in these docs."
+          desc="Reach the team at hello@usebe.am for anything not covered in these docs."
         />
         <Card
           icon={<Lock size={18} />}
           title="Security"
-          desc="Discovered a vulnerability? Please disclose responsibly to hello@beam.finance with 'Security' in the subject line."
+          desc="Discovered a vulnerability? Please disclose responsibly to hello@usebe.am with 'Security' in the subject line."
         />
         <Card
           icon={<ArrowUpRight size={18} />}
