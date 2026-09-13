@@ -1,4 +1,93 @@
 /* Premium Beam: porcelain, ice-blue light, and precision glass. */
+.beams-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 0 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #75afd333;
+}
+.beams-toolbar-button, .beams-toolbar-placeholder {
+  width: 154px;
+  height: 42px;
+  border-radius: 12px;
+}
+.beams-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(145deg, #ffffffe6, #edf8ffc9);
+  border: 1px solid #87bfe185;
+  box-shadow: 0 2px 7px #247db512, inset 0 1px 0 #fff;
+  color: #285571;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background .2s, border-color .2s;
+}
+.beams-toolbar-button:hover:not(:disabled) { background: #fff; border-color: #38a0e1; }
+.beams-toolbar-button:disabled { opacity: .6; cursor: default; }
+.beams-toolbar-button:focus-visible { outline-offset: 3px; }
+@media (max-width: 480px) {
+  .beams-toolbar-button, .beams-toolbar-placeholder { flex: 1; min-width: 0; width: auto; }
+}
+.beam-skeleton {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: #38a0e126;
+  animation: beam-skeleton-pulse 1.3s ease-in-out infinite alternate;
+}
+@keyframes beam-skeleton-pulse { to { opacity: .45; } }
+.app-page .amount-quote-panel {
+  display: grid;
+  grid-template-rows: 16px minmax(40px, auto) minmax(32px, auto);
+  gap: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  min-height: 130px;
+}
+.amount-quote-header, .amount-quote-header>span { display: flex; align-items: center; gap: 6px; }
+.amount-quote-header { justify-content: space-between; color: #476a81; font-size: 11px; }
+.amount-quote-value { align-content: center; font-size: 13px; line-height: 20px; font-weight: 600; color: #1e3d56; overflow-wrap: anywhere; }
+.amount-quote-note { align-content: center; font-size: 11px; line-height: 16px; color: #526f83; }
+.amount-quote-placeholder { display: flex; flex-direction: column; gap: 8px; }
+.quote-line-long { width: 80%; height: 12px; }
+.quote-line-medium { width: 50%; height: 12px; }
+.quote-line-short { width: 65%; height: 10px; }
+.beam-history-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px 0; min-height: 60px; }
+.beam-history-info { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.beam-history-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.beam-history-logo { display: inline-block; position: relative; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 8px; overflow: hidden; }
+.history-logo-skeleton, .history-token-image, .history-token-fallback { position: absolute; inset: 0; width: 24px; height: 24px; border-radius: 8px; }
+.history-token-image { object-fit: contain; background: #fff8; }
+.history-token-fallback { display: grid; place-items: center; font-size: 9px; color: #365f7b; background: #e0f2fa; }
+.beam-history-actions { display: inline-flex; align-items: center; gap: 4px; width: 52px; min-height: 24px; flex-shrink: 0; }
+.beam-history-status { display: inline-flex; justify-content: center; align-items: center; width: 64px; min-height: 20px; }
+.beam-history-cancel { display: inline-flex; width: 20px; min-height: 20px; align-items: center; }
+.history-amount-skeleton { width: 96px; height: 14px; }
+.history-usd-skeleton { width: 32px; height: 11px; }
+.history-action-skeleton { width: 20px; height: 20px; }
+.history-status-skeleton { width: 60px; height: 18px; border-radius: 100px; }
+.history-time-skeleton { width: 56px; height: 11px; }
+@media (max-width: 600px) {
+  .beam-history-row { flex-wrap: wrap; gap: 8px; }
+  .beam-history-info { flex-basis: 100%; }
+  .beam-history-meta { width: 100%; justify-content: flex-end; }
+}
+@media (prefers-reduced-motion: reduce) { .beam-skeleton { animation: none; } }
+.quote-skeleton {
+  height: 12px;
+  border-radius: 6px;
+  background: #38a0e12b;
+  animation: quote-skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+.quote-skeleton-long { width: 78%; margin-bottom: 9px; }
+.quote-skeleton-short { width: 48%; height: 9px; }
+@keyframes quote-skeleton-pulse { to { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .quote-skeleton { animation: none; } }
 .beam-preloader {
   position: fixed;
   inset: 0;
@@ -1703,19 +1792,6 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   color: #385c7b;
-}
-
-.beam-gift-card::before {
-  content: '';
-  position: absolute;
-  width: 210px;
-  height: 210px;
-  border-radius: 50%;
-  background: #79d6fc6b;
-  filter: blur(35px);
-  right: -110px;
-  top: -90px;
-  pointer-events: none;
 }
 
 .gift-card-top {

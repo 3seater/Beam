@@ -1,0 +1,139 @@
+/* The hero preview uses live UI at its native size; no scene scaling. */
+.hero-demo {
+  position: relative;
+  width: min(100%, 490px);
+  justify-self: end;
+  margin: 10px 0 55px;
+  padding: 25px;
+  border: 1px solid #fff;
+  border-radius: 32px;
+  background: linear-gradient(145deg, #ffffffd9, #f3fbff80);
+  box-shadow: 0 30px 80px -35px #2589c45c, inset 0 1px 0 #fff;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: #284d69;
+}
+
+.hero-demo-header, .hero-demo-header>span:first-child,
+.hero-demo-card-top, .hero-demo-card-bottom, .hero-demo-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hero-demo-header { margin-bottom: 24px; gap: 12px; font-size: 15px; }
+.hero-demo-header>span:first-child { gap: 7px; }
+.hero-demo-header svg { width: 25px; height: 25px; color: var(--beam-blue); }
+.hero-demo-label { font-size: 11px; color: #587a91; }
+
+.hero-demo-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 5px;
+  gap: 4px;
+  border: 1px solid #b9dded80;
+  background: #dceffa80;
+  border-radius: 17px;
+}
+.hero-demo-steps button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 5px;
+  font-size: 12px;
+  color: #527389;
+  border-radius: 12px;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.hero-demo-steps button>span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #8bbbd580;
+  border-radius: 50%;
+  font-size: 10px;
+}
+.hero-demo-steps button[aria-pressed="true"] {
+  background: white;
+  color: #214861;
+  box-shadow: 0 2px 8px #2c739c15;
+}
+.hero-demo-steps button[aria-pressed="true"]>span { background: #38a0e1; color: #fff; border-color: transparent; }
+.hero-demo-assets { display: flex; gap: 7px; margin: 24px 0 18px; }
+.hero-demo-assets button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 43px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  font-size: 12px;
+  color: #527389;
+  transition: background .2s, border-color .2s;
+}
+.hero-demo-assets button:hover, .hero-demo-amounts button:hover { background: #fff8; }
+.hero-demo-assets button[aria-pressed="true"] { border-color: #fff; background: #fff; color: #214861; box-shadow: 0 3px 12px #247db512; }
+.hero-demo-beam {
+  padding: 24px;
+  border: 1px solid #fff;
+  border-radius: 23px;
+  background: radial-gradient(ellipse at 100% 0%, #9be7fd99, transparent 65%), linear-gradient(135deg, #fff, #eff9ff);
+  box-shadow: 0 12px 28px -15px #2589c445;
+  transition: background .25s;
+}
+.hero-demo-card-top { font-size: 12px; color: #426982; min-height: 24px; }
+.hero-demo-value { gap: 12px; padding: 21px 0 25px; }
+.hero-demo-value>span:first-child { font-size: clamp(44px, 4.5vw, 62px); font-weight: 300; letter-spacing: -.06em; line-height: 1; }
+.hero-demo-value>span:first-child>span { font-size: .65em; color: #648aa3; }
+.hero-demo-asset { display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 11px; }
+.hero-demo-asset .landing-token-logo { border-radius: 13px; border: 1px solid #fff; box-shadow: 0 6px 12px #247db51c; }
+.hero-demo-card-bottom { justify-content: flex-start; gap: 7px; padding-top: 15px; border-top: 1px solid #76afd32b; font-size: 11px; color: #426982; }
+.hero-demo-check { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #21795f; background: #dcf4ec; }
+.hero-demo-detail { min-height: 76px; display: grid; place-items: center; }
+.hero-demo-detail p { margin: 0; max-width: 320px; text-align: center; font-size: 12px; line-height: 1.6; color: #476a81; }
+.hero-demo-link { display: block; margin-bottom: 4px; color: #245779; font-size: 13px; }
+.hero-demo-amounts { display: flex; justify-content: center; gap: 8px; }
+.hero-demo-amounts button { min-width: 66px; min-height: 36px; border: 1px solid #a6cfe580; border-radius: 100px; color: #456d87; font-size: 12px; }
+.hero-demo-amounts button[aria-pressed="true"] { background: #fff; border-color: #69b9e6; color: #245779; }
+.hero-demo-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 49px;
+  padding: 14px 19px;
+  border-radius: 16px;
+  background: #fff9;
+  border: 1px solid #fff;
+  font-size: 13px;
+  color: #234e6c;
+  transition: background .2s;
+}
+.hero-demo-next:hover { background: #fff; }
+.hero-demo button:focus-visible { outline-offset: 2px; }
+
+@media (max-width: 1050px) and (min-width: 961px) {
+  .hero-demo { padding: 18px; }
+  .hero-demo-value>span:first-child { font-size: 46px; }
+}
+@media (max-width: 960px) {
+  .hero-demo { margin: 42px auto 35px; }
+  .hero-demo-value>span:first-child { font-size: 60px; }
+}
+@media (max-width: 480px) {
+  .hero-demo { padding: 17px; border-radius: 25px; }
+  .hero-demo-header { font-size: 14px; }
+  .hero-demo-label { font-size: 10px; }
+  .hero-demo-steps button { gap: 5px; font-size: 11px; }
+  .hero-demo-assets { gap: 3px; margin-top: 18px; }
+  .hero-demo-assets button { font-size: 11px; gap: 6px; }
+  .hero-demo-beam { padding: 20px; }
+  .hero-demo-value>span:first-child { font-size: 50px; }
+  .hero-demo-card-bottom { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-demo *, .hero-demo *::before { transition: none; }
+}

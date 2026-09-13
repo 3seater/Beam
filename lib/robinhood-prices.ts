@@ -46,7 +46,7 @@ export async function fetchTokenPriceUsd(symbol: string, address?: string): Prom
 
   try {
     // Use our server-side proxy to avoid CORS and client-side network issues
-    const res = await fetch(`/api/price/${encodeURIComponent(symbol.toUpperCase())}${address ? `?address=${encodeURIComponent(address)}` : ""}`);
+    const res = await fetch(`/api/price/${encodeURIComponent(symbol.toUpperCase())}${address ? `?address=${encodeURIComponent(address)}` : ""}`, { signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
 
     const data: RHJPricesResponse = await res.json();

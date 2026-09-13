@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Wallet, Clock } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { SentBeams } from '@/components/SentBeams';
+import { BeamsSkeleton } from '@/components/BeamsSkeleton';
 
 export function HistoryPageClient() {
   const { address: walletAddress, isConnected, status: accountStatus } = useAccount();
@@ -61,14 +62,12 @@ export function HistoryPageClient() {
 
         {/* Loading / hydrating */}
         {!hydrated && (
-          <div className="glass rounded-[24px] px-8 py-12 flex items-center justify-center">
-            <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" aria-hidden="true" />
-          </div>
+          <BeamsSkeleton />
         )}
 
         {/* Connected — show history */}
         {hydrated && isConnected && walletAddress && (
-          <SentBeams walletAddress={walletAddress} />
+          <SentBeams key={walletAddress} walletAddress={walletAddress} />
         )}
       </motion.div>
     </main>

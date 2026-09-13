@@ -48,9 +48,10 @@ export interface UniswapQuote {
 export async function fetchUniswapQuote(
   tokenAddress: `0x${string}`,
   ethAmountWei: bigint,
+  signal?: AbortSignal,
 ): Promise<UniswapQuote | null> {
   // Slot0 is a spot price, not a liquidity-aware executable quote.
-  return tryTradingApiQuote(tokenAddress, ethAmountWei, null);
+  return tryTradingApiQuote(tokenAddress, ethAmountWei, null, undefined, signal);
 }
 
 // ── Firm quote (includes swap calldata for execution) ─────────────────────────
@@ -76,12 +77,14 @@ async function tryTradingApiQuote(
   ethAmountWei: bigint,
   swapper: `0x${string}` | null,
   exactOutputWei?: bigint, // if provided, use EXACT_OUTPUT
+  signal?: AbortSignal,
 ): Promise<UniswapQuote | null> {
   try {
     const effectiveSwapper = swapper ?? NATIVE_ETH;
     const isExactOutput = exactOutputWei !== undefined && exactOutputWei > 0n;
 
     const res = await fetch('/api/swap/quote', {
+      signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { BeamMark } from './BeamMark';
 import { ArrowUpRight, Check } from 'lucide-react';
+import { tokenCardStyle } from '@/lib/token-card-theme';
 
 interface BeamGiftCardProps {
   amount?: string;
@@ -18,7 +19,7 @@ interface BeamGiftCardProps {
 export function BeamGiftCard({ amount, symbol, logoUrl, label = 'Your Beam', status = 'Ready to share', detail }: BeamGiftCardProps) {
   const imageUrl = logoUrl || (symbol === 'ETH' ? 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' : undefined);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  return <div className="beam-gift-card">
+  return <div className="beam-gift-card" style={tokenCardStyle(symbol)}>
     <div className="gift-card-top"><span><BeamMark /> {label}</span><ArrowUpRight size={17} strokeWidth={1.4} /></div>
     <div className="gift-card-value">{amount ?? <BeamMark sculptural />}</div>
     {symbol && <span className="gift-token-pill">

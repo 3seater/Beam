@@ -5,13 +5,14 @@ import { usePublicClient, useWriteContract, useSignMessage } from 'wagmi';
 import { decodeEventLog, formatUnits } from 'viem';
 import { formatTokenValue } from '@/lib/format';
 import { Copy, Check, ExternalLink, Loader2, X, RefreshCw } from 'lucide-react';
-import { ICON_SIZE } from '@/lib/icons';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 import { loadBeamHistory, saveBeamEntry } from '@/lib/beam-history';
-import { fetchRobinhoodTokens, stockLogoUrl } from '@/lib/robinhood-tokens';
+import { fetchRobinhoodTokens } from '@/lib/robinhood-tokens';
 import type { StoredBeamLink } from '@/lib/beam-store';
-import Image from 'next/image';
+import { Skeleton } from './ui/Skeleton';
+import { BeamsSkeleton } from './BeamsSkeleton';
+import { HistoryTokenImage } from './HistoryTokenImage';
 import { recoveryMessage } from '@/lib/beam-recovery';
 
 type ServerEntry = Omit<StoredBeamLink, 'beamLink'> & { beamLink?: string };
@@ -148,9 +149,11 @@ interface RowData {
 function BeamRow({
   row,
   onCancelled,
+  hydrating,
 }: {
   row: RowData;
   onCancelled: (depositId: string) => void;
+  hydrating: boolean;
 }) {
   const client = usePublicClient();
   const { writeContractAsync } = useWriteContract();
@@ -162,7 +165,9 @@ function BeamRow({
 
   // Fetch claim status on mount
   useEffect(() => {
-    fetchDepositStatus(row.depositId, client).then(setStatus);
+    let active = true;
+    fetchDepositStatus(row.depositId, client).then(value => { if (active) setStatus(value); });
+    return () => { active = false; };
   }, [row.depositId, client]);
 
   const copy = useCallback(async () => {
@@ -203,10 +208,7 @@ function BeamRow({
   // Status badge
   const badge = (() => {
     if (status === 'loading') return (
-      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/40">
-        <Loader2 size={9} className="animate-spin" />
-        Loading
-      </span>
+      <span role="status" aria-label="Loading Beam status"><Skeleton className="history-status-skeleton" /></span>
     );
     if (status === 'claimed') return (
       <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white font-medium">
@@ -228,40 +230,28 @@ function BeamRow({
   })();
 
   return (
-    <div className="flex items-center gap-3 py-3.5 px-0">
+    <div className="beam-history-row">
 
       {/* LEFT: token logo + amount + USD value + copy/open actions */}
-      <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="beam-history-info">
         {/* Token logo */}
-        {row.logoUrl ? (
-          <Image
-            src={row.logoUrl}
-            alt={row.tokenSymbol}
-            width={24}
-            height={24}
-            className="rounded-lg object-contain bg-white/10 shrink-0"
-            style={{ width: 24, height: 24 }}
-            unoptimized
-          />
-        ) : (
-          <span className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-[9px] font-semibold text-white/70 shrink-0">
-            {row.tokenSymbol.slice(0, 2).toUpperCase()}
-          </span>
-        )}
+        <HistoryTokenImage src={row.logoUrl} symbol={row.tokenSymbol} loading={hydrating} />
 
         {/* Amount */}
         <span className={`text-sm font-semibold leading-none shrink-0 ${status === 'cancelled' ? 'text-white/30 line-through' : 'text-white'}`}>
-          {formattedAmt ? `${formattedAmt} ${row.tokenSymbol}` : row.tokenSymbol}
+          {hydrating && !formattedAmt ? <Skeleton className="history-amount-skeleton" /> : formattedAmt ? `${formattedAmt} ${row.tokenSymbol}` : row.tokenSymbol}
         </span>
 
         {/* USD — visually distinct: smaller, dimmer, slightly different weight */}
         {row.usdAmount != null && status !== 'cancelled' && (
           <span className="text-[11px] font-normal text-white/35 shrink-0 tabular-nums">${row.usdAmount}</span>
         )}
+        {row.usdAmount == null && hydrating && <Skeleton className="history-usd-skeleton" />}
 
         {/* Copy + open — only when unclaimed and link exists */}
-        {status === 'unclaimed' && row.beamLink && (
-          <div className="flex items-center gap-1 ml-1">
+        <span className="beam-history-actions">
+        {status === 'loading' ? <><Skeleton className="history-action-skeleton" /><Skeleton className="history-action-skeleton" /></> : status === 'unclaimed' && row.beamLink && (
+          <span className="flex items-center gap-1">
             <button
               type="button"
               onClick={copy}
@@ -281,17 +271,19 @@ function BeamRow({
             >
               <ExternalLink size={10} className="text-white/50" />
             </a>
-          </div>
+          </span>
         )}
+        </span>
       </div>
 
       {/* RIGHT: badge | cancel icon | timestamp — fixed column order */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="beam-history-meta">
 
         {/* Status badge — always present (loading/claimed/cancelled/pending) */}
-        {badge}
+        <span className="beam-history-status">{badge}</span>
 
         {/* Cancel — icon only, unclaimed rows only, sits after badge */}
+        <span className="beam-history-cancel">
         {status === 'unclaimed' && (
           <button
             type="button"
@@ -308,9 +300,10 @@ function BeamRow({
           </button>
         )}
 
+        </span>
         {/* Timestamp — fixed width so all rows align */}
         <span className="text-[11px] text-white/30 tabular-nums w-14 text-right">
-          {row.createdAt != null ? timeAgo(row.createdAt) : ''}
+          {row.createdAt != null ? timeAgo(row.createdAt) : hydrating ? <Skeleton className="history-time-skeleton" /> : '—'}
         </span>
       </div>
 
@@ -351,20 +344,22 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
   const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'done'>('idle');
 
   const tokenMapRef = useRef<Map<string, { symbol: string; decimals: number; logoUrl: string }>>(new Map());
+  const tokenReadyRef = useRef<Promise<void> | null>(null);
 
   // Load token map once
   useEffect(() => {
-    fetchRobinhoodTokens().then((tokens) => {
+    tokenReadyRef.current = fetchRobinhoodTokens().then((tokens) => {
       const map = new Map<string, { symbol: string; decimals: number; logoUrl: string }>();
       for (const t of tokens) map.set(t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals, logoUrl: t.logoUrl });
       tokenMapRef.current = map;
-    });
+    }).catch(() => {});
   }, []);
 
   // Seed rows immediately from localStorage so something shows before onchain fetch
   useEffect(() => {
     const local = loadBeamHistory(walletAddress);
     setRecoveryError(null);
+    setFetchState('idle');
     {
       setRows(local.map((e) => ({
         depositId: e.depositId,
@@ -391,6 +386,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       fetchOnchainDeposits(walletAddress, client),
       fetchServerLinks(walletAddress),
       Promise.resolve(loadBeamHistory(walletAddress)),
+      tokenReadyRef.current,
     ]);
 
     if (walletRef.current !== walletAddress || request !== requestRef.current) return;
@@ -415,7 +411,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       const isNative = dep.token.toLowerCase() === ZERO_ADDRESS;
       const tokenInfo = isNative
         ? { symbol: 'ETH', decimals: 18, logoUrl: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' }
-        : (tokenMapRef.current.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18, logoUrl: stockLogoUrl(dep.token.slice(0, 6)) });
+        : (tokenMapRef.current.get(dep.token.toLowerCase()) ?? { symbol: dep.token.slice(0, 6), decimals: 18, logoUrl: null });
 
       return {
         depositId: dep.depositId,
@@ -433,7 +429,8 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
     // Keep saved history visible even when the RPC cannot scan deposit events.
     for (const entry of [...serverLinks, ...localEntries]) {
       if (merged.some(row => row.depositId === entry.depositId)) continue;
-      merged.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: 18, amount: 0n, beamLink: entry.beamLink ?? localMap.get(entry.depositId)?.beamLink ?? null, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: null });
+      const info = [...tokenMapRef.current.values()].find(token => token.symbol.toUpperCase() === entry.tokenSymbol.toUpperCase());
+      merged.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: info?.decimals ?? 18, amount: 0n, beamLink: entry.beamLink ?? localMap.get(entry.depositId)?.beamLink ?? null, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: info?.logoUrl ?? (entry.tokenSymbol === 'ETH' ? 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628' : null) });
     }
     setRows(merged);
     setFetchState('done');
@@ -455,25 +452,33 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
   return (
     <div className="glass-sm rounded-2xl px-4 py-3">
-      <div className="flex items-center justify-end mb-1">
+      <div className="beams-toolbar" role="group" aria-label="Beam history actions">
+        {rows.some(row => !row.beamLink) && (
+          <button type="button" onClick={restoreLinks} disabled={restoring} className="beams-toolbar-button" aria-busy={restoring}>
+            {restoring ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+            <span>{restoring ? 'Check wallet…' : 'Restore my links'}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={refresh}
-          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/8 hover:bg-white/16 transition-colors"
+          disabled={!client || fetchState === 'loading'}
+          className="beams-toolbar-button"
           aria-label="Refresh beams"
+          aria-busy={fetchState === 'loading'}
         >
           {fetchState === 'loading'
-            ? <Loader2 size={ICON_SIZE.xs} className="animate-spin text-white/50" />
-            : <RefreshCw size={ICON_SIZE.xs} className="text-white/50" />
+            ? <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+            : <RefreshCw size={15} aria-hidden="true" />
           }
+          <span>{fetchState === 'loading' ? 'Refreshing…' : 'Refresh'}</span>
         </button>
       </div>
-      {rows.some(row => !row.beamLink) && <button type="button" onClick={restoreLinks} disabled={restoring} className="glass-button-primary px-4 py-2 rounded-xl mb-3">{restoring ? 'Check your wallet…' : 'Restore my links'}</button>}
       {recoveryError && <p role="alert" className="text-sm mb-3">{recoveryError}</p>}
-      {rows.length === 0 && <p className="text-sm py-3">{fetchState === 'loading' ? 'Loading your Beams…' : 'No saved Beams found. Refresh to check again.'}</p>}
+      {rows.length === 0 && (fetchState !== 'done' ? <BeamsSkeleton panel={false} /> : <p className="text-sm py-3">No saved Beams found. Refresh to check again.</p>)}
       <div className="flex flex-col divide-y divide-white/[0.06]">
         {rows.map((row) => (
-          <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} />
+          <BeamRow key={row.depositId} row={row} onCancelled={handleCancelled} hydrating={fetchState !== 'done'} />
         ))}
       </div>
     </div>

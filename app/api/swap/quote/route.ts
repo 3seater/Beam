@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
       // Never cache swap quotes — always fresh
       cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
     });
 
     const data = await res.json();

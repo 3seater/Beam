@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, RefreshCw, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
-import { parseUnits } from 'viem';
-import { fetchUniswapQuote, type UniswapQuote } from '@/lib/uniswap-swap';
-import { fetchTokenPriceUsd, formatUsd } from '@/lib/robinhood-prices';
+import { useAmountQuote } from '@/hooks/useAmountQuote';
+import { fetchTokenPriceUsd } from '@/lib/robinhood-prices';
+import { AmountQuotePanel } from './AmountQuotePanel';
 import { formatTokenValue } from '@/lib/format';
 import type { SelectedAsset } from './TokenPicker';
 
@@ -34,84 +33,23 @@ export function DollarAmountInput({
   const symbol = isNative ? 'ETH' : selectedAsset.symbol;
   const isCustom = !QUICK_AMOUNTS.some((a) => String(a) === dollarValue);
 
-  const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
-  const [tokenPriceUsd, setTokenPriceUsd] = useState<number | null>(null);
-  const [quote, setQuote] = useState<UniswapQuote | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteErr, setQuoteErr] = useState(false);
+  const { ethPriceUsd, quote, quoteLoading, quoteErr, retry } = useAmountQuote(
+    dollarValue, selectedAsset.type === 'erc20' ? selectedAsset.address : undefined,
+  );
+  const [tokenPrice, setTokenPrice] = useState<{ key: string; price: number | null } | null>(null);
   const [showCustom, setShowCustom] = useState(false);
-
-  const fetchId = useRef(0);
-  // Track the last asset we fired a quote for, so we can fire immediately
-  // when the token changes (rather than re-debouncing the existing amount)
-  const lastQuotedAsset = useRef<string>('');
-
-  // Fetch ETH price once on mount; fetch token price when asset changes
-  useEffect(() => {
-    fetchTokenPriceUsd('ETH').then((p) => { if (p) setEthPriceUsd(p); });
-  }, []);
+  const priceKey = selectedAsset.type === 'erc20' ? selectedAsset.address : 'ETH';
+  const tokenPriceUsd = tokenPrice?.key === priceKey ? tokenPrice.price : null;
 
   useEffect(() => {
-    if (!isNative && selectedAsset.type === 'erc20') {
-      fetchTokenPriceUsd(selectedAsset.symbol, selectedAsset.address).then((p) => {
-        setTokenPriceUsd(p);
+    let active = true;
+    if (selectedAsset.type === 'erc20') {
+      fetchTokenPriceUsd(selectedAsset.symbol, selectedAsset.address).then(price => {
+        if (active) setTokenPrice({ key: priceKey, price });
       });
-    } else {
-      setTokenPriceUsd(null);
     }
-  }, [isNative, selectedAsset]);
-
-  // Fetch Uniswap quote when dollar amount or asset changes
-  const fetchQuote = useCallback(async (usdAmt: number) => {
-    if (isNative || !ethPriceUsd || usdAmt <= 0) return;
-    if (selectedAsset.type !== 'erc20') return;
-
-    const ethAmountWei = parseUnits((usdAmt / ethPriceUsd).toFixed(18), 18);
-
-    setQuoteLoading(true);
-    setQuoteErr(false);
-    const id = ++fetchId.current;
-
-    const result = await fetchUniswapQuote(selectedAsset.address, ethAmountWei);
-
-    if (id !== fetchId.current) return; // stale
-    setQuoteLoading(false);
-    if (!result) {
-      setQuoteErr(true);
-      setQuote(null);
-    } else {
-      setQuote(result);
-    }
-  }, [isNative, selectedAsset, ethPriceUsd]);
-
-  // Reset quote when asset changes
-  useEffect(() => {
-    setQuote(null);
-    setQuoteErr(false);
-  }, [selectedAsset]);
-
-  // Debounced quote fetch on dollar value change.
-  // If the token just changed (asset key differs from last quoted), fire
-  // immediately — the user already committed to an amount.
-  useEffect(() => {
-    const usd = parseFloat(dollarValue);
-    if (!dollarValue || isNaN(usd) || usd <= 0) {
-      setQuote(null);
-      setQuoteErr(false);
-      return;
-    }
-
-    const assetKey = isNative ? 'eth' : (selectedAsset.type === 'erc20' ? selectedAsset.address : '');
-    const tokenJustChanged = assetKey !== lastQuotedAsset.current;
-    const delay = tokenJustChanged ? 0 : 300;
-
-    const t = setTimeout(() => {
-      lastQuotedAsset.current = assetKey;
-      void fetchQuote(usd);
-    }, delay);
-    return () => clearTimeout(t);
-  }, [dollarValue, fetchQuote, isNative, selectedAsset]);
-
+    return () => { active = false; };
+  }, [priceKey, selectedAsset]);
   // Pass token amount up to parent
   useEffect(() => {
     const usd = parseFloat(dollarValue);
@@ -127,7 +65,7 @@ export function DollarAmountInput({
     }
 
     if (isNative) {
-      if (!ethPriceUsd) { onTokenAmount(null); onError(null); return; }
+      if (!ethPriceUsd) { onTokenAmount(null); onError(quoteErr ? 'Price unavailable. Please retry.' : null); return; }
       onTokenAmount((usd / ethPriceUsd).toFixed(18));
       onError(null);
       return;
@@ -136,8 +74,8 @@ export function DollarAmountInput({
     if (quoteLoading) { onTokenAmount(null); onError(null); return; }
 
     if (quoteErr || !quote) {
-      // Quote failed — still allow confirm, useDeposit re-fetches at send time
-      onTokenAmount('pending');
+      // Never allow an old or unavailable quote to enable confirmation.
+      onTokenAmount(null);
       onError(null);
       return;
     }
@@ -170,10 +108,10 @@ export function DollarAmountInput({
         </span>
         <div className="flex items-center gap-1.5 ml-auto text-right shrink-0">
           {quoteLoading && <Loader2 size={ICON_SIZE.xs} className="animate-spin text-white/50" aria-hidden="true" />}
-          {!quoteLoading && quoteErr && !isNative && (
+          {!quoteLoading && quoteErr && (
             <button
               type="button"
-              onClick={() => void fetchQuote(usdNum)}
+              onClick={retry}
               className="flex items-center gap-1 text-xs text-white/50 hover:text-white transition-colors"
               aria-label="Retry quote"
             >
@@ -238,79 +176,10 @@ export function DollarAmountInput({
         </div>
       )}
 
-      {/* Live Uniswap quote panel */}
-      <AnimatePresence>
-        {!isNative && quote && usdNum > 0 && (() => {
-          // Compute estimated output value and price impact
-          const outTokens = parseFloat(quote.amountOutFormatted);
-          const outUsd = tokenPriceUsd && outTokens ? outTokens * tokenPriceUsd : null;
-          const impact = outUsd ? ((usdNum - outUsd) / usdNum) * 100 : null;
-          const highImpact = impact !== null && impact > 10;
-
-          return (
-            <motion.div
-              key="uniswap-quote"
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{ overflow: 'hidden' }}
-              className={`quote-panel glass-sm px-3 py-3 rounded-xl ${highImpact ? 'border-amber-400/30' : ''}`}
-              role="region"
-              aria-label="Live quote"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Zap size={ICON_SIZE.xs} className="text-white/50" aria-hidden="true" />
-                  <p className="text-xs text-white/50">
-                    Live quote · {quote.isV4 ? 'Uniswap V4' : 'Uniswap V3'}
-                  </p>
-                </div>
-                {impact !== null && (
-                  <span className={`text-[11px] font-medium ${highImpact ? 'text-amber-300' : 'text-white/40'}`}>
-                    {highImpact ? '⚠ ' : ''}{impact.toFixed(1)}% impact
-                  </span>
-                )}
-              </div>
-              <p className="text-sm font-semibold text-white mb-1">
-                You send {formatUsd(usdNum)} → get {quote.amountOutFormatted} {symbol}
-                {outUsd && <span className="text-white/50 font-normal"> ≈ {formatUsd(outUsd)}</span>}
-              </p>
-              {highImpact && (
-                <p className="text-[11px] text-amber-300/80 mt-1">
-                  Low pool liquidity — you may receive significantly less than expected.
-                </p>
-              )}
-              {!highImpact && (
-                <p className="text-[11px] text-white/40">
-                  {quote.isV4 ? `ETH → ${symbol} (V4 direct)` : `ETH → WETH → ${symbol}`}
-                </p>
-              )}
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
-
-      {/* ETH native panel */}
-      <AnimatePresence>
-        {isNative && displayTokenAmt && usdNum > 0 && (
-          <motion.div
-            key="eth-panel"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: 'hidden' }}
-            className="quote-panel glass-sm px-3 py-2.5 rounded-xl"
-          >
-            <p className="text-sm font-semibold text-white">
-              {displayTokenAmt} ETH
-              <span className="text-white/50 font-normal"> ≈ {formatUsd(usdNum)}</span>
-            </p>
-            <p className="text-[11px] text-white/40 mt-0.5">Direct deposit · no swap needed</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {usdNum > 0 && usdNum <= 1_000_000 && (
+        <AmountQuotePanel loading={quoteLoading} error={quoteErr} native={isNative}
+          quote={quote} usd={usdNum} symbol={symbol} tokenPrice={tokenPriceUsd} nativeAmount={displayTokenAmt} />
+      )}
     </div>
   );
 }
