@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw } from 'lucide-react';
 import { BeamMark } from './BeamMark';
 import { LandingTokenLogo } from './LandingTokenLogo';
 import { tokenCardStyle } from '@/lib/token-card-theme';
@@ -16,45 +16,54 @@ type Asset = typeof ASSETS[number];
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
+// Pixels per second for the auto-scroll
+const SCROLL_SPEED = 28;
+
 export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string) => void }) {
   const [asset, setAsset] = useState<Asset>('ETH');
   const [amount, setAmount] = useState<number>(100);
   const [step, setStep] = useState(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
 
-  const updateArrows = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
-
+  // Auto-scroll ticker — loops by jumping back when we reach the midpoint
+  // (we render the list twice side-by-side so the loop is seamless)
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    updateArrows();
-    el.addEventListener('scroll', updateArrows, { passive: true });
-    const ro = new ResizeObserver(updateArrows);
-    ro.observe(el);
-    return () => { el.removeEventListener('scroll', updateArrows); ro.disconnect(); };
-  }, [updateArrows]);
 
-  const scroll = (dir: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'left' ? -160 : 160, behavior: 'smooth' });
-  };
+    // Respect prefers-reduced-motion — skip the ticker entirely
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const tick = (ts: number) => {
+      if (!pausedRef.current) {
+        const dt = lastTimeRef.current !== null ? ts - lastTimeRef.current : 0;
+        lastTimeRef.current = ts;
+        el.scrollLeft += (SCROLL_SPEED * dt) / 1000;
+        // Seamless loop: when we've scrolled past the first copy, jump back
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) {
+          el.scrollLeft -= half;
+        }
+      } else {
+        lastTimeRef.current = null;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  const pause = () => { pausedRef.current = true; };
+  const resume = () => { pausedRef.current = false; };
 
   const selectAsset = (sym: Asset) => {
     setAsset(sym);
     onAssetChange?.(sym);
-    // Scroll selected button into view
-    const el = scrollRef.current;
-    if (!el) return;
-    const btn = el.querySelector<HTMLButtonElement>(`[data-symbol="${sym}"]`);
-    btn?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
   };
 
   return (
@@ -72,46 +81,37 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
         ))}
       </div>
 
-      {/* Scrollable asset row with arrows */}
-      <div className="hero-demo-assets-wrap">
-        <button
-          type="button"
-          className="hero-demo-scroll-btn hero-demo-scroll-left"
-          aria-label="Scroll tokens left"
-          onClick={() => scroll('left')}
-          style={{ opacity: canScrollLeft ? 1 : 0, pointerEvents: canScrollLeft ? 'auto' : 'none' }}
-        >
-          <ChevronLeft size={14} />
-        </button>
-
+      {/* Auto-scrolling ticker — two copies for seamless loop */}
+      <div
+        className="hero-demo-assets-wrap"
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onFocus={pause}
+        onBlur={resume}
+      >
         <div
           ref={scrollRef}
           className="hero-demo-assets"
           role="group"
           aria-label="Preview a token"
         >
-          {ASSETS.map(sym => (
-            <button
-              key={sym}
-              type="button"
-              data-symbol={sym}
-              aria-pressed={asset === sym}
-              onClick={() => selectAsset(sym)}
-            >
-              <LandingTokenLogo symbol={sym} size={20} />{sym}
-            </button>
-          ))}
+          {/* Two identical copies so the scroll loops seamlessly */}
+          {[0, 1].map(copy =>
+            ASSETS.map(sym => (
+              <button
+                key={`${copy}-${sym}`}
+                type="button"
+                data-symbol={sym}
+                aria-pressed={asset === sym}
+                aria-label={sym}
+                onClick={() => selectAsset(sym)}
+                tabIndex={copy === 0 ? 0 : -1}
+              >
+                <LandingTokenLogo symbol={sym} size={20} />{sym}
+              </button>
+            ))
+          )}
         </div>
-
-        <button
-          type="button"
-          className="hero-demo-scroll-btn hero-demo-scroll-right"
-          aria-label="Scroll tokens right"
-          onClick={() => scroll('right')}
-          style={{ opacity: canScrollRight ? 1 : 0, pointerEvents: canScrollRight ? 'auto' : 'none' }}
-        >
-          <ChevronRight size={14} />
-        </button>
       </div>
 
       <div className="hero-demo-stage" data-step={step}>

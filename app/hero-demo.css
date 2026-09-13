@@ -92,10 +92,7 @@
 
 .hero-demo-assets-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
   margin: 24px 0 18px;
-  gap: 4px;
   min-width: 0;
   overflow: hidden;
 }
@@ -103,16 +100,9 @@
 .hero-demo-assets {
   display: flex;
   gap: 6px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  flex: 1;
-  min-width: 0;
-}
-
-.hero-demo-assets::-webkit-scrollbar {
-  display: none;
+  overflow-x: hidden;
+  white-space: nowrap;
+  user-select: none;
 }
 
 .hero-demo-assets button {
@@ -121,7 +111,6 @@
   justify-content: center;
   gap: 6px;
   flex-shrink: 0;
-  scroll-snap-align: start;
   padding: 0 11px;
   min-height: 36px;
   border: 1px solid transparent;
@@ -130,24 +119,6 @@
   color: #527389;
   white-space: nowrap;
   transition: background .2s, border-color .2s;
-}
-
-.hero-demo-scroll-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 1px solid #c5dde980;
-  background: #fff9;
-  color: #527389;
-  transition: opacity .2s, background .15s;
-}
-
-.hero-demo-scroll-btn:hover {
-  background: #fff;
 }
 
 .hero-demo-assets button:hover,
@@ -341,11 +312,6 @@
     gap: 5px;
     padding: 0 9px;
     min-height: 32px;
-  }
-
-  .hero-demo-scroll-btn {
-    width: 22px;
-    height: 22px;
   }
 
   .hero-demo-beam {
