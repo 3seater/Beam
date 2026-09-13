@@ -52,7 +52,7 @@
 .docs-sidebar-logo svg {
   width: 26px;
   height: 26px;
-  color: #4d92ce;
+  color: var(--beam-blue);
 }
 
 .docs-sidebar-version {
@@ -116,7 +116,7 @@
 }
 
 .docs-nav-link.active {
-  color: #1675dc;
+  color: var(--beam-action-bottom);
   font-weight: 500;
   background: #eaf3fd;
 }
@@ -128,7 +128,7 @@
   top: 4px;
   bottom: 4px;
   width: 3px;
-  background: linear-gradient(180deg, #429cff, #1675dc);
+  background: linear-gradient(180deg, var(--beam-action-top), var(--beam-action-bottom));
   border-radius: 0 3px 3px 0;
 }
 
@@ -195,8 +195,8 @@
 }
 
 .docs-toc-link.active {
-  color: #1675dc;
-  border-left-color: #429cff;
+  color: var(--beam-action-bottom);
+  border-left-color: var(--beam-action-top);
   font-weight: 500;
 }
 
@@ -223,7 +223,7 @@
   display: block;
   width: 18px;
   height: 1.5px;
-  background: #429cff;
+  background: var(--beam-action-top);
   border-radius: 99px;
 }
 
@@ -270,7 +270,7 @@
 
 .docs-p a,
 .docs-lead a {
-  color: #1675dc;
+  color: var(--beam-action-bottom);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 150ms;
@@ -612,7 +612,7 @@
   transition: color 150ms;
 }
 
-.docs-faq-trigger:hover { color: #1675dc; }
+.docs-faq-trigger:hover { color: var(--beam-action-bottom); }
 
 .docs-faq-chevron {
   flex-shrink: 0;

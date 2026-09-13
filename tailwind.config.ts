@@ -10,11 +10,11 @@ const config: Config = {
     extend: {
       colors: {
         sky: {
-          top: "#0a4a6e",
-          mid: "#1a7ab5",
-          light: "#4db8f0",
-          pale: "#a8dff7",
-          white: "#dff0fb",
+          top: "#155979",
+          mid: "#38a0e1",
+          light: "#79d6fc",
+          pale: "#9be7fd",
+          white: "#f3fbff",
         },
         glass: {
           white: "rgba(255,255,255,0.14)",

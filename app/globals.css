@@ -36,16 +36,26 @@
 }
 
 :root {
+  /* Shared with Beam's sky-blue profile artwork and banner. */
+  --beam-blue: #38a0e1;
+  --beam-sky: #79d6fc;
+  --beam-cyan: #9be7fd;
+  --beam-ice: #f3fbff;
+  --beam-link: #2589c4;
+  --beam-action-top: #79d6fc;
+  --beam-action-bottom: #38a0e1;
+  --beam-action-ink: #102f47;
+  --beam-wallet: rgba(24, 65, 94, 0.96);
   /* Sky gradient background */
-  --sky-top: #0a4a6e;
+  --sky-top: #155979;
   /* deep ocean */
-  --sky-mid: #1a7ab5;
+  --sky-mid: #38a0e1;
   /* mid blue   */
-  --sky-light: #4db8f0;
+  --sky-light: #79d6fc;
   /* sky        */
-  --sky-pale: #a8dff7;
+  --sky-pale: #9be7fd;
   /* pale sky   */
-  --sky-white: #dff0fb;
+  --sky-white: #f3fbff;
   /* near-white */
 
   /* Liquid glass surfaces */
@@ -70,7 +80,7 @@
   --text-dim: rgba(255, 255, 255, 0.30);
 
   /* Accent */
-  --accent-blue: #4eb4f0;
+  --accent-blue: #79d6fc;
   --accent-teal: #38c4d8;
   --accent-green: #34d399;
   --accent-red: #f87171;
@@ -103,7 +113,7 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
     'SF Pro Text', 'Helvetica Neue', 'Inter', system-ui, sans-serif;
-  background-color: #1a7ab5;
+  background-color: #38a0e1;
   /* solid fallback — matches gradient mid, no flash */
   background-image: linear-gradient(185deg,
       var(--sky-top) 0%,
@@ -722,7 +732,7 @@ body>* {
 
   /* Glass gradient text */
   .text-sky-gradient {
-    background: linear-gradient(135deg, #ffffff 0%, #a8dff7 60%, #4eb4f0 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #9be7fd 60%, #79d6fc 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

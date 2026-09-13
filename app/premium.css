@@ -51,7 +51,7 @@ body::after,
 }
 
 :focus-visible {
-  outline: 2px solid #2788ef;
+  outline: 2px solid var(--beam-link);
   outline-offset: 5px;
 }
 
@@ -113,7 +113,7 @@ body::after,
 }
 
 .nav-links a:hover {
-  color: #0879dc;
+  color: var(--beam-link);
 }
 
 .nav-actions {
@@ -128,10 +128,10 @@ body::after,
   border-radius: 100px;
   padding: 16px 25px;
   border: 1px solid #ffffff60;
-  color: white;
+  color: var(--beam-action-ink);
   font-size: 13px;
   font-weight: 500;
-  background: linear-gradient(165deg, #429cff, #1675dc);
+  background: linear-gradient(165deg, var(--beam-action-top), var(--beam-action-bottom));
   box-shadow: 0 5px 15px #2580d728, inset 0 1px 1px #ffffff60;
   transition: transform .2s, box-shadow .2s;
   cursor: pointer;
@@ -253,7 +253,7 @@ body::after,
 }
 
 .hero-copy h1 span {
-  color: #548fc6;
+  color: var(--beam-blue);
 }
 
 .hero-copy p {
@@ -282,7 +282,7 @@ body::after,
 }
 
 .text-link:hover {
-  color: #1681e8;
+  color: var(--beam-link);
 }
 
 .hero-footnote {
@@ -295,9 +295,22 @@ body::after,
 }
 
 .beam-scene {
+  --scene-scale: 1;
   position: relative;
   height: 590px;
   isolation: isolate;
+  display: grid;
+  place-items: center;
+}
+
+/* Layout zoom paints the glass, type and vectors at their final size instead
+   of resampling a transformed image of the entire scene. The outer grid
+   keeps the same footprint and centers the artwork at every breakpoint. */
+.beam-scene-art {
+  position: relative;
+  width: calc(100% * var(--scene-scale));
+  height: calc(100% * var(--scene-scale));
+  zoom: var(--scene-scale);
 }
 
 .orbit {
@@ -395,7 +408,7 @@ body::after,
 .preview-brand svg {
   width: 21px;
   height: 21px;
-  color: #4d92ce;
+  color: var(--beam-blue);
 }
 
 .preview-amount {
@@ -463,7 +476,7 @@ body::after,
   width: 213px;
   padding: 16px;
   border-radius: 21px 21px 5px 21px;
-  background: linear-gradient(140deg, #58adf7, #2387e4);
+  background: linear-gradient(140deg, var(--beam-sky), var(--beam-blue));
   color: #fff;
   border: 1px solid #ffffff65;
   box-shadow: 0 20px 35px #3289d928, inset 0 1px 0 #ffffff66;
@@ -600,7 +613,7 @@ body::after,
 }
 
 .step-card {
-  background: #f6f9fc;
+  background: #f1faff;
   border: 1px solid #eef3f7;
   border-radius: 27px;
   overflow: hidden;
@@ -615,7 +628,7 @@ body::after,
 .step-copy {
   position: relative;
   padding: 25px 26px 29px;
-  border-top: 1px solid #e6edf4;
+  border-top: 1px solid #d7edf5;
 }
 
 .step-number {
@@ -636,7 +649,7 @@ body::after,
 }
 
 .token-art {
-  background: radial-gradient(ellipse at 50% 20%, #e6f2ff, transparent 70%);
+  background: radial-gradient(ellipse at 50% 20%, #d5f5ff, transparent 70%);
 }
 
 .token-disc {
@@ -654,7 +667,7 @@ body::after,
 .token-eth {
   top: 30px;
   left: calc(50% - 36px);
-  background: linear-gradient(135deg, #fcfdff, #cadcff);
+  background: linear-gradient(135deg, #fcfdff, #bfeefa);
   color: #7b93c1;
   transform: rotate(-12deg);
   z-index: 2;
@@ -704,7 +717,7 @@ body::after,
 
 .share-art {
   padding: 61px 27px 25px;
-  background: radial-gradient(ellipse at 60% 70%, #e5f1ff, transparent);
+  background: radial-gradient(ellipse at 60% 70%, #d5f5ff, transparent);
 }
 
 .share-bubble {
@@ -721,7 +734,7 @@ body::after,
 
 .share-link {
   margin-top: 11px;
-  background: linear-gradient(130deg, #73b8f1, #4899dd);
+  background: linear-gradient(130deg, var(--beam-sky), var(--beam-blue));
   color: white;
   border: 1px solid #ffffff70;
   border-radius: 14px 14px 3px 14px;
@@ -748,7 +761,7 @@ body::after,
 }
 
 .receive-art {
-  background: radial-gradient(ellipse at 50% 40%, #d9f1ff, transparent 70%);
+  background: radial-gradient(ellipse at 50% 40%, #cff5ff, transparent 70%);
 }
 
 .receive-mark {
@@ -787,7 +800,7 @@ body::after,
 }
 
 .why-section {
-  background: #f7fafd;
+  background: #effaff;
   padding-top: 70px;
   padding-bottom: 70px;
 }
@@ -804,7 +817,7 @@ body::after,
   position: relative;
   display: grid;
   place-items: center;
-  background: radial-gradient(ellipse, #d7eafa, transparent 67%);
+  background: radial-gradient(ellipse, #bfeefa, transparent 67%);
 }
 
 .security-orbit {
@@ -831,7 +844,7 @@ body::after,
   border-radius: 44px;
   background: linear-gradient(130deg, #ffffffb0, #c1dff355);
   border: 1px solid #fff;
-  color: #74a8d2;
+  color: var(--beam-blue);
   box-shadow: 14px 25px 45px #49739920, inset 0 1px 1px white;
   transform: rotate(-11deg);
   backdrop-filter: blur(8px);
@@ -916,7 +929,7 @@ body::after,
 }
 
 .premium-accordion button:hover {
-  color: #2786de;
+  color: var(--beam-link);
 }
 
 .premium-accordion button>span:last-child {
@@ -1002,7 +1015,7 @@ body::after,
 }
 
 .premium-footer a:hover {
-  color: #2389df;
+  color: var(--beam-link);
 }
 
 @keyframes sculpture-float {
@@ -1023,7 +1036,7 @@ body::after,
   }
 
   .beam-scene {
-    transform: scale(1.08);
+    --scene-scale: 1.08;
   }
 }
 
@@ -1037,8 +1050,7 @@ body::after,
   }
 
   .beam-scene {
-    transform: scale(.85);
-    transform-origin: center;
+    --scene-scale: .85;
   }
 
   .hero-grid {
@@ -1150,7 +1162,7 @@ body::after,
   .beam-scene {
     width: 540px;
     height: 550px;
-    transform: scale(.82);
+    --scene-scale: .82;
     margin: -20px 0 -70px;
     flex-shrink: 0;
   }
@@ -1316,7 +1328,7 @@ body::after,
 
 @media(max-width:400px) {
   .beam-scene {
-    transform: scale(.65);
+    --scene-scale: .65;
     margin: -50px 0 -115px;
   }
 
@@ -1355,7 +1367,7 @@ body::after,
   }
 
   .step-copy {
-    border-top: 1px solid #e6edf4;
+    border-top: 1px solid #d7edf5;
     padding: 20px 24px 25px;
   }
 
@@ -1391,7 +1403,7 @@ body::after,
 
 /* The transaction screens share the landing page's frosted palette. */
 body {
-  background: radial-gradient(ellipse at 10% 0%, #d6eaf8 0%, transparent 55%), radial-gradient(ellipse at 90% 100%, #a8d8f0 0%, transparent 60%), #c8dff0;
+  background: radial-gradient(ellipse at 8% 0%, #f3fbff 0%, transparent 52%), radial-gradient(ellipse at 95% 85%, #9be7fd 0%, transparent 58%), linear-gradient(135deg, #e5f6ff, #79d6fc);
   background-attachment: fixed;
 }
 
@@ -1417,7 +1429,7 @@ body {
 .app-page .glass,
 .app-page .glass-sm,
 .app-page .glass-strong {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(210, 238, 255, 0.52));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(204, 244, 255, 0.52));
   border-color: rgba(150, 210, 245, 0.65);
   box-shadow: 0 12px 40px -8px rgba(20, 70, 120, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(24px) saturate(1.6);
@@ -1432,7 +1444,7 @@ body {
 /* ── Token tiles — frosted glass frames for the asset grid ───────────────
    Blue-tinted backing so tiles are clearly distinct from the modal surface. */
 .app-page .token-tile {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(195, 228, 252, 0.42));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(190, 232, 252, 0.42));
   border: 1px solid rgba(140, 205, 242, 0.58);
   box-shadow:
     0 2px 8px rgba(20, 70, 120, 0.12),
@@ -1442,7 +1454,7 @@ body {
 }
 
 .app-page .token-tile:hover {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.90), rgba(210, 238, 255, 0.70));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.90), rgba(204, 244, 255, 0.70));
   border-color: rgba(90, 170, 225, 0.72);
   box-shadow:
     0 5px 18px rgba(20, 70, 120, 0.16),
@@ -1450,7 +1462,7 @@ body {
 }
 
 .app-page .token-tile.selected {
-  background: linear-gradient(160deg, rgba(195, 230, 255, 0.92), rgba(165, 215, 255, 0.68));
+  background: linear-gradient(160deg, rgba(155, 231, 253, 0.92), rgba(121, 214, 252, 0.68));
   border-color: rgba(55, 150, 220, 0.82);
   box-shadow:
     0 0 0 2px rgba(55, 150, 220, 0.28),
@@ -1461,7 +1473,7 @@ body {
 /* ── Quick-amount preset buttons ($5 / $10 / $25 / Custom) ───────────────
    Blue-tinted glass pills with visible borders. */
 .app-page .amt-preset {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(195, 228, 252, 0.44));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(190, 232, 252, 0.44));
   border: 1px solid rgba(140, 205, 242, 0.60);
   color: #1e4a6a;
   box-shadow: 0 2px 6px rgba(20, 70, 120, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.88);
@@ -1471,14 +1483,14 @@ body {
 }
 
 .app-page .amt-preset:hover {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.90), rgba(210, 238, 255, 0.72));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.90), rgba(204, 244, 255, 0.72));
   border-color: rgba(80, 165, 225, 0.72);
   color: #0f3a58;
   box-shadow: 0 4px 14px rgba(20, 70, 120, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .app-page .amt-preset.active {
-  background: linear-gradient(160deg, rgba(185, 228, 255, 0.95), rgba(155, 212, 255, 0.75));
+  background: linear-gradient(160deg, rgba(155, 231, 253, 0.95), rgba(121, 214, 252, 0.75));
   border-color: rgba(45, 145, 215, 0.85);
   color: #0a3d6a;
   box-shadow:
@@ -1489,7 +1501,7 @@ body {
 
 /* ── Selected-token chip & glass-sm ─────────────────────────────────────── */
 .app-page .glass-sm {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(205, 235, 255, 0.50));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(195, 241, 253, 0.50));
   border-color: rgba(145, 208, 245, 0.62);
   backdrop-filter: blur(16px) saturate(1.5);
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
@@ -1498,7 +1510,7 @@ body {
 
 /* ── Quote / fee panels ──────────────────────────────────────────────────── */
 .app-page .quote-panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(205, 235, 255, 0.48));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(195, 241, 253, 0.48));
   border: 1px solid rgba(145, 208, 245, 0.60);
   border-radius: 14px;
   box-shadow: 0 3px 14px rgba(20, 70, 120, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.90);
@@ -1528,10 +1540,10 @@ body {
 
 /* ── Primary CTA button ─────────────────────────────────────────────────── */
 .app-page .btn-glass-primary {
-  background: linear-gradient(165deg, #429cff, #1675dc);
-  color: white;
+  background: linear-gradient(165deg, var(--beam-action-top), var(--beam-action-bottom));
+  color: var(--beam-action-ink);
   border-color: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 5px 20px rgba(22, 117, 220, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+  box-shadow: 0 5px 20px rgba(18, 142, 190, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.55);
 }
 
 .app-page .btn-glass-primary [class*="text-white"] {
@@ -1640,7 +1652,7 @@ body {
 .beam-gift-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(125deg, #ffffffd9, #e4f3ff8c);
+  background: linear-gradient(125deg, #ffffffd9, #d5f5ff8c);
   border: 1px solid #fff;
   border-radius: 28px;
   padding: 24px 26px 18px;
@@ -1656,7 +1668,7 @@ body {
   width: 210px;
   height: 210px;
   border-radius: 50%;
-  background: #b4e0ff42;
+  background: #79d6fc6b;
   filter: blur(35px);
   right: -110px;
   top: -90px;
@@ -1682,7 +1694,7 @@ body {
 .gift-card-top>span svg {
   width: 23px;
   height: 23px;
-  color: #589aca;
+  color: var(--beam-blue);
 }
 
 .gift-card-value {
@@ -1838,7 +1850,7 @@ body {
 }
 
 .claim-entry-card {
-  background: linear-gradient(130deg, #ffffffbf, #e1f1fd80);
+  background: linear-gradient(130deg, #ffffffbf, #d5f5ff80);
   border: 1px solid white;
   border-radius: 30px;
   box-shadow: 0 20px 50px #5380a51c, inset 0 1px 0 white;
@@ -2032,7 +2044,7 @@ body {
 
 /* Clearer hierarchy and the sky-blue spectrum from Beam's brand artwork. */
 .hero-atmosphere {
-  background: radial-gradient(ellipse at 84% 40%, #78ceee85, transparent 49%), radial-gradient(ellipse at 100% 85%, #b6ecfb, transparent 55%), linear-gradient(150deg, #fff 18%, #f1f9ff 56%, #c8e5fc);
+  background: radial-gradient(ellipse at 80% 32%, #79d6fca8, transparent 48%), radial-gradient(ellipse at 100% 85%, #9be7fd, transparent 58%), linear-gradient(150deg, #fff 15%, #f3fbff 48%, #79d6fc);
 }
 
 .hero-copy h1 {
@@ -2044,7 +2056,7 @@ body {
 }
 
 .bottom-cta {
-  background: radial-gradient(ellipse at 50% 0%, #fff9, transparent 65%), linear-gradient(145deg, #dcf5ff, #91d9ef 60%, #68bce2);
+  background: radial-gradient(ellipse at 50% 0%, #fff9, transparent 65%), linear-gradient(145deg, #e5f6ff, #79d6fc 60%, #38a0e1);
   padding: 65px 0 85px;
 }
 
@@ -2087,7 +2099,7 @@ body {
 
 .premium-footer {
   padding: 66px 0 28px;
-  background: linear-gradient(145deg, #e5f7ff, #b8e7f6 70%, #a4dcf1);
+  background: linear-gradient(145deg, #f3fbff, #d2f2fe 70%, #9be7fd);
   color: #3e6580;
 }
 
@@ -2141,7 +2153,7 @@ body {
   width: min(100%, 330px);
   margin: 0 auto 12px;
   border-radius: 42px;
-  background: radial-gradient(ellipse at 50% 35%, #c4f4ff, #75cbe8 60%, #379bc82b);
+  background: radial-gradient(ellipse at 50% 35%, #e0f6ff, #79d6fc 60%, #38a0e170);
   box-shadow: inset 0 1px 0 #fff, 0 18px 40px -24px #167ca966;
   overflow: hidden;
 }
@@ -2242,9 +2254,9 @@ body {
 }
 
 .tx-stages li[data-state="active"] {
-  background: linear-gradient(130deg, #218ed0, #12649f);
+  background: linear-gradient(130deg, var(--beam-action-top), var(--beam-action-bottom));
   border-color: #247caf;
-  color: #fff;
+  color: var(--beam-action-ink);
   box-shadow: 0 5px 16px #1577ad30;
 }
 
@@ -2455,4 +2467,6 @@ body {
 
 .share-bubble .landing-token-logo {
   margin-right: 7px;
-}
+}/* Use the unmodified, sourced WhatsApp silhouette rather than a traced approximation. */
+.share-whatsapp-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: #25d366; }
+.share-whatsapp-icon>span { display: block; width: 21px; height: 21px; background: white; mask: url('/brand-icons/whatsapp.svg') center / contain no-repeat; -webkit-mask: url('/brand-icons/whatsapp.svg') center / contain no-repeat; }

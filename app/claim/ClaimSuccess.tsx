@@ -14,7 +14,7 @@ interface Particle {
   angle: number; spin: number; color: string;
   w: number; h: number; life: number;
 }
-const COLORS = ['#ffffff', '#a8dff7', '#4eb4f0', '#34d399'];
+const COLORS = ['#ffffff', '#9be7fd', '#79d6fc', '#34d399'];
 
 function spawnParticles(n: number, ox: number, oy: number): Particle[] {
   return Array.from({ length: n }, () => {

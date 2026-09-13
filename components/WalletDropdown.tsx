@@ -217,7 +217,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
       style={{
         top: '100px',
         right: '24px',
-        background: 'rgba(36,70,104,0.94)',
+        background: 'var(--beam-wallet)',
         border: '1px solid rgba(255,255,255,0.28)',
         backdropFilter: 'blur(32px) saturate(1.8)',
         WebkitBackdropFilter: 'blur(32px) saturate(1.8)',
