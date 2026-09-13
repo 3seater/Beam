@@ -159,7 +159,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
         for (const entry of data.entries ?? []) if (!merged.has(entry.depositId)) merged.set(entry.depositId, entry);
         preview = [...merged.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, PREVIEW_COUNT);
       }
-    }).catch(() => {}).then(() => tokenMapRef.current.size > 0
+    }).catch(() => { }).then(() => tokenMapRef.current.size > 0
       ? Promise.resolve(buildRows(tokenMapRef.current))
       : fetchRobinhoodTokens().then((tokens) => {
         const map = new Map<string, { symbol: string; decimals: number; logoUrl: string }>();
@@ -264,9 +264,18 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
           <p className="text-xs text-white/50 mb-2">Recent beams</p>
 
           {loading && (
-            <div className="flex items-center gap-2 py-2 text-sm text-white/40">
-              <Loader2 size={ICON_SIZE.sm} className="animate-spin" />
-              Loading…
+            <div role="status" aria-label="Loading recent beams" aria-busy="true">
+              <span className="sr-only">Loading recent beams…</span>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="wd-row-skeleton" aria-hidden="true">
+                  <span className="beam-skeleton wd-logo-skeleton" />
+                  <span className="wd-text-skeleton">
+                    <span className="beam-skeleton wd-label-skeleton" />
+                    <span className="beam-skeleton wd-time-skeleton" />
+                  </span>
+                  <span className="beam-skeleton wd-badge-skeleton" />
+                </div>
+              ))}
             </div>
           )}
 

@@ -319,9 +319,20 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
       {/* Token grid */}
       <div style={{ padding: '4px' }}>
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-6 text-white/50 text-sm">
-            <Loader2 size={ICON_SIZE.md} className="animate-spin" aria-hidden="true" />
-            Loading tokens…
+          <div
+            role="status"
+            aria-label="Loading tokens"
+            aria-busy="true"
+            className="grid gap-2"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))' }}
+          >
+            <span className="sr-only">Loading tokens…</span>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="tp-tile-skeleton" aria-hidden="true">
+                <span className="beam-skeleton tp-logo-skeleton" />
+                <span className="beam-skeleton tp-label-skeleton" />
+              </div>
+            ))}
           </div>
         ) : (
           <div

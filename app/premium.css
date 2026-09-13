@@ -2589,3 +2589,38 @@ body {
 }/* Use the unmodified, sourced WhatsApp silhouette rather than a traced approximation. */
 .share-whatsapp-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: #25d366; }
 .share-whatsapp-icon>span { display: block; width: 21px; height: 21px; background: white; mask: url('/brand-icons/whatsapp.svg') center / contain no-repeat; -webkit-mask: url('/brand-icons/whatsapp.svg') center / contain no-repeat; }
+
+
+/* ── Skeleton: WalletDropdown recent-beam rows ─────────────────────────── */
+/* Each row is: 20px logo | flex-1 text block (two lines) | status badge   */
+/* Real row height: py-2 (8px top+bottom) + content ≈ 44px total          */
+.wd-row-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  height: 44px;
+}
+.wd-logo-skeleton    { width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; }
+.wd-text-skeleton    { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+.wd-label-skeleton   { width: 70%; height: 12px; }
+.wd-time-skeleton    { width: 40%; height: 10px; }
+.wd-badge-skeleton   { width: 52px; height: 18px; border-radius: 100px; flex-shrink: 0; }
+
+/* ── Skeleton: TokenPicker grid tiles ──────────────────────────────────── */
+/* Each tile: minmax(80px,1fr), py-3 px-2, 40px logo + 12px label = ~76px */
+.tp-tile-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+}
+.tp-logo-skeleton  { width: 40px; height: 40px; border-radius: 10px; }
+.tp-label-skeleton { width: 34px; height: 10px; border-radius: 4px; }
+
+/* ── Skeleton: AccountChip hydration placeholder ───────────────────────── */
+/* Exact same pill shape as the real chip: 120×40px, border-radius:999px   */
+/* Reuses beam-skeleton animation — just add the class to the existing div  */

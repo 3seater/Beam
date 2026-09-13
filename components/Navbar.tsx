@@ -64,8 +64,8 @@ function AccountChip() {
     return <div style={{
       ...chipStyle,
       width: '120px',
-      opacity: 0.6
-    }} aria-hidden="true" />;
+      opacity: 0.5
+    }} className="beam-skeleton" aria-hidden="true" />;
   }
 
   // Not connected
