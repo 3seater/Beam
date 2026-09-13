@@ -2894,53 +2894,20 @@ body {
 
 
 /* ── Footer $BEAM token notice ─────────────────────────────────────────── */
-.footer-token-notice {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 20px;
-  margin-bottom: 28px;
-  border-radius: 14px;
-  background: rgba(56, 160, 225, 0.07);
-  border: 1px solid rgba(56, 160, 225, 0.18);
-}
-
-.footer-token-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #2a6a96;
-  white-space: nowrap;
-}
-
-.footer-token-badge::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #38a0e1;
-  box-shadow: 0 0 0 3px rgba(56, 160, 225, 0.2);
-  flex-shrink: 0;
-}
-
 .footer-token-ca {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
-  color: #5a8fa8;
-  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  color: inherit;
+  opacity: 0.7;
 }
 
 .footer-token-ca-blur {
-  filter: blur(5px);
+  filter: blur(4.5px);
   user-select: none;
   pointer-events: none;
-  letter-spacing: 0.5px;
-  color: #2a6a96;
-  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.3px;
 }
