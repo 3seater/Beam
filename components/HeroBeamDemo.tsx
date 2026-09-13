@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check, Link2, RotateCcw } from 'lucide-react';
 import { BeamMark } from './BeamMark';
 import { LandingTokenLogo } from './LandingTokenLogo';
@@ -16,50 +16,10 @@ type Asset = typeof ASSETS[number];
 const STEPS = ['Choose', 'Share', 'Claim'] as const;
 const AMOUNTS = [10, 50, 100] as const;
 
-// Pixels per second for the auto-scroll
-const SCROLL_SPEED = 28;
-
 export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string) => void }) {
   const [asset, setAsset] = useState<Asset>('ETH');
   const [amount, setAmount] = useState<number>(100);
   const [step, setStep] = useState(0);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const pausedRef = useRef(false);
-  const rafRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
-
-  // Auto-scroll ticker — loops by jumping back when we reach the midpoint
-  // (we render the list twice side-by-side so the loop is seamless)
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    // Respect prefers-reduced-motion — skip the ticker entirely
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const tick = (ts: number) => {
-      if (!pausedRef.current) {
-        const dt = lastTimeRef.current !== null ? ts - lastTimeRef.current : 0;
-        lastTimeRef.current = ts;
-        el.scrollLeft += (SCROLL_SPEED * dt) / 1000;
-        // Seamless loop: when we've scrolled past the first copy, jump back
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) {
-          el.scrollLeft -= half;
-        }
-      } else {
-        lastTimeRef.current = null;
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
-  }, []);
-
-  const pause = () => { pausedRef.current = true; };
-  const resume = () => { pausedRef.current = false; };
 
   const selectAsset = (sym: Asset) => {
     setAsset(sym);
@@ -81,36 +41,25 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
         ))}
       </div>
 
-      {/* Auto-scrolling ticker — two copies for seamless loop */}
-      <div
-        className="hero-demo-assets-wrap"
-        onMouseEnter={pause}
-        onMouseLeave={resume}
-        onFocus={pause}
-        onBlur={resume}
-      >
-        <div
-          ref={scrollRef}
-          className="hero-demo-assets"
-          role="group"
-          aria-label="Preview a token"
-        >
-          {/* Two identical copies so the scroll loops seamlessly */}
-          {[0, 1].map(copy =>
-            ASSETS.map(sym => (
-              <button
-                key={`${copy}-${sym}`}
-                type="button"
-                data-symbol={sym}
-                aria-pressed={asset === sym}
-                aria-label={sym}
-                onClick={() => selectAsset(sym)}
-                tabIndex={copy === 0 ? 0 : -1}
-              >
-                <LandingTokenLogo symbol={sym} size={20} />{sym}
-              </button>
-            ))
-          )}
+      {/* CSS ticker — two copies animate continuously, pause on hover/focus */}
+      <div className="hero-demo-assets-wrap" role="group" aria-label="Preview a token">
+        <div className="hero-demo-assets-track">
+          {[0, 1].map(copy => (
+            <div key={copy} className="hero-demo-assets-row" aria-hidden={copy === 1}>
+              {ASSETS.map(sym => (
+                <button
+                  key={sym}
+                  type="button"
+                  data-symbol={sym}
+                  aria-pressed={asset === sym}
+                  onClick={() => selectAsset(sym)}
+                  tabIndex={copy === 0 ? 0 : -1}
+                >
+                  <LandingTokenLogo symbol={sym} size={20} />{sym}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -125,16 +74,26 @@ export function HeroBeamDemo({ onAssetChange }: { onAssetChange?: (asset: string
             <span className="hero-demo-asset"><LandingTokenLogo key={asset} symbol={asset} size={48} /><span>{asset}</span></span>
           </div>
           <div className="hero-demo-card-bottom">
-            {step === 0 ? <span>Choose how much to send.</span> : step === 1 ? <><Link2 size={14} /><span>One private link. Ready to share.</span></> : <><Check size={14} /><span>${amount} of {asset}, received.</span></>}
+            {step === 0
+              ? <span>Choose how much to send.</span>
+              : step === 1
+                ? <><Link2 size={14} /><span>One private link. Ready to share.</span></>
+                : <><Check size={14} /><span>${amount} of {asset}, received.</span></>}
           </div>
         </div>
 
         <div className="hero-demo-detail">
           {step === 0 ? (
             <div className="hero-demo-amounts" role="group" aria-label="Preview an amount">
-              {AMOUNTS.map(value => <button key={value} type="button" aria-pressed={amount === value} onClick={() => setAmount(value)}>${value}</button>)}
+              {AMOUNTS.map(value => (
+                <button key={value} type="button" aria-pressed={amount === value} onClick={() => setAmount(value)}>
+                  ${value}
+                </button>
+              ))}
             </div>
-          ) : step === 1 ? <p><span className="hero-demo-link">usebe.am/claim#••••••</span>Send the link in any conversation.</p> : <p>They sign in with Apple or Google. No existing wallet needed.</p>}
+          ) : step === 1
+            ? <p><span className="hero-demo-link">usebe.am/claim#••••••</span>Send the link in any conversation.</p>
+            : <p>They sign in with Apple or Google. No existing wallet needed.</p>}
         </div>
       </div>
 

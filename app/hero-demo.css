@@ -91,21 +91,39 @@
 }
 
 .hero-demo-assets-wrap {
-  position: relative;
   margin: 24px 0 18px;
-  min-width: 0;
   overflow: hidden;
 }
 
-.hero-demo-assets {
+/* Track holds two identical rows — CSS animation slides it left for seamless loop */
+.hero-demo-assets-track {
   display: flex;
-  gap: 6px;
-  overflow-x: hidden;
-  white-space: nowrap;
-  user-select: none;
+  width: max-content;
+  animation: hero-ticker 18s linear infinite;
 }
 
-.hero-demo-assets button {
+.hero-demo-assets-wrap:hover .hero-demo-assets-track,
+.hero-demo-assets-wrap:focus-within .hero-demo-assets-track {
+  animation-play-state: paused;
+}
+
+@keyframes hero-ticker {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.hero-demo-assets-row {
+  display: flex;
+  gap: 6px;
+  padding-right: 6px;
+}
+
+.hero-demo-assets-row button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -121,12 +139,12 @@
   transition: background .2s, border-color .2s;
 }
 
-.hero-demo-assets button:hover,
+.hero-demo-assets-row button:hover,
 .hero-demo-amounts button:hover {
   background: #fff8;
 }
 
-.hero-demo-assets button[aria-pressed="true"] {
+.hero-demo-assets-row button[aria-pressed="true"] {
   border-color: #fff;
   background: #fff;
   color: #214861;
@@ -307,7 +325,7 @@
     margin: 18px 0 14px;
   }
 
-  .hero-demo-assets button {
+  .hero-demo-assets-row button {
     font-size: 11px;
     gap: 5px;
     padding: 0 9px;
@@ -332,5 +350,9 @@
   .hero-demo *,
   .hero-demo *::before {
     transition: none;
+  }
+
+  .hero-demo-assets-track {
+    animation: none;
   }
 }
