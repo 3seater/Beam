@@ -21,7 +21,7 @@ export function Footer() {
         <span>© {new Date().getFullYear()} Beam</span>
         <span>Built on Robinhood Chain</span>
         <span className="footer-token-ca">
-          $BEAM not live · CA: <span className="footer-token-ca-blur" aria-label="Contract address not yet released">0x4a3b9c1f2e8d7a6c5b0e4f3a2d1c9b8e7a6f5d4c</span>
+          $BEAM is not live · CA: <span className="footer-token-ca-blur" aria-label="Contract address not yet released">0x4a3b9c1f2e8d7a6c5b0e4f3a2d1c9b8e7a6f5d4c</span>
         </span>
       </div>
     </div>
