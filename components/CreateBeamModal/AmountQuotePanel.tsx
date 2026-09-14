@@ -2,12 +2,16 @@ import { Loader2, Zap } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
 import type { UniswapQuote } from '@/lib/uniswap-swap';
 import { formatUsd } from '@/lib/robinhood-prices';
+import { formatUnits } from 'viem';
 
-export function AmountQuotePanel({ loading, error, native, quote, usd, symbol, tokenPrice, nativeAmount }: {
+export function AmountQuotePanel({ loading, error, native, quote, usd, symbol, tokenPrice, nativeAmount, tokenDecimals = 18 }: {
   loading: boolean; error: boolean; native: boolean; quote: UniswapQuote | null;
   usd: number; symbol: string; tokenPrice: number | null; nativeAmount: string | null;
+  tokenDecimals?: number;
 }) {
-  const output = quote && tokenPrice ? Number(quote.amountOutFormatted) * tokenPrice : null;
+  // Display text is rounded and may contain thousands separators. Value the
+  // full quoted quantity instead, using the asset's decimal precision.
+  const output = quote && tokenPrice ? Number(formatUnits(quote.amountOut, tokenDecimals)) * tokenPrice : null;
   const impact = output && usd > 0 ? (usd - output) / usd * 100 : null;
   const highImpact = impact !== null && impact > 10;
   return <div className="quote-panel glass-sm amount-quote-panel" role="status" aria-live="polite" aria-busy={loading} aria-label={loading ? 'Getting your quote' : 'Live quote'}>

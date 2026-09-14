@@ -7,6 +7,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Rounded native arrows: no tracking lag or overlay over the interface. */
+@media (hover: hover) and (pointer: fine) and (forced-colors: none) {
+  body {
+    cursor: url('/cursors/beam-arrow.svg') 4 4, auto;
+  }
+
+  :is(a[href], button, summary, select, label[for], [role='button'],
+      [role='link'], .cursor-pointer, input[type='button'],
+      input[type='submit'], input[type='reset'], input[type='checkbox'],
+      input[type='radio'], input[type='range']):not(:disabled):not([aria-disabled='true']):not([aria-busy='true']):not(.btn-loading) {
+    /* Also covers controls with an inline pointer style, such as the wallet. */
+    cursor: url('/cursors/beam-pointer.svg') 4 4, pointer !important;
+  }
+
+  :is(input:not([type]), input[type='text'], input[type='email'],
+      input[type='password'], input[type='search'], input[type='url'],
+      input[type='tel'], input[type='number'], textarea,
+      [contenteditable='true']):not(:disabled) {
+    cursor: text;
+  }
+}
+
 /* Offset anchor scroll for fixed navbar */
 [id] {
   scroll-margin-top: 80px;

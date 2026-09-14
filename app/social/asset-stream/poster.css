@@ -1,0 +1,16 @@
+body:has(.asset-stream-page){margin:0;background:#dff6ff}
+body:has(.asset-stream-page) .premium-header,body:has(.asset-stream-page) .beam-preloader{display:none!important}
+.asset-stream-page{width:100%;min-height:100vh;overflow:auto}
+.asset-stream-canvas{position:relative;isolation:isolate;width:1920px;height:1080px;overflow:hidden;background:radial-gradient(ellipse at 95% 0%,#eafcff 0%,transparent 55%),linear-gradient(120deg,#38a0e1,#79d6fc 68%,#9be7fd)}
+.asset-stream-curves{position:absolute;inset:0;overflow:hidden;z-index:-1}.asset-stream-curves i{position:absolute;width:1980px;height:2040px;border:114px solid #ffffff12;border-radius:50%;top:-1224px;left:-924px}.asset-stream-curves i:nth-child(2){width:2400px;height:2460px;top:-1380px;left:-1032px}.asset-stream-curves i:nth-child(3){width:2820px;height:2880px;top:-1536px;left:-1140px}
+.asset-stream-ribbon{position:absolute;inset:0;width:100%;height:100%}
+.asset-stream-tile{position:absolute;padding:16px;border:2px solid #fff;border-radius:80px;background:linear-gradient(135deg,#ffffffe6,#d7f3ffb5);box-shadow:0 28px 55px -20px #1c689c66,0 0 0 7px #ffffff30,inset 0 2px 0 #fff}
+.asset-stream-inner{width:100%;height:100%;display:grid;place-items:center;border:1px solid #ffffffb0;border-radius:64px;background:linear-gradient(145deg,#ffffffc0,#eafaff50)}
+.asset-stream-inner img{width:61%;height:61%;object-fit:contain;border-radius:28%}
+@media(max-width:1919px){.asset-stream-canvas{zoom:calc(100vw / 1920px)}}
+.asset-stream-native .asset-stream-canvas{zoom:1}
+@media print{@page{size:1920px 1080px;margin:0}.asset-stream-canvas{zoom:1;print-color-adjust:exact}}
+
+/* Keep the provider's smaller crypto originals below native resolution. */
+.asset-stream-inner img[alt='PONS logo'],.asset-stream-inner img[alt='AI logo']{width:184px;height:184px}
+.asset-stream-inner img[alt='CASHCAT logo']{width:230px;height:230px}

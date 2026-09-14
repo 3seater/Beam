@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatUnits } from 'viem';
 import { RefreshCw } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { useAmountQuote } from '@/hooks/useAmountQuote';
@@ -34,6 +35,7 @@ export function DollarAmountInput({
   bundle = false,
 }: DollarAmountInputProps) {
   const isNative = selectedAsset.type === 'native';
+  const tokenDecimals = selectedAsset.type === 'erc20' ? selectedAsset.decimals : 18;
   const symbol = isNative ? 'ETH' : selectedAsset.symbol;
   const isCustom = !QUICK_AMOUNTS.some((a) => String(a) === dollarValue);
 
@@ -90,10 +92,10 @@ export function DollarAmountInput({
       return;
     }
 
-    // Pass the human-readable amount; useDeposit will use the raw wei from its own quote
-    onTokenAmount(quote.amountOutFormatted);
+    // Pass an unrounded decimal amount, never the grouped display string.
+    onTokenAmount(formatUnits(quote.amountOut, tokenDecimals));
     onError(null);
-  }, [dollarValue, isNative, ethPriceUsd, quote, quoteLoading, quoteErr, onTokenAmount, onError]);
+  }, [dollarValue, isNative, tokenDecimals, ethPriceUsd, quote, quoteLoading, quoteErr, onTokenAmount, onError]);
 
   function handleCustomChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/[^0-9.]/g, '');
@@ -188,7 +190,8 @@ export function DollarAmountInput({
 
       {!bundle && usdNum > 0 && usdNum <= 1_000_000 && (
         <AmountQuotePanel loading={quoteLoading} error={quoteErr} native={isNative}
-          quote={quote} usd={usdNum} symbol={symbol} tokenPrice={tokenPriceUsd} nativeAmount={displayTokenAmt} />
+          quote={quote} usd={usdNum} symbol={symbol} tokenPrice={tokenPriceUsd} nativeAmount={displayTokenAmt}
+          tokenDecimals={tokenDecimals} />
       )}
     </div>
   );

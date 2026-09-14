@@ -1,0 +1,21 @@
+body:has(.asset-orbits-page){margin:0;background:#f4fbff}
+body:has(.asset-orbits-page) .premium-header,body:has(.asset-orbits-page) .beam-preloader{display:none!important}
+.asset-orbits-page{width:100%;min-height:100vh;overflow:auto}
+.asset-orbits-canvas{position:relative;isolation:isolate;width:1920px;height:1080px;overflow:hidden;background:radial-gradient(ellipse at 83% 4%,#edfcff 0%,transparent 48%),radial-gradient(ellipse at 42% 110%,#b9f3ff 0%,transparent 56%),linear-gradient(125deg,#38a0e1 0%,#65c7f1 47%,#9be7fd 100%)}
+.asset-orbits-lines{position:absolute;inset:0;width:100%;height:100%}
+.asset-orbit-node{position:absolute;display:grid;place-items:center;border-radius:26%;border:2px solid #fff;background:linear-gradient(135deg,#ffffffeb,#d7f3ff9c 60%,#edfaffc9);box-shadow:0 22px 45px -19px #328bc44a,0 0 0 6px #ffffff60,inset 0 3px 0 #fff,inset 0 -3px 12px #a6ddf22b}
+.asset-orbit-node img{width:64%;height:64%;object-fit:contain;border-radius:25%}
+.asset-orbits-fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,transparent 78%,#a1e5f82b 91%,#b5edfa99 100%)}
+@media(max-width:1919px){.asset-orbits-canvas{zoom:calc(100vw / 1920px)}}
+.orbit-native .asset-orbits-canvas{zoom:1}
+@media print{@page{size:1920px 1080px;margin:0}.asset-orbits-canvas{zoom:1;print-color-adjust:exact}}
+
+.asset-orbit-node::before{content:'';position:absolute;inset:9px;border:1px solid #ffffffa6;border-radius:23%;pointer-events:none}
+.asset-orbit-nvda{background:linear-gradient(135deg,#fffffff0,#e6f6c4a8 58%,#e4f8ffc9)}
+.asset-orbit-msft{background:linear-gradient(135deg,#fffffff0,#dcf3ffad 58%,#f3faffc9)}
+
+.orbit-background-bands{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.orbit-background-bands i{position:absolute;width:2250px;height:2150px;left:-1440px;top:-1440px;border:120px solid #ffffff0d;border-radius:50%;transform:rotate(-25deg)}
+.orbit-background-bands i:nth-child(2){width:2660px;height:2560px;left:-1610px;top:-1600px}
+.orbit-background-bands i:nth-child(3){width:3070px;height:2970px;left:-1780px;top:-1760px}
+.asset-orbit-node{box-shadow:0 28px 50px -18px #176da357,0 0 0 6px #ffffff45,inset 0 3px 0 #fff,inset 0 -3px 12px #a6ddf22b}

@@ -1,0 +1,16 @@
+body:has(.burn-page){margin:0;background:#dff6ff}
+body:has(.burn-page) .premium-header,body:has(.burn-page) .beam-preloader{display:none!important}
+.burn-page{width:100%;min-height:100vh;overflow:auto}
+.burn-canvas{position:relative;isolation:isolate;width:1920px;height:1080px;overflow:hidden;color:#fff;background:radial-gradient(ellipse at 95% 0%,#eafcff 0%,transparent 55%),linear-gradient(120deg,#38a0e1,#79d6fc 68%,#9be7fd)}
+.burn-canvas .docs-launch-brand{left:96px;top:80.4px;transform:scale(1.2);transform-origin:top left}
+.burn-canvas .docs-launch-curves{transform:scale(1.2);transform-origin:top left}
+.burn-ribbons{display:none}
+.burn-canvas h1{position:absolute;left:96px;top:312px;margin:0;font-size:165.6px;font-weight:300;line-height:1.02;letter-spacing:-9.6px}
+.burn-canvas .docs-launch-addresses{left:96px;bottom:93.6px;transform:scale(1.2);transform-origin:bottom left}
+.burn-emblem{position:absolute;left:970px;top:120px;width:640px;height:747px;transform:rotate(32deg) scale(1.52);transform-origin:50% 50%}
+.burn-flame{width:100%;height:100%;filter:drop-shadow(-18px 30px 30px #17639038)}
+.burn-coin{position:absolute;left:195px;top:429px;width:245px;height:183px;border:1px solid #fff;border-radius:50%;background:linear-gradient(140deg,#e9faff,#b7e9fc);box-shadow:0 12px 30px #287ba725,0 0 0 5px #ffffff30;display:grid;place-items:center;transform:rotate(7deg)}
+.burn-coin svg{width:112px;height:112px;color:#38a0e1}
+@media(max-width:1919px){.burn-canvas{zoom:calc(100vw / 1920px)}}
+.burn-native .burn-canvas{zoom:1}
+@media print{@page{size:1920px 1080px;margin:0}.burn-canvas{zoom:1;print-color-adjust:exact}}

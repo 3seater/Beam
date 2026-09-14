@@ -294,7 +294,7 @@ function SingleClaimPageClient() {
             )}
 
             {/* Deposit card + claim button — share the same max-w-sm column */}
-            {claimStep !== 'success' && (
+            {!deposit.claimed && claimStep !== 'success' && (
               <div className="claim-receive-shell w-full flex flex-col gap-5">
                 {!deposit.claimed && <h1 className="receipt-heading">Claim your Beam.</h1>}
                 <motion.div
