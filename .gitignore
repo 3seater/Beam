@@ -12,6 +12,7 @@
 # next.js
 /.next/
 /.next-dev/
+/.next-dev-recovery/
 /.next-stock-art/
 /.next-spectrum/
 /.next-spectrum-build/

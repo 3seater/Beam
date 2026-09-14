@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { Search, Check, Loader2, X } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
-import { fetchRobinhoodTokens, POPULAR_SYMBOLS, stockLogoUrl, type RHToken } from '@/lib/robinhood-tokens';
+import { fetchRobinhoodTokens, isTokenCatalogUsingSnapshot, POPULAR_SYMBOLS, stockLogoUrl, type RHToken } from '@/lib/robinhood-tokens';
 
 /* ── Types re-exported for the parent ───────────────────────────────────── */
 export type NativeAsset = { type: 'native'; symbol: 'ETH' };
@@ -156,7 +156,14 @@ type ResolvedToken = { address: `0x${string}`; symbol: string; name: string; dec
 export function TokenPicker({ value, onChange, disabled = false }: TokenPickerProps) {
   const [allTokens, setAllTokens] = useState<RHToken[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usingSnapshot, setUsingSnapshot] = useState(false);
   const [query, setQuery] = useState('');
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Start each search at the first match without moving the search field.
+  useEffect(() => {
+    if (resultsRef.current) resultsRef.current.scrollTop = 0;
+  }, [query]);
 
   // A resolved-but-not-yet-selected token from a pasted CA
   const [resolvedToken, setResolvedToken] = useState<ResolvedToken | null>(null);
@@ -169,7 +176,7 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
   useEffect(() => {
     let cancelled = false;
     fetchRobinhoodTokens().then((tokens) => {
-      if (!cancelled) { setAllTokens(tokens); setLoading(false); }
+      if (!cancelled) { setAllTokens(tokens); setUsingSnapshot(isTokenCatalogUsingSnapshot()); setLoading(false); }
     });
     return () => { cancelled = true; };
   }, []);
@@ -278,8 +285,8 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
         <p className="text-sm font-normal text-white/90">Choose a token</p>
       </div>
 
-      {/* Selected token chip — shown when a token is chosen and user isn't searching */}
-      {hasSelection && !query && (
+      {/* Keep the selected chip in place while searching for a replacement. */}
+      {hasSelection && (
         <SelectedChip asset={value} onClear={clearSelection} />
       )}
 
@@ -301,6 +308,17 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
         />
       </div>
 
+      {/* Reserve results space so filtering never resizes or recenters the card. */}
+      <div
+        ref={resultsRef}
+        className="overflow-y-auto overscroll-contain"
+        style={{ height: 'clamp(160px, calc(100dvh - 420px), 352px)', scrollbarGutter: 'stable', padding: '4px' }}
+      >
+      {usingSnapshot && (
+        <p className="text-xs text-white/50 px-1 mb-3" role="status">
+          Live catalog unavailable. Showing the last verified catalog.
+        </p>
+      )}
       {/* Resolving spinner */}
       {resolving && (
         <div className="flex items-center gap-2 px-1 mb-3 text-sm text-white/50">
@@ -317,7 +335,7 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
       )}
 
       {/* Token grid */}
-      <div style={{ padding: '4px' }}>
+      <div>
         {loading ? (
           <div
             role="status"
@@ -388,6 +406,7 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
             No results — try pasting a contract address above
           </p>
         )}
+      </div>
       </div>
     </div>
   );

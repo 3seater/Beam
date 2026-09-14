@@ -43,17 +43,23 @@ export function DollarAmountInput({
   const [tokenPrice, setTokenPrice] = useState<{ key: string; price: number | null } | null>(null);
   const [showCustom, setShowCustom] = useState(false);
   const priceKey = selectedAsset.type === 'erc20' ? selectedAsset.address : 'ETH';
+  const priceAddress = selectedAsset.type === 'erc20' ? selectedAsset.address : undefined;
   const tokenPriceUsd = tokenPrice?.key === priceKey ? tokenPrice.price : null;
 
   useEffect(() => {
     let active = true;
-    if (selectedAsset.type === 'erc20') {
-      fetchTokenPriceUsd(selectedAsset.symbol, selectedAsset.address).then(price => {
-        if (active) setTokenPrice({ key: priceKey, price });
-      });
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    async function loadPrice() {
+      const price = await fetchTokenPriceUsd(symbol, priceAddress);
+      if (!active) return;
+      // The price belongs to the asset, not the chosen dollar amount. Never
+      // erase a successful lookup because a subsequent request failed.
+      if (price !== null) setTokenPrice({ key: priceKey, price });
+      else retryTimer = setTimeout(loadPrice, 2_000);
     }
-    return () => { active = false; };
-  }, [priceKey, selectedAsset]);
+    if (priceAddress) void loadPrice();
+    return () => { active = false; clearTimeout(retryTimer); };
+  }, [priceKey, priceAddress, symbol]);
   // Pass token amount up to parent
   useEffect(() => {
     const usd = parseFloat(dollarValue);

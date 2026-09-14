@@ -37,7 +37,8 @@
     ".next-dev/types/**/*.ts",
     ".next-spectrum-build/types/**/*.ts",
     ".next-spectrum/types/**/*.ts",
-    ".next-stock-art/types/**/*.ts"
+    ".next-stock-art/types/**/*.ts",
+    ".next-dev-recovery/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
