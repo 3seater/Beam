@@ -10,6 +10,7 @@
  */
 
 import snapshot from './rh-assets-snapshot.json';
+import communityTokens from './community-tokens.json';
 
 const ROBINHOOD_CHAIN_ID = 4663;
 
@@ -35,6 +36,7 @@ export function stockLogoUrl(ticker: string): string {
 
 /* ── WETH, USDG, and community tokens hardcoded (not in /rhj/assets) ──────── */
 const CHAIN_TOKENS: RHToken[] = [
+  ...communityTokens.map(token => ({ ...token, address: token.address as `0x${string}` })),
   {
     symbol: 'WETH',
     name: 'Wrapped Ether',
@@ -168,10 +170,12 @@ export function clearTokenCache() {
 }
 
 /**
- * The 9 preset stock tokens shown in the quick-pick grid, plus USDG.
+ * Nineteen quick-pick assets, mixed across four rows with native ETH first.
  * Order matches the desired display order in the UI.
  */
 export const POPULAR_SYMBOLS = [
-  'NVDA', 'AAPL', 'TSLA', 'MSFT', 'META', 'GOOGL', 'AMZN', 'SPCX', 'MU', 'USDG',
-  'CASHCAT', 'PONS', 'AI', 'MEME',
+  'NVDA', 'INDEX', 'AAPL', 'TSLA',
+  'MOO', 'MSFT', 'CASHCAT', 'META', 'GOOGL',
+  'AMZN', 'HOOKR', 'SPCX', 'PONS', 'MU',
+  'DELTA', 'USDG', 'AI', 'TENDIES', 'MEME',
 ];

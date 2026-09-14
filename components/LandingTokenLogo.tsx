@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { stockLogoUrl } from '@/lib/robinhood-tokens';
+import communityTokens from '@/lib/community-tokens.json';
 
 const ETH_LOGO = 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628';
 const WETH_LOGO = 'https://coin-images.coingecko.com/coins/images/2518/small/weth.png?1696503332';
@@ -13,6 +14,7 @@ const PONS_LOGO = 'https://cdn.dexscreener.com/cms/images/dkmXs8KYMyMXjuU1?width
 const MEME_LOGO = 'https://cdn.dexscreener.com/cms/images/pPWqEwHoGm1tbUMt?width=64&height=64&quality=95&format=auto';
 
 const FIXED_LOGOS: Record<string, string> = {
+  ...Object.fromEntries(communityTokens.map(token => [token.symbol, token.logoUrl])),
   ETH: ETH_LOGO,
   WETH: WETH_LOGO,
   USDG: USDG_LOGO,

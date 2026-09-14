@@ -1,0 +1,42 @@
+[
+  {
+    "symbol": "INDEX",
+    "name": "The Index",
+    "address": "0x56910D4409F3a0C78C64DD8D0545FF0705389870",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/index.png",
+    "isStock": false
+  },
+  {
+    "symbol": "MOO",
+    "name": "Memory cow Moo",
+    "address": "0xD9dB30BB0D2b8d2eae3826A1372117E058791e18",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/moo.png",
+    "isStock": false
+  },
+  {
+    "symbol": "HOOKR",
+    "name": "Hookr.fun",
+    "address": "0x18E674231A58c239Dc7DaeDcffE15Ec3A24cff5c",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/hookr.png",
+    "isStock": false
+  },
+  {
+    "symbol": "DELTA",
+    "name": "Delta",
+    "address": "0xe8ffd7e24187F72afB08d75B1bb13088A989a791",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/delta.png",
+    "isStock": false
+  },
+  {
+    "symbol": "TENDIES",
+    "name": "TENDIES",
+    "address": "0x45242320DBB855EeA8Fd36804C6487E10E97FCF9",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/tendies.png",
+    "isStock": false
+  }
+]

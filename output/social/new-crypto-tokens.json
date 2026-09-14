@@ -1,0 +1,52 @@
+[
+  {
+    "symbol": "Index",
+    "name": "The Index",
+    "address": "0x56910D4409F3a0C78C64DD8D0545FF0705389870",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/index.png",
+    "isStock": false,
+    "source": "https://dexscreener.com/robinhood/0x00dd2df2f17d431cf3a0938f06c9cf9abc5e9643b6cc466ca3f71f3af246edf3",
+    "originalLogo": "https://cdn.dexscreener.com/cms/images/LTfdhAlnWijozhDa?width=800&height=800&quality=95&format=auto"
+  },
+  {
+    "symbol": "MOO",
+    "name": "Memory cow Moo",
+    "address": "0xD9dB30BB0D2b8d2eae3826A1372117E058791e18",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/moo.png",
+    "isStock": false,
+    "source": "https://dexscreener.com/robinhood/0xc3cc877a8a7d28efdb5dbec9ae71724652431e6411aa1a9fc8928028da554aa1",
+    "originalLogo": "https://cdn.dexscreener.com/cms/images/DXvCPLxceXnY_5XS?width=800&height=800&quality=95&format=auto"
+  },
+  {
+    "symbol": "HOOKR",
+    "name": "Hookr.fun",
+    "address": "0x18E674231A58c239Dc7DaeDcffE15Ec3A24cff5c",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/hookr.png",
+    "isStock": false,
+    "source": "https://dexscreener.com/robinhood/0x590dcb6a87828bf688b48089a62239b693378f1fb64d2286e6a399ed8c005fdf",
+    "originalLogo": "https://cdn.dexscreener.com/cms/images/8HVsUvtM_VyD-mXb?width=800&height=800&quality=95&format=auto"
+  },
+  {
+    "symbol": "DELTA",
+    "name": "Delta",
+    "address": "0xe8ffd7e24187F72afB08d75B1bb13088A989a791",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/delta.png",
+    "isStock": false,
+    "source": "https://dexscreener.com/robinhood/0xd64fbda67e1015df43fa5e49f02ca844729e5f94",
+    "originalLogo": "https://cdn.dexscreener.com/cms/images/R0D6i-QgKwRAa7sg?width=800&height=800&quality=95&format=auto"
+  },
+  {
+    "symbol": "TENDIES",
+    "name": "TENDIES",
+    "address": "0x45242320DBB855EeA8Fd36804C6487E10E97FCF9",
+    "decimals": 18,
+    "logoUrl": "/social/tokens/tendies.png",
+    "isStock": false,
+    "source": "https://dexscreener.com/robinhood/0x237609918f330add285b8bc5f8f2922283d1c4c5",
+    "originalLogo": "https://cdn.dexscreener.com/cms/images/j8K5uOi-9TVXuWFJ?width=800&height=800&quality=95&format=auto"
+  }
+]
