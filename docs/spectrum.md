@@ -37,7 +37,10 @@ Deployed and runtime-verified on Robinhood Chain:
 `0x191618ac8bb752039ee4586cf7aed9a4ff18b234`.
 Deployment transaction: `0x2b8272e2fa62542e3298774cd534026a53c943a02b841b4a7236129fbc43d8af`.
 Deployment gas cost: 0.00008132914944 ETH. The local environment is configured.
-Use this address in the hosting environment and rebuild to enable the deployed app.
+This address is the application default, so builds without a public escrow
+environment variable still use the deployed contract. An explicit
+`NEXT_PUBLIC_SPECTRUM_ESCROW_ADDRESS` override takes precedence; setting it to
+the zero address disables sending. Rebuild and deploy to update existing clients.
 
 1. Keep `ENSO_API_KEY` server-side in the hosting environment. The supplied key is
    configured in the ignored local `.env.local`; it is not in source control.
@@ -49,7 +52,7 @@ Use this address in the hosting environment and rebuild to enable the deployed a
    forge script script/DeploySpectrum.s.sol:DeploySpectrum --rpc-url https://rpc.mainnet.chain.robinhood.com --account YOUR_DEPLOYMENT_ACCOUNT --broadcast
    ```
 
-4. Set `NEXT_PUBLIC_SPECTRUM_ESCROW_ADDRESS` to that deployment, configure/fund
+4. If using another deployment, set `NEXT_PUBLIC_SPECTRUM_ESCROW_ADDRESS` to it. Configure/fund
    `RELAYER_PRIVATE_KEY`, and rebuild the app. Preset browsing and allocation
    review work before deployment; sends and claims are gated.
 5. Validate a small send, claim and cancellation onchain before launch.

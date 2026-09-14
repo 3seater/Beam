@@ -20,7 +20,10 @@ export function allocateBudget(amount: bigint, weights: readonly number[]): bigi
   if (portions.some(p => p <= 0n)) throw new Error('Amount is too small for this bundle.');
   return portions;
 }
-export const SPECTRUM_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_SPECTRUM_ESCROW_ADDRESS ?? zeroAddress) as `0x${string}`;
+// Canonical Robinhood Chain deployment. Public addresses belong in the build;
+// only the Enso API key and relayer credentials require hosting secrets.
+// An explicit override (including zeroAddress to disable sends) still wins.
+export const SPECTRUM_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_SPECTRUM_ESCROW_ADDRESS ?? '0x191618ac8bb752039ee4586cf7aed9a4ff18b234') as `0x${string}`;
 export const spectrumConfigured = isAddress(SPECTRUM_ESCROW_ADDRESS) && SPECTRUM_ESCROW_ADDRESS !== zeroAddress;
 export const SPECTRUM_ABI = parseAbi([
   'function depositBundle(address sender,address claimSigner,address[] tokens,uint256[] amounts,bytes32 presetId) returns (uint256 depositId)',
