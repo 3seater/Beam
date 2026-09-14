@@ -12,6 +12,7 @@ import { wagmiConfig } from '@/lib/wagmi-config';
 import { DEPOSIT_TIMEOUT_MS } from '@/lib/constants';
 import { saveBeamEntry } from '@/lib/beam-history';
 import { requireBeamBackup } from '@/lib/beam-backup-ready';
+import { friendlyWalletError } from '@/lib/wallet-error';
 
 interface PendingSpectrum { hash: `0x${string}`; key: `0x${string}`; presetId: string; usdAmount: number; sender: `0x${string}`; escrow: `0x${string}` }
 const pendingStorageKey = (sender: string) => `beam:spectrum:pending:${sender.toLowerCase()}`;
@@ -77,7 +78,7 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
     if (busy.current || !pendingRef.current) return;
     busy.current = true; setError(null);
     try { await finish(pendingRef.current); }
-    catch (err) { setError(pendingRef.current ? 'Confirmation is still unavailable. Your transaction is saved; retry confirmation before sending again.' : err instanceof Error ? err.message : 'Confirmation unavailable.'); setStatus('idle'); }
+    catch (err) { setError(pendingRef.current ? 'Confirmation is still unavailable. Your transaction is saved; retry confirmation before sending again.' : friendlyWalletError(err, 'Confirmation unavailable. Please try again.')); setStatus('idle'); }
     finally { busy.current = false; }
   }
   async function send(preset: SpectrumPreset, usdAmount: number, sender: `0x${string}`) {
@@ -109,7 +110,7 @@ export function useSpectrum(walletAddress?: `0x${string}`) {
       try { localStorage.setItem(pendingStorageKey(sender), JSON.stringify(p)); } catch { /* In-memory recovery remains available. */ }
       await finish(p);
     } catch (err) {
-      setError(pendingRef.current ? 'Transaction submitted. Retry confirmation before sending again; your claim key is saved.' : err instanceof Error ? err.message : 'Spectrum could not be sent.'); setStatus('idle');
+      setError(pendingRef.current ? 'Transaction submitted. Retry confirmation before sending again; your claim key is saved.' : friendlyWalletError(err, 'Spectrum could not be sent. Please try again.')); setStatus('idle');
     } finally { busy.current = false; }
   }
   return { status, error, link, pending, received, send, resume, reset() { if (!busy.current && !pendingRef.current) { setStatus('idle'); setError(null); setLink(null); setReceived(undefined); } } };
