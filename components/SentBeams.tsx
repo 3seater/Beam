@@ -296,15 +296,14 @@ function BeamRow({
         <HistoryTokenImage src={row.logoUrl} symbol={row.tokenSymbol} loading={hydrating} />
 
         {/* Amount */}
-        <span className={`text-sm font-semibold leading-none shrink-0 ${status === 'cancelled' ? 'text-white/30 line-through' : 'text-white'}`}>
+        <span className={`history-amount-slot text-sm font-semibold leading-none shrink-0 ${status === 'cancelled' ? 'text-white/30 line-through' : 'text-white'}`} title={`${formattedAmt} ${row.tokenSymbol}`}>
           {hydrating && !formattedAmt ? <Skeleton className="history-amount-skeleton" /> : formattedAmt ? `${formattedAmt} ${row.tokenSymbol}` : row.tokenSymbol}
         </span>
 
         {/* USD — visually distinct: smaller, dimmer, slightly different weight */}
-        {row.usdAmount != null && (
-          <span className="text-[11px] font-normal text-white/35 shrink-0 tabular-nums">${row.usdAmount}</span>
-        )}
-        {row.usdAmount == null && hydrating && <Skeleton className="history-usd-skeleton" />}
+        <span className="history-usd-slot text-[11px] font-normal text-white/35 shrink-0 tabular-nums">
+          {row.usdAmount != null ? `$${row.usdAmount}` : hydrating ? <Skeleton className="history-usd-skeleton" /> : null}
+        </span>
 
         {/* Copy + open — only when unclaimed and link exists */}
         <span className="beam-history-actions">

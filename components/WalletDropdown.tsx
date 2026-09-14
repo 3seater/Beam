@@ -264,7 +264,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
           <p className="text-xs text-white/50 mb-2">Recent beams</p>
 
           {loading && (
-            <div role="status" aria-label="Loading recent beams" aria-busy="true">
+            <div className="flex flex-col gap-0.5" role="status" aria-label="Loading recent beams" aria-busy="true">
               <span className="sr-only">Loading recent beams…</span>
               {[0, 1, 2].map((i) => (
                 <div key={i} className="wd-row-skeleton" aria-hidden="true">
@@ -282,7 +282,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
           {!loading && rows.length > 0 && (
             <div className="flex flex-col gap-0.5">
               {rows.map((row) => (
-                <div key={row.depositId} className="flex items-center justify-between gap-3 py-2">
+                <div key={row.depositId} className="wd-row flex items-center justify-between gap-3 py-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {/* Token logo */}
                     {row.tokenLogoUrl ? (
@@ -301,7 +301,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
                       </span>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 h-5 overflow-hidden whitespace-nowrap">
                         <span className={`text-sm ${row.status === 'cancelled' ? 'text-white/35 line-through' : 'text-white font-medium'}`}>
                           {row.usdAmount != null
                             ? `$${row.usdAmount} of ${row.tokenSymbol}`
@@ -310,12 +310,12 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
                               : row.tokenSymbol}
                         </span>
                       </div>
-                      {row.createdAt != null && (
-                        <div className="flex items-center gap-1 mt-0.5">
+                        <div className="flex items-center gap-1 mt-0.5 h-4">
+                        {row.createdAt != null && <>
                           <Clock size={ICON_SIZE.xs} className="text-white/35 shrink-0" />
                           <span className="text-xs text-white/35">{timeAgo(row.createdAt)}</span>
+                        </>}
                         </div>
-                      )}
                     </div>
                   </div>
                   <StatusBadge status={row.status} />

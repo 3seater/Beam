@@ -42,6 +42,8 @@ function AccountChip() {
     right: 'auto',
     zIndex: 50,
     height: '40px',
+    width: '144px',
+    justifyContent: 'center',
     borderRadius: '999px',
     background: open ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.15)',
     border: '1px solid rgba(255,255,255,0.28)',
@@ -63,7 +65,7 @@ function AccountChip() {
   if (!mounted) {
     return <div style={{
       ...chipStyle,
-      width: '120px',
+      width: '144px',
       opacity: 0.5
     }} className="beam-skeleton" aria-hidden="true" />;
   }

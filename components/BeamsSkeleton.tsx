@@ -4,8 +4,8 @@ export function BeamRowSkeleton() {
   return <div className="beam-history-row" aria-hidden="true">
     <div className="beam-history-info">
       <Skeleton className="beam-history-logo" />
-      <Skeleton className="history-amount-skeleton" />
-      <Skeleton className="history-usd-skeleton" />
+      <span className="history-amount-slot"><Skeleton className="history-amount-skeleton" /></span>
+      <span className="history-usd-slot"><Skeleton className="history-usd-skeleton" /></span>
       <span className="beam-history-actions"><Skeleton className="history-action-skeleton" /><Skeleton className="history-action-skeleton" /></span>
     </div>
     <div className="beam-history-meta">

@@ -69,7 +69,7 @@
   }
 }
 
-.app-page .amount-quote-panel {
+.amount-quote-panel {
   display: grid;
   grid-template-rows: 16px minmax(40px, auto) minmax(32px, auto);
   gap: 8px;
@@ -2875,3 +2875,29 @@ body {
   font-size: 11px;
   letter-spacing: 0.3px;
 }
+
+/* Loading and loaded content share their outer geometry. */
+.gift-value-skeleton { display:block; width:65%; height:1.1em; }
+.gift-symbol-skeleton { width:64px; height:14px; }
+.claim-sender-skeleton { width:76px; height:15px; }
+.claim-page { justify-content:flex-start; }
+.claim-receive-shell .gift-card-value { min-height:calc(1.1em + 41px); display:flex; align-items:center; }
+.claim-receive-shell .gift-card-bottom { min-height:43px; }
+.claim-receive-shell .gift-token-pill { min-height:46px; }
+.claim-receive-shell .gift-card-value .gift-value-skeleton { flex:none; }
+.bundle-allocation-value > strong, .bundle-allocation-value > .data-skeleton { min-height:21px; line-height:21px; }
+.bundle-allocation-value { min-height:38px; }
+.wd-row, .wd-row-skeleton { height:54px; }
+.wd-row-skeleton { gap:8px; }
+.wd-text-skeleton { gap:2px; }
+.wd-label-skeleton { height:20px; }
+.wd-time-skeleton { height:16px; }
+.tp-tile-skeleton { border-radius:16px; gap:.4rem; }
+.tp-label-skeleton { height:11px; }
+.data-skeleton { vertical-align:middle; }
+
+
+.history-amount-slot { display:inline-flex; align-items:center; width:136px; min-height:16px; overflow:hidden; white-space:nowrap; }
+.history-usd-slot { display:inline-flex; align-items:center; width:44px; min-height:17px; }
+.bundle-history-status { display:inline-flex; align-items:center; width:140px; min-height:16px; flex-shrink:0; }
+.gift-token-logo.beam-skeleton { background:#38a0e126; }

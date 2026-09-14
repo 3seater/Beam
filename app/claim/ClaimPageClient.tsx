@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { usePublicClient } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -20,6 +20,7 @@ import { ClaimSuccess } from './ClaimSuccess';
 import { AlertTriangle, RefreshCw, LogIn, ArrowRight, Link2 } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { SpectrumClaim } from '@/components/SpectrumClaim';
+import { ClaimSkeleton } from '@/components/ClaimSkeleton';
 
 type PageState = 'parsing' | 'no-link' | 'invalid-link' | 'loading' | 'error' | 'ready';
 
@@ -76,12 +77,14 @@ function LinkEntryPanel() {
 
 export function ClaimPageClient() {
   const [hash, setHash] = useState<string | null>(null);
-  useEffect(() => {
+  // Resolve the private fragment before the first browser paint, so a Spectrum
+  // never briefly displays the shorter single-asset loading layout.
+  useLayoutEffect(() => {
     const read = () => setHash(window.location.hash);
     read(); window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
-  if (hash === null) return null;
+  if (hash === null) return <main className="app-page beam-flow-page claim-page min-h-screen flex flex-col items-center px-4 py-28"><section className="claim-receive-shell w-full flex flex-col gap-5"><ClaimSkeleton /></section></main>;
   const kind = new URLSearchParams(hash.slice(1)).get('kind');
   return kind === 'spectrum' ? <SpectrumClaim key={hash} /> : <SingleClaimPageClient key={hash} />;
 }
@@ -184,15 +187,12 @@ function SingleClaimPageClient() {
   return (
     <>
       <main
-        className="app-page beam-flow-page min-h-screen flex flex-col items-center justify-center px-4 py-20 gap-8"
+        className="app-page beam-flow-page claim-page min-h-screen flex flex-col items-center px-4 py-28 gap-8"
         aria-label="Beam claim page"
       >
         {/* ── Parsing ────────────────────────────────────────────────────── */}
         {pageState === 'parsing' && (
-          <div className="flex items-center gap-2 text-white/50 text-sm" role="status">
-            <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" aria-hidden="true" />
-            Reading BeamLink…
-          </div>
+          <section className="claim-receive-shell w-full flex flex-col gap-5"><ClaimSkeleton /></section>
         )}
 
         {/* ── No link — let user paste one ──────────────────────────────── */}
@@ -219,10 +219,7 @@ function SingleClaimPageClient() {
 
         {/* ── Loading ────────────────────────────────────────────────────── */}
         {pageState === 'loading' && (
-          <div className="flex items-center gap-2 text-white/50 text-sm" role="status">
-            <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" aria-hidden="true" />
-            Loading deposit details…
-          </div>
+          <section className="claim-receive-shell w-full flex flex-col gap-5"><ClaimSkeleton /></section>
         )}
 
         {/* ── Error ──────────────────────────────────────────────────────── */}
@@ -301,8 +298,7 @@ function SingleClaimPageClient() {
               <div className="claim-receive-shell w-full flex flex-col gap-5">
                 {!deposit.claimed && <h1 className="receipt-heading">Claim your Beam.</h1>}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={false}
                   transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full"
                 >
@@ -311,8 +307,7 @@ function SingleClaimPageClient() {
 
                 {(!deposit.claimed || claimStep === 'error') && (
                   <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={false}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                     className="w-full"
                   >

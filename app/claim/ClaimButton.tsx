@@ -11,6 +11,7 @@ interface ClaimButtonProps {
   error: string | null;
   alreadyClaimed: boolean;
   onClaim: () => void;
+  disabled?: boolean;
 }
 
 const LOADING_STEPS: ClaimStep[] = [
@@ -29,7 +30,7 @@ function loadingLabel(step: ClaimStep): string {
   }
 }
 
-export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim }: ClaimButtonProps) {
+export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim, disabled = false }: ClaimButtonProps) {
   if (claimStep === 'success') return null;
 
   const isLoading = LOADING_STEPS.includes(claimStep);
@@ -43,7 +44,7 @@ export function ClaimButton({ claimStep, error, alreadyClaimed, onClaim }: Claim
         size="lg"
         isLoading={isLoading}
         loadingLabel={isLoading ? loadingLabel(claimStep) : undefined}
-        disabled={alreadyClaimed}
+        disabled={alreadyClaimed || disabled}
         onClick={isLoading || alreadyClaimed ? undefined : onClaim}
         leftIcon={<ArrowUpRight size={ICON_SIZE.md} aria-hidden="true" />}
         aria-label={alreadyClaimed ? 'Already claimed' : isError ? 'Retry claim' : 'Claim my Beam'}

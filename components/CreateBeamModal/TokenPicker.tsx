@@ -327,8 +327,8 @@ export function TokenPicker({ value, onChange, disabled = false }: TokenPickerPr
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))' }}
           >
             <span className="sr-only">Loading tokens…</span>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="tp-tile-skeleton" aria-hidden="true">
+            {Array.from({ length: POPULAR_SYMBOLS.length + 1 }).map((_, i) => (
+              <div key={i} className="token-tile tp-tile-skeleton" aria-hidden="true">
                 <span className="beam-skeleton tp-logo-skeleton" />
                 <span className="beam-skeleton tp-label-skeleton" />
               </div>

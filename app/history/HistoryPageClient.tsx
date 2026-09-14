@@ -24,8 +24,7 @@ export function HistoryPageClient() {
     <main className="app-page min-h-screen flex flex-col items-center px-4 py-28">
       <motion.div
         className="w-full max-w-xl"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={false}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Page header */}

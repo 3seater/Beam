@@ -3,10 +3,11 @@
 import { useEffect, useId } from 'react';
 import { useEstimateGas, useAccount } from 'wagmi';
 import { formatEther, encodeFunctionData } from 'viem';
-import { Fuel, AlertTriangle, Loader2 } from 'lucide-react';
+import { Fuel, AlertTriangle } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
+import { Skeleton } from '../ui/Skeleton';
 
 export interface FeeEstimateProps {
   amountWei: bigint | null;
@@ -72,9 +73,9 @@ export function FeeEstimate({
   if (amountWei === null || amountWei === 0n || !senderAddress) return null;
 
   if (isLoading) return (
-    <div className={`flex items-center gap-2 text-sm text-white/50 ${className}`} aria-live="polite" aria-busy="true">
-      <Loader2 size={ICON_SIZE.sm} className="animate-spin shrink-0" aria-hidden="true" />
-      <span>Estimating fee…</span>
+    <div className={`flex items-center justify-between text-sm min-h-5 ${className}`} aria-live="polite" aria-busy="true" aria-label="Estimating fee">
+      <span className="flex items-center gap-1.5 text-white/50"><Fuel size={ICON_SIZE.sm} aria-hidden="true" className="shrink-0" />Estimated fee</span>
+      <Skeleton className="w-28 h-4" />
     </div>
   );
 
