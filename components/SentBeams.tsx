@@ -331,7 +331,6 @@ function BeamRow({
             </a>
           </span>
         )}
-        {!row.beamLink && <span className="text-[11px] text-white/50" title="This deposit exists onchain, but no original claim link is saved on this device. Restore checks the server backup.">Link unavailable</span>}
         </span>
       </div>
 
@@ -409,7 +408,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
         return restored;
       });
       if (!entries.length) setRecoveryError('Wallet verified, but no link backups were found. An original link is needed to restore its claim key. You can still cancel an unclaimed Beam from its sending wallet.');
-      else setRecoveryError(`${entries.length} saved links restored. A pending Beam still showing “Link unavailable” needs its original link or a backup from another device.`);
+      else setRecoveryError(`${entries.length} saved links restored.`);
     } catch (error) { if (walletRef.current === walletAddress) setRecoveryError(error instanceof Error ? error.message : 'Could not restore links. Please try again.'); }
     finally { setRestoring(false); }
   };

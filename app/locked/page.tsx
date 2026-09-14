@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { LockKeyhole, ArrowRight, RotateCcw } from 'lucide-react';
+import { ArrowRight, RotateCcw } from 'lucide-react';
+import { BeamMark } from '@/components/BeamMark';
 import './pattern-lock.css';
 
 const labels = ['Top left', 'Top center', 'Top right', 'Middle left', 'Center', 'Middle right', 'Bottom left', 'Bottom center', 'Bottom right'];
@@ -32,18 +33,15 @@ export default function PatternLock() {
   return <main className="pattern-screen">
     <div className="pattern-orb pattern-orb-one" /><div className="pattern-orb pattern-orb-two" />
     <section className="pattern-card" aria-labelledby="pattern-title">
-      <div className="pattern-brand"><span aria-hidden="true">✦</span> Beam</div>
-      <div className="pattern-badge"><LockKeyhole size={13} /> Private preview</div>
-      <h1 id="pattern-title">A little privacy.</h1>
-      <p className="pattern-intro">Tap your pattern to step inside.</p>
+      <div className="pattern-brand beam-wordmark" aria-label="Beam"><BeamMark />beam</div>
+      <h1 id="pattern-title">Enter password</h1>
       <div className="pattern-grid" role="group" aria-label="Select four dots in order">
         <svg viewBox="0 0 280 280" aria-hidden="true"><polyline points={pattern.map(point).join(' ')} /></svg>
         {labels.map((label, index) => <button key={label} type="button" className={`pattern-dot ${pattern.includes(index) ? 'selected' : ''}`} aria-label={label} aria-pressed={pattern.includes(index)} disabled={busy || pattern.includes(index) || pattern.length === 4} onClick={() => choose(index)}><span /></button>)}
       </div>
-      <div className="pattern-status" role="status" aria-live="polite">{message || (busy ? 'Opening Beam…' : pattern.length === 4 ? 'Your pattern is ready.' : 'Choose four points.')}</div>
+      <div className="pattern-status" role="status" aria-live="polite">{message || (busy ? 'Unlocking…' : '')}</div>
       <button className="pattern-unlock" disabled={busy || pattern.length !== 4} onClick={() => void unlock()}>Unlock Beam <ArrowRight size={17} /></button>
       <button className="pattern-reset" disabled={busy || !pattern.length} onClick={() => { setPattern([]); setMessage(''); }}><RotateCcw size={13} /> Start again</button>
     </section>
-    <p className="pattern-footer">Stocks and crypto. Simply sent.</p>
   </main>;
 }
