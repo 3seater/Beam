@@ -6,7 +6,7 @@ import { ExternalLink, Send, Key, Copy, Check, Loader2, ChevronRight } from 'luc
 import { ICON_SIZE } from '@/lib/icons';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { isAddress, parseUnits } from 'viem';
-import { BeamGiftCard, BeamMoment } from '@/components/BeamGiftCard';
+import { BeamGiftCard } from '@/components/BeamGiftCard';
 
 /* ── Confetti ────────────────────────────────────────────────────────────── */
 interface Particle {
@@ -224,7 +224,7 @@ export function ClaimSuccess({ amount, symbol, decimals = 18, recipientAddress, 
         role="status"
         aria-live="polite"
       >
-        <BeamMoment title={txHash ? 'Just like that. All yours.' : 'Your Beam wallet.'} description={txHash ? 'A little possibility, now in your hands.' : 'Your next move, made simple.'} />
+        <h1 className="receipt-heading">{txHash ? 'Just like that. All yours.' : 'Your Beam wallet.'}</h1>
         <BeamGiftCard amount={amount} symbol={symbol} logoUrl={tokenLogoUrl} tokenVisual={tokenVisual} label="A little something" status={txHash ? 'Claimed' : 'Connected'} detail="On Robinhood Chain" />
         <details className="receipt-wallet-details"><summary>Your wallet & next steps <ChevronRight size={16} /></summary><div className="receipt-wallet-content">
         {/* Wallet address */}

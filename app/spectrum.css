@@ -43,3 +43,7 @@
 .tx-token-mark > .bundle-token-stack { width: auto; }
 @media(max-width:380px) { .bundle-picker-list { gap: 8px; }.bundle-picker-row { padding: 12px 9px; }.bundle-picker-heading strong { font-size: 12px; } }
 @media(prefers-reduced-motion:reduce) { .bundle-picker-row { transition: none; } }
+
+.spectrum-copy-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; width:108px; min-height:36px; padding:8px 12px; border:1px solid #87bfe185; border-radius:10px; background:linear-gradient(145deg,#ffffffe6,#edf8ffc9); box-shadow:0 2px 7px #247db512,inset 0 1px 0 #fff; color:#285571; font-size:12px; font-weight:500; transition:background .15s,border-color .15s; }
+.spectrum-copy-button:hover { background:#fff; border-color:#38a0e1; }
+.spectrum-copy-button:focus-visible { outline:2px solid #2589c4; outline-offset:3px; }

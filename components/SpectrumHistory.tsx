@@ -1,11 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 import { usePublicClient, useWriteContract, useSignMessage } from 'wagmi';
 import { SPECTRUM_ABI, SPECTRUM_PRESETS, SPECTRUM_ESCROW_ADDRESS, spectrumConfigured } from '@/lib/spectrum';
 import { BundleTokenStack } from './SpectrumAssets';
 import { loadBeamHistory, saveBeamEntry, type BeamHistoryEntry } from '@/lib/beam-history';
 import { recoveryMessage } from '@/lib/beam-recovery';
 import { DataSkeleton } from './ui/DataSkeleton';
+import { readBeamStatus, cacheBeamStatus } from '@/lib/beam-status-cache';
 
 export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
   const [entries, setEntries] = useState<BeamHistoryEntry[]>([]);
@@ -13,6 +15,29 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyRequest = useRef(0);
+  useEffect(() => {
+    setCopied(null);
+    return () => {
+      copyRequest.current++;
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    };
+  }, [walletAddress]);
+  async function copyLink(entry: BeamHistoryEntry) {
+    const request = ++copyRequest.current;
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    setCopied(null);
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(entry.beamLink);
+      if (request !== copyRequest.current) return;
+      setCopied(entry.depositId);
+      copyTimer.current = setTimeout(() => { setCopied(null); copyTimer.current = null; }, 2000);
+    } catch {
+      if (request === copyRequest.current) setError('Could not copy the link.');
+    }
+  }
   const client = usePublicClient({ chainId: 4663 });
   const { writeContractAsync } = useWriteContract();
   const { signMessageAsync } = useSignMessage();
@@ -31,8 +56,27 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
   }, [walletAddress]);
   useEffect(() => {
     let active = true;
-    if (client && spectrumConfigured) for (const e of entries) client.readContract({ address: SPECTRUM_ESCROW_ADDRESS, abi: SPECTRUM_ABI, functionName: 'getBundle', args: [BigInt(e.depositId)] }).then(b => { if (active) setClosed(prev => ({ ...prev, [e.depositId]: b[2] })); }).catch(() => { if (active) setClosed(prev => ({ ...prev, [e.depositId]: null })); });
-    return () => { active = false; };
+    setClosed(previous => {
+      const seeded = { ...previous };
+      for (const entry of entries) {
+        const cached = readBeamStatus(SPECTRUM_ESCROW_ADDRESS, entry.depositId);
+        if (seeded[entry.depositId] === undefined && cached) seeded[entry.depositId] = cached !== 'unclaimed';
+      }
+      return seeded;
+    });
+    const timer = setTimeout(() => {
+      if (active) setClosed(previous => {
+        const next = { ...previous };
+        for (const entry of entries) if (next[entry.depositId] === undefined) next[entry.depositId] = null;
+        return next;
+      });
+    }, 4000);
+    if (client && spectrumConfigured) for (const e of entries) client.readContract({ address: SPECTRUM_ESCROW_ADDRESS, abi: SPECTRUM_ABI, functionName: 'getBundle', args: [BigInt(e.depositId)] }).then(b => {
+      if (!active) return;
+      cacheBeamStatus(SPECTRUM_ESCROW_ADDRESS, e.depositId, b[2] ? 'closed' : 'unclaimed');
+      setClosed(prev => ({ ...prev, [e.depositId]: b[2] }));
+    }).catch(() => { if (active) setClosed(prev => ({ ...prev, [e.depositId]: prev[e.depositId] ?? null })); });
+    return () => { active = false; clearTimeout(timer); };
   }, [entries, client]);
   async function restore() {
     setBusy('restore'); setError(null);
@@ -54,6 +98,7 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
       const receipt = await client.waitForTransactionReceipt({ hash });
       if (receipt.status !== 'success') throw new Error('Cancellation reverted.');
       setClosed(prev => ({ ...prev, [e.depositId]: true }));
+      cacheBeamStatus(SPECTRUM_ESCROW_ADDRESS, e.depositId, 'closed');
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not cancel Spectrum.'); } finally { setBusy(null); }
   }
   if (!entries.length) return null;
@@ -63,7 +108,10 @@ export function SpectrumHistory({ walletAddress }: { walletAddress: string }) {
       <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-3">{SPECTRUM_PRESETS.find(p => p.name === e.tokenSymbol) && <BundleTokenStack tokens={SPECTRUM_PRESETS.find(p => p.name === e.tokenSymbol)!.constituents} size={26} />}<strong>{e.tokenSymbol}</strong></span><span>${e.usdAmount.toLocaleString()}</span></div>
       <div className="text-xs flex items-center gap-2"><span className="bundle-history-status">{spectrumConfigured && closed[e.depositId] === undefined ? <DataSkeleton className="w-28 h-3" label="Checking bundle status" /> : <span className="opacity-55">{!spectrumConfigured || closed[e.depositId] === null ? 'Status unavailable' : closed[e.depositId] ? 'Claimed or cancelled' : 'Unclaimed'}</span>}</span><span className="opacity-55">· {new Date(e.createdAt).toLocaleDateString()}</span></div>
       <div className="flex gap-4 text-xs min-h-4">
-        {e.beamLink && <button onClick={() => { void navigator.clipboard.writeText(e.beamLink).then(() => setCopied(e.depositId)).catch(() => setError('Could not copy the link.')); }}>{copied === e.depositId ? 'Copied' : 'Copy link'}</button>}
+        {e.beamLink && <button type="button" className="spectrum-copy-button" aria-label={`Copy ${e.tokenSymbol} claim link`} onClick={() => void copyLink(e)}>
+          {copied === e.depositId ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+          <span aria-live="polite">{copied === e.depositId ? 'Copied' : 'Copy link'}</span>
+        </button>}
         {closed[e.depositId] === false && <button disabled={busy !== null} onClick={() => void cancel(e)}>{busy === e.depositId ? 'Cancelling…' : 'Cancel & recover all assets'}</button>}
       </div>
     </div>)}

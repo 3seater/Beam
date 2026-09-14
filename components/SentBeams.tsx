@@ -15,6 +15,7 @@ import { BeamsSkeleton } from './BeamsSkeleton';
 import { HistoryTokenImage } from './HistoryTokenImage';
 import { recoveryMessage } from '@/lib/beam-recovery';
 import { tokenLogoUrl } from './LandingTokenLogo';
+import { readBeamStatus, cacheBeamStatus } from '@/lib/beam-status-cache';
 
 type ServerEntry = Omit<StoredBeamLink, 'beamLink'> & { beamLink?: string };
 
@@ -200,7 +201,7 @@ function BeamRow({
   const { writeContractAsync } = useWriteContract();
 
   const [copied, setCopied] = useState(false);
-  const [status, setStatus] = useState<DepositStatus | 'loading'>('loading');
+  const [status, setStatus] = useState<DepositStatus | 'loading'>(() => readBeamStatus(BEAM_ESCROW_ADDRESS, row.depositId) ?? 'loading');
   const [cancelling, setCancelling] = useState(false);
   const [cancelErr, setCancelErr] = useState<string | null>(null);
 
@@ -208,10 +209,15 @@ function BeamRow({
   useEffect(() => {
     if (!client) return;
     let active = true;
+    const loadingTimer = setTimeout(() => {
+      if (active) setStatus(previous => previous === 'loading' ? 'unknown' : previous);
+    }, 4000);
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const check = async (attempt: number) => {
       const value = await queuedDepositStatus(row.depositId, client);
       if (!active) return;
+      if (value !== 'unknown') cacheBeamStatus(BEAM_ESCROW_ADDRESS, row.depositId, value);
+      if (value === 'closed') setStatus(previous => previous === 'claimed' || previous === 'cancelled' ? previous : value);
       if ((value === 'unknown' || value === 'closed') && attempt < 3) {
         // Keep the loading indicator or last known status while recovering.
         retryTimer = setTimeout(() => { void check(attempt + 1); }, 750 * 2 ** attempt);
@@ -222,7 +228,7 @@ function BeamRow({
         value === 'closed' && (previous === 'claimed' || previous === 'cancelled') ? previous : value);
     };
     void check(0);
-    return () => { active = false; clearTimeout(retryTimer); };
+    return () => { active = false; clearTimeout(retryTimer); clearTimeout(loadingTimer); };
   }, [row.depositId, client, refreshVersion]);
 
   const copy = useCallback(async () => {
@@ -252,6 +258,7 @@ function BeamRow({
       if (receipt.status !== 'success') throw new Error('Cancellation reverted.');
       cancellationQueries.delete(client);
       setStatus('cancelled');
+      cacheBeamStatus(BEAM_ESCROW_ADDRESS, row.depositId, 'cancelled');
       onCancelled(row.depositId);
     } catch (e) {
       setCancelErr(e instanceof Error ? e.message.slice(0, 80) : 'Cancel failed');
@@ -457,7 +464,21 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
 
     const [onchain, serverLinks] = await Promise.all([
       fetchOnchainDeposits(walletAddress, client),
-      fetchServerLinks(walletAddress),
+      fetchServerLinks(walletAddress).then(entries => {
+        if (walletRef.current !== walletAddress || request !== requestRef.current) return entries;
+        // Database metadata can render while the slower chain scan continues.
+        setRows(previous => {
+          const updated = [...previous];
+          for (const entry of entries) {
+            if (updated.some(row => row.depositId === entry.depositId)) continue;
+            updated.push({ depositId: entry.depositId, tokenSymbol: entry.tokenSymbol, tokenDecimals: 18, amount: 0n, beamLink: entry.beamLink ?? null, usdAmount: entry.usdAmount, createdAt: entry.createdAt, claimSigner: '', logoUrl: tokenLogoUrl(entry.tokenSymbol) });
+          }
+          updated.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+          historyCache.set(cacheKey, updated);
+          return updated;
+        });
+        return entries;
+      }),
       tokenReadyRef.current,
     ]);
 
@@ -518,7 +539,7 @@ export function SentBeams({ walletAddress }: SentBeamsProps) {
       return updated;
     });
     setFetchState('done');
-  }, [walletAddress, client]);
+  }, [walletAddress, client, cacheKey]);
 
   // Fire refresh when client becomes available (handles wagmi async hydration)
   useEffect(() => {

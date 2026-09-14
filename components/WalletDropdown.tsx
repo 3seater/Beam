@@ -6,6 +6,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { formatUnits } from 'viem';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Copy, Check, LogOut, Clock, Loader2, ChevronRight } from 'lucide-react';
 import { ICON_SIZE } from '@/lib/icons';
 import { formatTokenValue } from '@/lib/format';
@@ -13,6 +14,7 @@ import { BEAM_ESCROW_ABI } from '@/lib/escrow-abi';
 import { BEAM_ESCROW_ADDRESS } from '@/lib/constants';
 import { loadBeamHistory } from '@/lib/beam-history';
 import { fetchRobinhoodTokens } from '@/lib/robinhood-tokens';
+import { SPECTRUM_PRESETS } from '@/lib/spectrum';
 
 const ETH_LOGO_URL = 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628';
 
@@ -131,7 +133,16 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
 
     // Resolve logos — token map may already be populated from the other effect,
     // or we fetch inline here if it isn't yet.
-    const resolveLogo = (symbol: string, map: Map<string, { symbol: string; decimals: number; logoUrl: string }>): string | null => {
+    const resolveLogo = (symbol: string, map: Map<string, { symbol: string; decimals: number; logoUrl: string }>, kind?: 'spectrum'): string | null => {
+      if (kind === 'spectrum') {
+        const preset = SPECTRUM_PRESETS.find(p => p.name === symbol || p.id === symbol);
+        // Use the largest allocation; catalog order breaks equal-weight ties.
+        const mainToken = preset?.constituents.reduce<(typeof preset.constituents)[number] | undefined>(
+          (main, token) => !main || token.weight > main.weight ? token : main,
+          undefined,
+        );
+        return mainToken?.logoUrl || null;
+      }
       if (symbol === 'ETH') return ETH_LOGO_URL;
       for (const v of map.values()) {
         if (v.symbol === symbol) return v.logoUrl;
@@ -144,7 +155,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
         depositId: e.depositId,
         tokenSymbol: e.tokenSymbol,
         tokenDecimals: 18,
-        tokenLogoUrl: resolveLogo(e.tokenSymbol, map),
+        tokenLogoUrl: resolveLogo(e.tokenSymbol, map, e.kind),
         amount: 0n,
         usdAmount: e.usdAmount,
         createdAt: e.createdAt,
@@ -336,7 +347,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
       <div className="px-4 pb-1">
         <div className="h-px bg-white/10 rounded-full mb-1" aria-hidden="true" />
       </div>
-      <a
+      <Link
         href="/history"
         onClick={onClose}
         className="flex items-center justify-between px-4 py-3 rounded-b-[20px]
@@ -345,7 +356,7 @@ export function WalletDropdown({ address, onClose, triggerRef }: WalletDropdownP
       >
         <span className="text-sm font-medium">View all beams</span>
         <ChevronRight size={ICON_SIZE.sm} className="text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all duration-150" />
-      </a>
+      </Link>
     </motion.div>
   );
 }

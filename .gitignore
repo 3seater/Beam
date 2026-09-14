@@ -12,6 +12,7 @@
 # next.js
 /.next/
 /.next-dev/
+/.next-stock-art/
 /.next-spectrum/
 /.next-spectrum-build/
 /output/spectrum-check/
