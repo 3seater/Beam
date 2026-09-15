@@ -1,0 +1,5 @@
+/* The inner frames inherit production CSS without visual overrides. */
+body:has(.mobile-export),body:has(.mobile-flow-gallery){margin:0}
+body:has(.mobile-export) .premium-header,body:has(.mobile-flow-gallery) .premium-header{display:none!important}
+.mobile-export{width:1080px;height:2340px;overflow:hidden}.mobile-export>iframe{border:0;width:360px;height:780px;transform:scale(3);transform-origin:top left;display:block}
+.mobile-flow-gallery{padding:36px;background:#e7f5fb;min-height:100vh;color:#355b77}.mobile-flow-gallery h1{font-size:28px}.mobile-flow-gallery>p{margin:10px 0 30px}.mobile-flow-gallery>div{display:flex;gap:24px;flex-wrap:wrap}.mobile-flow-gallery a{display:flex;flex-direction:column;gap:15px;color:inherit}.mobile-flow-gallery iframe{width:360px;height:780px;border:0;border-radius:18px}

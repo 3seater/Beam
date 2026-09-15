@@ -31,7 +31,7 @@ const TX_STEPS: BeamStep[] = [
 ];
 
 // ── Selected asset summary chip ───────────────────────────────────────────────
-function AssetChip({ asset, onClick }: { asset: SelectedAsset; onClick: () => void }) {
+export function AssetChip({ asset, onClick }: { asset: SelectedAsset; onClick: () => void }) {
   const symbol = asset.type === 'native' ? 'ETH' : asset.symbol;
   const name = asset.type === 'native' ? 'Ethereum' : asset.name;
   const logoUrl = asset.type === 'erc20' ? asset.logoUrl : 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628';
