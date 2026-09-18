@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import './globals.css';
 import './premium.css';
 import './spectrum.css';
@@ -46,11 +45,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {headers().get('x-beam-locked') === '1' ? children : <Providers>
+        <Providers>
           {/* Navbar lives here — renders once, never unmounts on navigation */}
           <Navbar />
           {children}
-        </Providers>}
+        </Providers>
       </body>
     </html>
   );
