@@ -2860,6 +2860,8 @@ body {
 /* ── Footer $BEAM token notice ─────────────────────────────────────────── */
 .footer-token-ca {
   display: inline-flex;
+  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   gap: 4px;
   font-size: 12px;
@@ -2867,10 +2869,9 @@ body {
   opacity: 0.7;
 }
 
-.footer-token-ca-blur {
-  filter: blur(4.5px);
-  user-select: none;
-  pointer-events: none;
+.footer-token-ca-address {
+  overflow-wrap: anywhere;
+  min-width: 0;
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;
   letter-spacing: 0.3px;
